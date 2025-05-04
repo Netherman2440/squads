@@ -5,11 +5,45 @@
 /frontend/ios/Pods/
 /frontend/.flutter-plugins
 
-# Python
-/backend/__pycache__/
-/backend/.venv/
-/backend/*.pyc
+# Narzędzia Dart/Flutter
+/frontend/.flutter-plugins-dependencies
+/frontend/.packages
+
+# IntelliJ/Android Studio
+*.iml
+.android/
+/frontend/.metadata
+
+# Xcode
+frontend/ios/Pods/
+/frontend/ios/Runner.xcworkspace/
+/frontend/ios/Flutter/Flutter.framework
+/frontend/ios/Flutter/Flutter.podspec
+
 
 # IDE
 .vscode/
 .idea/
+
+# ===== Python =====
+# wirtualne środowisko
+/backend/.venv/
+/backend/venv/
+/backend/env/
+
+# pliki byte-code i cache
+**/__pycache__/
+**/*.py[cod]
+
+# cache pytest, coverage
+/.pytest_cache/
+/coverage.xml
+htmlcov/
+
+# pliki instancji / lokalnej konfiguracji
+/backend/instance/
+/backend/.env
+/backend/service-account.json   # klucz do Firestore
+
+# logi
+*.log
