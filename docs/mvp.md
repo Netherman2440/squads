@@ -1,147 +1,124 @@
-# Zakres MVP
+# MVP Scope
 
-Dokument definiuje minimalny zakres funkcjonalny (MVP) aplikacji do wybierania i zarządzania składami na mecz.
-
----
-
-## 1. Baza danych (Firebase Firestore SQL)
-
-* **Modele (kolekcje):**
-
-  * `teams` — drużyny
-  * `players` — zawodnicy
-  * `matches` — mecze
-  * `users` — konta użytkowników (na razie tylko jedno konto: Ty)
-
-    * Goście („guest”) nie zakładają kont — mają tylko dostęp do odczytu danych.
-
-* **Relacje:**
-
-  * `teams/{teamId}` przechowuje dane drużyny.
-  * `players/{playerId}` z polem `teamId` wskazującym drużynę.
-  * `matches/{matchId}` zawiera datę, uczestników (`playerIds`) i wynik.
-  * `users/{userId}` z mapą ról względem `teamId` (na razie `{ yourId: "admin" }`).
+This document defines the minimal functional scope (MVP) of the application for creating and managing sports team squads.
 
 ---
 
-## 2. Backend (Flask)
+## 1. Database (PostgreSQL)
 
-### 2.0. Inicjalizacja projektu
+* **Models (tables):**
+  * `teams` — teams
+  * `players` — players
+  * `matches` — matches
+  * `users` — user accounts (initially only one admin account: you)
+    * Guests do not create accounts — they have read-only access.
 
-1. **Środowisko Python**
+* **Relations:**
+  * `teams.id` — primary key for teams.
+  * `players.team_id` — foreign key referencing the team.
+  * `matches.id` — contains date, participants (`player_ids`), and result.
+  * `users.id` — user account, with a role field (e.g., `{ your_id: "admin" }`).
 
-   * Zainstaluj Pythona w wersji >=3.10.
-   * W katalogu `backend/` utwórz wirtualne środowisko:
+---
 
+## 2. Backend (FastAPI)
+
+### 2.0. Project initialization
+
+1. **Python environment**
+   * Install Python >=3.11.
+   * In the `backend/` directory, create a virtual environment:
      ```bash
      python -m venv .venv
      source .venv/bin/activate   # Linux/Mac
-     .venv\Scripts\activate    # Windows
+     .venv\Scripts\activate      # Windows
      ```
-2. **Struktura katalogów**
 
+2. **Directory structure**
    ```
    backend/
    ├── app/
-   │   ├── models/          # definicje ORM lub Firestore wrappers
-   │   ├── schemas/         # Pydantic/Marshmallow
-   │   ├── services/        # logika biznesowa
-   │   ├── routes/          # blueprinty / CCTV
-   │   ├── utils/           # middleware, auth, helpery
-   │   └── main.py          # punkt wejścia aplikacji
-   ├── requirements.txt     # zależności
-   ├── config.py            # ustawienia środowiskowe
-   └── .venv/               # wirtualne środowisko
+   │   ├── models/          # ORM definitions (SQLAlchemy)
+   │   ├── schemas/         # Pydantic schemas
+   │   ├── services/        # business logic
+   │   ├── routes/          # API endpoints
+   │   ├── utils/           # auth, helpers, error handlers
+   │   └── main.py          # app entry point
+   ├── requirements.txt     # dependencies
+   ├── config.py            # environment settings
+   └── .venv/               # virtual environment
    ```
+
 3. **Dependencies**
-
-   * W `requirements.txt` umieść:
-
+   * In `requirements.txt`:
      ```txt
-     Flask
-     google-cloud-firestore
-     Flask-JWT-Extended
-     gunicorn
+     fastapi
+     uvicorn
+     sqlalchemy
+     psycopg2-binary
+     pydantic
+     python-jose
+     passlib[bcrypt]
      pytest
      ```
-   * Zainstaluj je:
-
+   * Install them:
      ```bash
      pip install -r requirements.txt
      ```
 
-### 2.1. Konfiguracja połączenia z Firestore
+### 2.1. Database connection (PostgreSQL)
 
-* Utwórz Service Account w Google Cloud z rolą `Cloud Datastore User`.
-* Pobierz JSON z kluczami i ustaw zmienną środowiskową:
-
-  ```bash
-  export GOOGLE_APPLICATION_CREDENTIALS="/path/to/key.json"
-  ```
-* W `config.py` zarządzaj ścieżką:
-
+* Configure the connection string in `config.py`:
   ```python
   import os
-  FIRESTORE_CREDENTIALS = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+  DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:password@localhost:5432/mydb')
   ```
 
-### 2.2. Główny punkt wejścia (`main.py`)
+* Use SQLAlchemy for ORM and migrations (optionally Alembic).
+
+### 2.2. Main entry point (`main.py`)
 
 ```python
-from flask import Flask
-from routes.teams import teams_bp
-from routes.players import players_bp
-from routes.matches import matches_bp
-from utils.auth import init_jwt, auth_error_handler
+from fastapi import FastAPI
+from app.routes.teams import router as teams_router
+from app.routes.players import router as players_router
+from app.routes.matches import router as matches_router
+from app.routes.auth import router as auth_router
 
-app = Flask(__name__)
-app.config['JWT_SECRET_KEY'] = 'YOUR_SECRET'
+app = FastAPI()
 
-# inicjalizacja JWT
-init_jwt(app)
-# globalny handler błędów
-app.register_error_handler(Exception, auth_error_handler)
-
-# rejestracja blueprintów
-app.register_blueprint(teams_bp, url_prefix='/teams')
-app.register_blueprint(players_bp, url_prefix='/players')
-app.register_blueprint(matches_bp, url_prefix='/matches')
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+app.include_router(teams_router, prefix="/teams")
+app.include_router(players_router, prefix="/players")
+app.include_router(matches_router, prefix="/matches")
+app.include_router(auth_router, prefix="/auth")
 ```
 
-### 2.3. Autoryzacja
+### 2.3. Authorization
 
-* **Flask-JWT-Extended**:
-
-  * `POST /users/login` zwraca token JWT.
-  * Dekorator `@jwt_required()` zabezpiecza endpointy.
-  * W middleware sprawdzasz `get_jwt_identity()` i odczytujesz w `UserService` role.
+* **JWT-based authentication**:
+  * `POST /auth/login` returns a JWT token.
+  * Use `Depends(get_current_user)` to protect endpoints.
+  * The backend verifies the JWT and checks user roles.
 
 ### 2.4. REST API
 
-* **Endpointy:**
-
+* **Endpoints:**
   * `GET /teams`, `POST /teams`, `PUT /teams/{id}`, `DELETE /teams/{id}`
   * `GET /players`, `POST /players`, `PUT /players/{id}`, `DELETE /players/{id}`
   * `GET /matches`, `POST /matches`, `PUT /matches/{id}`, `DELETE /matches/{id}`
-  * `POST /users/login` → payload `{email, password}` → zwraca `{access_token}`
+  * `POST /auth/login` → payload `{email, password}` → returns `{access_token}`
 
-### 2.5. Testy
+### 2.5. Tests
 
-* **Unit tests** (pytest) dla usług w `services/`:
-
+* **Unit tests** (pytest) for services in `services/`:
   * `tests/unit/test_team_service.py`, `test_player_service.py`, etc.
 * **Integration tests**:
+  * Use a test PostgreSQL database (can be a separate Docker container).
+  * HTTP endpoint tests: `client = TestClient(app)` + CRUD flows.
 
-  * Użyj Firestore emulatora, fixture `firebase_emulator` w pytest.
-  * Testy endpointów HTTP: `client = app.test_client()` + CRUD flows.
+### 2.6. Business logic
 
-### 2.6. Logika biznesowa
-
-* Operacje w `services/`:
-
+* Operations in `services/`:
   * `TeamService.create_team()`, `TeamService.update_team()`, etc.
   * `PlayerService.add_player_to_team()`, `PlayerService.update_stats()`.
   * `MatchService.create_match()`, `MatchService.record_result()`, `MatchService.update_rankings()`.
@@ -151,21 +128,17 @@ if __name__ == '__main__':
 
 ## 3. Frontend (Flutter)
 
-(Flutter)
+* **Screens:**
+  * **Teams list**: view all `teams`
+  * **Team details**: list of `players`, access to `matches`
+  * **Match form**: select participants, enter result
+  * **Admin panel** (only after login): CRUD for all resources
 
-* **Ekrany:**
-
-  * **Lista drużyn**: widok wszystkich `teams`
-  * **Szczegóły drużyny**: lista `players`, dostęp do `matches`
-  * **Formularz meczu**: wybór uczestników, wprowadzenie wyniku
-  * **Panel admina** (tylko po zalogowaniu): CRUD dla wszystkich zasobów
-
-* **Logika**:
-
-  * Wywoływanie REST API dla CRUD
-  * Parsowanie JSON → modele Dart (`Team`, `Player`, `Match`)
-  * Wyświetlanie rankingów i statystyk
+* **Logic:**
+  * Call REST API for CRUD operations
+  * Parse JSON → Dart models (`Team`, `Player`, `Match`)
+  * Display rankings and statistics
 
 ---
 
-*Zakres MVP obejmuje bazową funkcjonalność: przechowywanie i odczyt danych, podstawowe zarządzanie składami oraz mechanizm autoryzacji dla administracji.*
+*MVP scope covers basic functionality: data storage and retrieval, basic squad management, and an authorization mechanism for administration.*

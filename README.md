@@ -1,111 +1,109 @@
 # Squads
 
-Lekka aplikacja do tworzenia i przeglądania składów drużyn sportowych, zbudowana jako monorepo:
+A lightweight app for creating and browsing sports team squads, built as a monorepo:
 
-- **Frontend**: Flutter (Android, iOS, Web)  
-- **Backend**: Python + Flask  
-- **Baza danych**: Google Firestore  
-- **CI/CD**: GitHub Actions  
-- **Dokumentacja**: MkDocs/Docusaurus w folderze `docs/`
+- **Frontend**: Flutter (Android, iOS, Web)
+- **Backend**: Python + FastAPI
+- **Database**: PostgreSQL
+- **CI/CD**: GitHub Actions
+- **Documentation**: .md files in `docs/`
 
 ---
 
-## 📂 Struktura repozytorium
+## 📂 Repository structure
 
 ```
 squads-monorepo/
-├── README.md             ← ten plik
+├── README.md             ← this file
 ├── .gitignore
-├── docs/                 ← dokumentacja techniczna (.md + config)
-├── frontend/             ← aplikacja Flutter
-│   ├── lib/              ← kod źródłowy (screens/, widgets/, services/)
-│   ├── test/             ← testy unit & widget
-│   └── pubspec.yaml      ← zależności Dart
-├── backend/              ← serwis Flask + Firestore
+├── docs/                 ← technical documentation (.md + config)
+├── frontend/             ← Flutter app
+│   ├── lib/              ← source code (screens/, widgets/, services/)
+│   ├── test/             ← unit & widget tests
+│   └── pubspec.yaml      ← Dart dependencies
+├── backend/              ← FastAPI service + PostgreSQL
 │   ├── app/
-│   │   ├── main.py       ← tworzy Flask-app, JWT, Firestore
-│   │   ├── routes/       ← endpointy (teams, players, matches…)
-│   │   ├── services/     ← logika biznesowa (CRUD, rankingi…)
+│   │   ├── main.py       ← creates FastAPI app, JWT, DB connection
+│   │   ├── routes/       ← endpoints (teams, players, matches…)
+│   │   ├── services/     ← business logic (CRUD, rankings…)
 │   │   └── utils/        ← auth, error handlers, CORS
-│   ├── tests/            ← pytest (unit & integracja)
-│   ├── requirements.txt  
-│   └── Dockerfile
+│   ├── tests/            ← pytest (unit & integration)
+│   ├── requirements.txt
+│   ├── Dockerfile
+│   └── alembic/          ← DB migrations (optional, if using Alembic)
+├── docker-compose.yml    ← runs backend + PostgreSQL locally
 └── .github/              ← CI/CD (GitHub Actions)
 ```
 
 ---
 
-## 🚀 Szybki start
+## 🚀 Quick start
 
-### 1. Klonowanie repozytorium
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/TwojeRepo/squads-monorepo.git
-cd squads-monorepo
+git clone https://github.com/Netherman2440/squads.git
+cd squads
 ```
 
-### 2. Ustawienia wspólne
+### 2. Common setup
 
-- Zainstaluj [Flutter SDK](https://flutter.dev/docs/get-started/install)  
-- Zainstaluj [Python 3.11+](https://www.python.org/downloads/)  
-- (Opcjonalnie) [Firebase CLI](https://firebase.google.com/docs/cli) do emulatorów  
+- Install [Flutter SDK](https://flutter.dev/docs/get-started/install)
+- Install [Python 3.11+](https://www.python.org/downloads/)
+- Install [Docker Desktop](https://www.docker.com/products/docker-desktop) (for local backend + database)
+- (Optional) [DBeaver](https://dbeaver.io/) or [pgAdmin](https://www.pgadmin.org/) for managing PostgreSQL
 
 ---
 
-## 🖥️ Backend (Flask + Firestore)
+## 🖥️ Backend (FastAPI + PostgreSQL)
 
-1. **Utwórz i aktywuj wirtualne środowisko**  
+### 1. Local development (recommended: Docker Compose)
+
+1. **Start backend and database with Docker Compose**
    ```bash
-   cd backend
-   python -m venv .venv
-   # Windows PowerShell:
-   .venv\Scripts\Activate.ps1
-   # Bash (Linux/macOS):
-   source .venv/bin/activate
+   docker compose up --build
    ```
+   - This will build the backend image and start both FastAPI and PostgreSQL containers.
+   - FastAPI will be available at [http://localhost:8000](http://localhost:8000)
+   - PostgreSQL will be available at `localhost:5432` (user: `postgres`, password: `password`, db: `mydb`)
 
-2. **Zainstaluj zależności**  
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-
-3. **Poświadczenia do Firestore**  
-   - Pobierz `service-account.json` z Google Cloud Console  
-   - Ustaw zmienną środowiskową:
+2. **(Alternative) Run backend without Docker**
+   - Install PostgreSQL locally and create a database.
+   - Set environment variable `DATABASE_URL=postgresql://postgres:password@localhost:5432/mydb`
+   - Install dependencies:
      ```bash
-     # Windows PowerShell
-     $Env:GOOGLE_APPLICATION_CREDENTIALS="C:\ścieżka\do\service-account.json"
-
-     # Linux/macOS
-     export GOOGLE_APPLICATION_CREDENTIALS="/full/path/service-account.json"
+     cd backend
+     pip install --upgrade pip
+     pip install -r requirements.txt
+     ```
+   - Run the app:
+     ```bash
+     uvicorn app.main:app --reload
      ```
 
-4. **(Opcjonalnie) Emulator Firestore**  
-   ```bash
-   firebase emulators:start --only firestore
-   # w nowym oknie terminala:
-   export USE_FIRESTORE_EMULATOR=1
-   ```
+### 2. Database migrations (optional)
+- If using Alembic for migrations:
+  ```bash
+  alembic upgrade head
+  ```
 
-5. **Uruchom serwis**  
-   ```bash
-   flask run --host=0.0.0.0 --port=5000
-   # będzie dostępny pod http://localhost:5000
-   ```
+### 3. Authentication
+- JWT-based authentication is implemented in the backend.
+- On login, the backend returns a JWT token.
+- The frontend must store the token securely and send it in the `Authorization: Bearer <token>` header for protected endpoints.
 
 ---
 
 ## 📱 Frontend (Flutter)
 
-1. **Przejdź do katalogu i pobierz zależności**  
+1. **Go to the directory and get dependencies**
    ```bash
    cd frontend
    flutter pub get
    ```
 
-2. **Uruchom aplikację**  
-   - **Android/iOS** (urządzenie lub emulator):
+2. **Run the app**
+   - **Android/iOS** (device or emulator):
      ```bash
      flutter run
      ```
@@ -114,24 +112,23 @@ cd squads-monorepo
      flutter run -d chrome
      ```
 
-3. **Wskaż adres API**  
-   Domyślnie frontend łączy się z `http://localhost:5000`.  
-   Możesz nadpisać to:
+3. **Set API address**
+   By default, the frontend connects to `http://localhost:8000`.
+   You can override this:
    ```bash
-   flutter run --dart-define=API_URL=https://squads-backend-abcdefg.a.run.app
+   flutter run --dart-define=API_URL=https://your-backend-url.com
    ```
 
 ---
 
-## 🧪 Testy
+## 🧪 Tests
 
-- **Backend**:  
+- **Backend**:
   ```bash
   cd backend
-  source .venv/bin/activate
   pytest
   ```
-- **Frontend**:  
+- **Frontend**:
   ```bash
   cd frontend
   flutter test
@@ -141,34 +138,42 @@ cd squads-monorepo
 
 ## 📦 CI/CD
 
-- **Backend**: `.github/workflows/python.yml`  
-- **Frontend**: `.github/workflows/flutter.yml`  
-- Po każdym pushu do `main`:
-  1. Lint & testy  
-  2. Build (Docker dla backendu, `flutter build web` dla frontu)  
-  3. Automatyczny deploy (np. Google Cloud Run, Firebase Hosting)
+- **Backend**: `.github/workflows/python.yml`
+- **Frontend**: `.github/workflows/flutter.yml`
+- On every push to `main`:
+  1. Lint & tests
+  2. Build (Docker for backend, `flutter build web` for frontend)
+  3. Automatic deploy (e.g. Google Cloud Run, Railway, Render, Firebase Hosting for frontend)
 
 ---
 
-## 📖 Dokumentacja
+## 📖 Documentation
 
-Wszystkie decyzje architektoniczne i specyfikacje znajdziesz w folderze `docs/`:
+All architectural decisions and specifications are in the `docs/` folder:
 
-- `docs/tech-stack.md`  
-- `docs/scope-mvp.md`  
+- `docs/tech-stack.md`
+- `docs/scope-mvp.md`
 
-Możesz zbudować i podejrzeć ją lokalnie za pomocą MkDocs albo Docusaurus.
+You can build and preview it locally using MkDocs or Docusaurus.
 
 ---
 
-## 🔗 Przydatne linki
+## ☁️ Deployment (cloud)
 
-- [Flutter Docs](https://flutter.dev/docs)  
-- [Flask Documentation](https://flask.palletsprojects.com/)  
-- [Firestore Python Client](https://googleapis.dev/python/firestore/latest/index.html)  
-- [Firebase Emulator Suite](https://firebase.google.com/docs/emulator-suite)  
+- The backend (FastAPI) can be deployed to any cloud that supports Docker containers (e.g. Google Cloud Run, Railway, Render, Fly.io).
+- The PostgreSQL database can be hosted as a managed service (recommended for production) or as a Docker container (for development).
+- The frontend (Flutter Web) can be hosted on Netlify, Vercel, Firebase Hosting, or any static hosting.
+
+---
+
+## 🔗 Useful links
+
+- [Flutter Docs](https://flutter.dev/docs)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Docker Documentation](https://docs.docker.com/)
 - [GitHub Actions](https://docs.github.com/actions)
 
 ---
 
-> Jeśli masz pytania lub chcesz rozszerzyć projekt – daj znać!
+> If you have questions or want to contribute – let me know!
