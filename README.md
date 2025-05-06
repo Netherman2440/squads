@@ -81,12 +81,6 @@ cd squads
      uvicorn app.main:app --reload
      ```
 
-### 2. Database migrations (optional)
-- If using Alembic for migrations:
-  ```bash
-  alembic upgrade head
-  ```
-
 ### 3. Authentication
 - JWT-based authentication is implemented in the backend.
 - On login, the backend returns a JWT token.
