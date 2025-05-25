@@ -1,8 +1,8 @@
 import os
-from typing import Union
+
 
 import dotenv
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File3, UploadFile
 from app.routes import auth
 from app.services.database_service import DatabaseService
 #.\.venv\Scripts\activate
@@ -32,12 +32,6 @@ def shutdown_event():
 def read_root():
     return {"message": "Hello World"}
 
-@app.post("/upload-image/")
-async def upload_image(file: UploadFile = File(...)):
-    # Odczytaj zawartość pliku
-    contents = await file.read()
-    # Tutaj możesz zapisać plik lub go przetworzyć
-    return {"filename": file.filename, "content_type": file.content_type}
 
 
 

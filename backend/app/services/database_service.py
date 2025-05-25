@@ -12,39 +12,11 @@ class DatabaseService:
 
 
 
-    def select_data(self, query, params=None):
+    def query(self, query, params=None):
         try:
             with self.connection.cursor() as cur:
                 cur.execute(query, params)
                 return cur.fetchall()
         except psycopg2.Error as e:
-            print(f"Error selecting data: {e}")
-            raise
-
-    def insert_data(self, query, params=None):
-        print(query)
-        try:
-            with self.connection.cursor() as cur:
-                cur.execute(query, params)
-                self.connection.commit()
-        except psycopg2.Error as e:
-            print(f"Error inserting data: {e}")
-            raise
-
-    def update_data(self, query, params=None):
-        try:
-            with self.connection.cursor() as cur:
-                cur.execute(query, params)
-                self.connection.commit()
-        except psycopg2.Error as e:
-            print(f"Error updating data: {e}")
-            raise
-
-    def delete_data(self, query, params=None):
-        try:
-            with self.connection.cursor() as cur:
-                cur.execute(query, params)
-                self.connection.commit()
-        except psycopg2.Error as e:
-            print(f"Error deleting data: {e}")
-            raise
+            print(f"Error during query execution,3: {e}")
+            
