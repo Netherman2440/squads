@@ -17,3 +17,5 @@ class Match(Base):
     teams = relationship("Team", back_populates="match", cascade="all, delete-orphan")
 
     tournament = relationship("Tournament", back_populates="matches")
+
+    
