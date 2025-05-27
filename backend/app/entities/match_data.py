@@ -1,15 +1,23 @@
 from dataclasses import dataclass
 from datetime import datetime
-from .team_data import TeamData
+from .team_data import TeamData, TeamDetailData
 
 @dataclass
 class MatchData:
     match_id: str
-    squad_id: str
     team_a: TeamData
     team_b: TeamData
     created_at: datetime
 
 
-    def score(self) -> str:
-        return f"{self.team_a.score} - {self.team_b.score}"
+    def score(self) -> tuple[int, int]:
+        return self.team_a.score, self.team_b.score
+
+
+@dataclass
+class MatchDetailData(MatchData):
+    team_a: TeamDetailData
+    team_b: TeamDetailData
+    
+
+

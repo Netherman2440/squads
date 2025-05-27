@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import uuid
-from sqlalchemy import UUID, Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import UUID, Column, Float, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -13,6 +13,7 @@ class Player(Base):
     name = Column(String, nullable=False)
     position = Column(String, nullable=False) # goalie or field
     base_score = Column(Integer, nullable=False)
+    score = Column(Float, nullable=False, default=0.0)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     # age = Column(Integer, nullable=False)
     # height = Column(Integer, nullable=False)
@@ -22,7 +23,6 @@ class Player(Base):
         "Match",
         secondary="team_players",
         primaryjoin="Player.player_id==TeamPlayer.player_id",
-        secondaryjoin="TeamPlayer.match_id==Match.match_id",
-        back_populates=None,
+        secondaryjoin="Match.match_id==TeamPlayer.match_id",
         viewonly=True
     )

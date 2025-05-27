@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 import uuid
-from sqlalchemy import UUID, Column, String, ForeignKey, DateTime
+from sqlalchemy import UUID, Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from .database import Base
 
@@ -12,6 +12,7 @@ class Team(Base):
     team_id = Column(UUID, primary_key=True, default=lambda: uuid.uuid4())
     color = Column(String, nullable=False) # white , black or color or maybe really a RGB value
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    score = Column(Integer, nullable=False, default=0)
     # Reference to match
     match = relationship("Match", back_populates="teams")
     # List of players in the team
