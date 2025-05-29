@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional
 
+from app.entities import PlayerData
+
 
 @dataclass
 class TeamData:
@@ -12,6 +14,4 @@ class TeamData:
 
 @dataclass
 class TeamDetailData(TeamData):
-    def __post_init__(self):
-        from .player_data import PlayerData  # local import
-        self.players: list[PlayerData]
+    players: list[PlayerData]

@@ -4,12 +4,11 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 
 from app.db import Player, Base as PlayerBase
-from app.db.match import Match, Base as MatchBase
-from app.db.team import Team, Base as TeamBase
-from app.db.team_player import TeamPlayer, Base as TeamPlayerBase
-from app.services.player_service import PlayerService
-from app.entities.player_data import PlayerData
-from app.entities.position import Position
+from app.db import Match, Base as MatchBase
+from app.db import Team, Base as TeamBase
+from app.db import TeamPlayer, Base as TeamPlayerBase
+from app.services import PlayerService
+from app.entities import PlayerData, Position
 
 @pytest.fixture
 def session():
@@ -29,7 +28,6 @@ def create_player(session, name="Test Player", base_score=10, squad_id=None):
         name=name,
         position= Position.GOALIE.value,
         base_score=base_score,
-        score=base_score,
         squad_id=squad_id,
         player_id=player_id
     )

@@ -1,4 +1,3 @@
-import uuid
 from app.db import User, Base, engine, SessionLocal
 import pytest
 

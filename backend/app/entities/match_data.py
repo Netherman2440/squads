@@ -18,6 +18,6 @@ class MatchData:
 class MatchDetailData(MatchData):
     team_a: TeamDetailData
     team_b: TeamDetailData
-    
+    #todo: stats
 
 
