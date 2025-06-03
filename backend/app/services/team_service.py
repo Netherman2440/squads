@@ -85,6 +85,16 @@ class TeamService:
         team = self.session.query(Team).filter(Team.team_id == team_id).first()
         if not team:
             return None
-        team.players = players
+        team_players = self.session.query(TeamPlayer).filter(TeamPlayer.team_id == team_id).all()
+        for player in team_players:
+            self.session.delete(player)
+        for player in players:
+            team_player = TeamPlayer(
+                squad_id=team.squad_id,
+                match_id=team.match_id,
+                team_id=team_id,
+                player_id=player.player_id
+            )
+            self.session.add(team_player)
         self.session.commit()
         return self.get_team_details(team_id)
