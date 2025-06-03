@@ -1,66 +1,81 @@
 import pytest
-from app.services.match_service import MatchService
-from app.entities import PlayerData, Position
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+import uuid
+
+from app.db import Match, Base as MatchBase
+from app.db import Team, Base as TeamBase
+from app.db import TeamPlayer, Base as TeamPlayerBase
+from app.db import Player, Base as PlayerBase
+from app.db import Squad, Base as SquadBase
+from app.services import MatchService
+from app.entities import PlayerData
 
 @pytest.fixture
-def players_10():
-    return [
-        PlayerData(
-            squad_id="squad1",
-            player_id=str(i),
-            name=f"Player {i}",
-            base_score=100 - i,
-            position=Position.NONE
-        )
-        for i in range(10)
+def session():
+    # Create in-memory SQLite database
+    engine = create_engine("sqlite:///:memory:")
+    # Create all tables
+    PlayerBase.metadata.create_all(engine)
+    MatchBase.metadata.create_all(engine)
+    TeamBase.metadata.create_all(engine)
+    TeamPlayerBase.metadata.create_all(engine)
+    SquadBase.metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    return Session()
+
+def create_player_data(name="Test Player", score=10, player_id=None) -> PlayerData:
+    if player_id is None:
+        player_id = str(uuid.uuid4())
+    return PlayerData(
+        player_id=player_id,
+        name=name, 
+        base_score=score,
+        position="GOALIE",
+        squad_id=None
+    )
+
+def test_create_match(session):
+    service = MatchService(session)
+
+    # Create squad in DB
+    squad = Squad( name="Test Squad")
+    session.add(squad)
+    session.commit()
+    team_a_players = [create_player_data(name="Player A1"), create_player_data(name="Player A2")]
+    team_b_players = [create_player_data(name="Player B1"), create_player_data(name="Player B2")]
+
+    match_data = service.create_match(squad.squad_id, team_a_players, team_b_players)
+
+    assert match_data.match_id is not None
+    assert match_data.team_a is not None
+    assert match_data.team_b is not None
+    assert match_data.created_at is not None
+
+def test_get_match(session):
+    service = MatchService(session)
+    squad_id = str(uuid.uuid4())
+    # Create squad in DB
+    squad = Squad(squad_id=squad_id, name="Test Squad")
+    session.add(squad)
+    session.commit()
+    team_a_players = [create_player_data(name="Player A1")]
+    team_b_players = [create_player_data(name="Player B1")]
+
+    match_data = service.create_match(squad.squad_id, team_a_players, team_b_players)
+
+    fetched_match = service.get_match(match_data.match_id)
+    assert fetched_match is not None
+    assert fetched_match.match_id == match_data.match_id
+
+def test_draw_teams(session):
+    service = MatchService(session)
+    players = [
+        create_player_data(name="Player 1", score=20),
+        create_player_data(name="Player 2", score=15),
+        create_player_data(name="Player 3", score=10),
+        create_player_data(name="Player 4", score=5)
     ]
-
-@pytest.fixture
-def match_service():
-    # Jeśli masz zależności (np. session), możesz je zamockować
-    return MatchService(session=None)
-
-def test_create_match(match_service, players_10):
-    match = match_service.create_match(players_10)
-    assert match is not None
-    assert hasattr(match, "match_id")
-    assert len(match.players) == 10
-
-def test_get_match(match_service, players_10):
-    match = match_service.create_match(players_10)
-    fetched = match_service.get_match(match.match_id)
-    assert fetched is not None
-    assert fetched.match_id == match.match_id
-
-def test_update_match(match_service, players_10):
-    match = match_service.create_match(players_10)
-    # Załóżmy, że update_match przyjmuje match_id i nową listę graczy
-    new_players = players_10[:5]
-    updated = match_service.update_match(match.match_id, new_players)
-    assert updated is not None
-    assert len(updated.players) == 5
-
-def test_delete_match(match_service, players_10):
-    match = match_service.create_match(players_10)
-    match_service.delete_match(match.match_id)
-    assert match_service.get_match(match.match_id) is None
-
-def test_draw_teams_integration(match_service, players_10):
-    # Wywołanie draw_teams przez serwis
-    combos = match_service.draw_teams(players_10, amount_of_teams=2, amount_of_draws=10)
-    assert isinstance(combos, list)
-    assert len(combos) == 10
-    for combo in combos:
-        assert len(combo) == 5  # 10 graczy, 2 drużyny po 5
-
-def test_draw_teams_user_can_choose_combo(match_service, players_10):
-    combos = match_service.draw_teams(players_10, amount_of_teams=2, amount_of_draws=5)
-    # Symulujemy wybór przez użytkownika pierwszej kombinacji
-    chosen_combo = combos[0]
-    team1 = [players_10[i] for i in chosen_combo]
-    team2 = [players_10[i] for i in range(10) if i not in chosen_combo]
-    assert len(team1) == 5
-    assert len(team2) == 5
-    # Możesz dodać więcej asercji, np. czy sumy punktów są zbliżone
-
-# Możesz dodać więcej testów, np. na edge case'y, jeśli chcesz 
+    sorted_players, list_of_teams = service.draw_teams(players, amount_of_teams=2)
+    assert len(sorted_players) == 4
+    assert isinstance(list_of_teams, list)

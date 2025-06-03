@@ -1,9 +1,6 @@
-from sqlalchemy.orm import Session
-from app.db import Match, Team, TeamPlayer
+from app.db import Match
 
-import uuid
-from app.entities import MatchData, TeamData, PlayerData
-from app.services import TeamService, DrawTeamsService
+from app.entities import MatchData, PlayerData
 
 class MatchService:
     def __init__(self, session):
@@ -11,6 +8,7 @@ class MatchService:
 
     def create_match(self, squad_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData]) -> MatchData:
 
+        from app.services import TeamService
         team_service = TeamService(self.session)
         # Create match and add to session
         match = Match(squad_id=squad_id)
@@ -29,17 +27,19 @@ class MatchService:
             created_at=match.created_at
         )
 
-    def get_match(self, match_id: uuid.UUID) -> MatchData | None:
+    def get_match(self, match_id: str) -> MatchData | None:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()
         if not match:
             return None
+        from app.services import TeamService
         team_service = TeamService(self.session)
-        team_a = team_service.get_team(match.team_a)
-        team_b = team_service.get_team(match.team_b)
+        team_a = team_service.get_team(match.teams[0].team_id)
+        team_b = team_service.get_team(match.teams[1].team_id)
         # Convert ORM Match to MatchData
         return MatchData(
             match_id=str(match.match_id),
             team_a=team_a,
+            team_b=team_b,
             created_at=match.created_at
         )
 
@@ -47,6 +47,7 @@ class MatchService:
     def draw_teams(self, players: list[PlayerData], amount_of_teams: int = 2) -> tuple[list[PlayerData], list[int]]:
         
         players.sort(key=lambda x: x.score, reverse=True)
+        from app.services import DrawTeamsService
         draw_teams_service = DrawTeamsService(players, amount_of_teams)
         list_of_teams = draw_teams_service.draw_teams()
         print(len(list_of_teams))

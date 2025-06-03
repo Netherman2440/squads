@@ -98,7 +98,7 @@ class PlayerService:
         # Return updated PlayerData
         return PlayerData(
             squad_id=player.squad_id,
-            player_id=player.player_id,
+            player_id=str(player.player_id),
             name=player.name,
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,

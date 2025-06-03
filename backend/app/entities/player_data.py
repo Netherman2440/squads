@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 from .position import Position
-from .match_data import MatchData
 
 
 @dataclass
@@ -23,7 +22,4 @@ class PlayerData:
         # Set _score
         self._score = value
 
-@dataclass
-class PlayerDetailData(PlayerData):
-    matches: list[MatchData] = field(default_factory=list)
-    #stats
+

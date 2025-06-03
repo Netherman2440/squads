@@ -7,7 +7,7 @@ from .database import Base
 class Squad(Base):
     __tablename__ = "squads"
 
-    squad_id = Column(UUID, primary_key=True, default= lambda: uuid.uuid4())
+    squad_id = Column(String, primary_key=True, default= lambda: str(uuid.uuid4()))
     name = Column(String, nullable=False)
     created_at = Column(DateTime, default= lambda: datetime.now(timezone.utc))
     # List of players in the squad

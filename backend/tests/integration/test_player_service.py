@@ -8,7 +8,7 @@ from app.db import Match, Base as MatchBase
 from app.db import Team, Base as TeamBase
 from app.db import TeamPlayer, Base as TeamPlayerBase
 from app.services import PlayerService
-from app.entities import PlayerData, Position
+from app.entities import Position
 
 @pytest.fixture
 def session():
@@ -23,7 +23,7 @@ def session():
     return Session()
 
 def create_player(session, name="Test Player", base_score=10, squad_id=None):
-    player_id = uuid.uuid4()
+    player_id = str(uuid.uuid4())
     player = Player(
         name=name,
         position= Position.GOALIE.value,
@@ -42,22 +42,21 @@ def create_match_with_teams_and_player(session, player, player_team_score, oppon
     session.add_all([team1, team2])
     session.commit()
 
-    # Create match
-    match_id = uuid.uuid4()
-    match = Match(created_at=created_at, match_id=match_id)
+
+    match = Match(created_at=created_at)
     session.add(match)
     session.commit()
 
     # Link teams to match
-    team1.match_id = match_id
-    team2.match_id = match_id
+    team1.match_id = match.match_id
+    team2.match_id = match.match_id
     session.commit()
 
     # Link player to team1
     team_player = TeamPlayer(
         player_id=player.player_id,
         team_id=team1.team_id,
-        match_id=match_id
+        match_id=match.match_id
     )
     session.add(team_player)
     session.commit()
@@ -90,4 +89,4 @@ def test_recalculate_and_update_score(session):
     assert player_data.score == 10.333333333333334
     assert player_data.base_score == 10
     assert player_data.name == player.name
-    assert player_data.player_id == str(player.player_id)
+    assert player_data.player_id == player.player_id

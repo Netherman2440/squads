@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from app.entities import PlayerData
-
 
 @dataclass
 class TeamData:
@@ -10,8 +8,11 @@ class TeamData:
     name: Optional[str]
     color: Optional[str]
     score: int = 0
+    players_count: int = 0
 
 
 @dataclass
 class TeamDetailData(TeamData):
-    players: list[PlayerData]
+    def post_init(self):
+        from .player_data import PlayerData
+        self.players : list[PlayerData]

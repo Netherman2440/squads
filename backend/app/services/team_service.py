@@ -9,6 +9,7 @@ class TeamService:
         self.session = session
 
     def create_team(self,squad_id: str, match_id: str, players: list[PlayerData], color: str, name: Optional[str] = None) -> TeamData:
+
         team = Team(squad_id=squad_id, match_id=match_id, color=color, name=name)
         self.session.add(team)
         self.session.commit()
