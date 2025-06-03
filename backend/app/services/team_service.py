@@ -56,3 +56,35 @@ class TeamService:
             players_count=len(team.players),
             players=players
         )
+
+    def update_team_name(self, team_id: str, name: str) -> TeamDetailData | None:
+        team = self.session.query(Team).filter(Team.team_id == team_id).first()
+        if not team:
+            return None
+        team.name = name
+        self.session.commit()
+        return self.get_team_details(team_id)
+    
+    def update_team_color(self, team_id: str, color: str) -> TeamDetailData | None:
+        team = self.session.query(Team).filter(Team.team_id == team_id).first()
+        if not team:
+            return None
+        team.color = color
+        self.session.commit()
+        return self.get_team_details(team_id)
+    
+    def update_team_score(self, team_id: str, score: int) -> TeamDetailData | None:
+        team = self.session.query(Team).filter(Team.team_id == team_id).first()
+        if not team:
+            return None
+        team.score = score
+        self.session.commit()
+        return self.get_team_details(team_id)
+        
+    def update_team_players(self, team_id: str, players: list[PlayerData]) -> TeamDetailData | None:
+        team = self.session.query(Team).filter(Team.team_id == team_id).first()
+        if not team:
+            return None
+        team.players = players
+        self.session.commit()
+        return self.get_team_details(team_id)

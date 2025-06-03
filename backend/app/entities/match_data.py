@@ -4,18 +4,17 @@ from .team_data import TeamData, TeamDetailData
 
 @dataclass
 class MatchData:
+    squad_id: str
     match_id: str
-    team_a: TeamData
-    team_b: TeamData
+    score: tuple[int, int]
     created_at: datetime
 
 
-    def score(self) -> tuple[int, int]:
-        return self.team_a.score, self.team_b.score
-
-
 @dataclass
-class MatchDetailData(MatchData):
+class MatchDetailData:
+    squad_id: str
+    match_id: str
+    created_at: datetime
     team_a: TeamDetailData
     team_b: TeamDetailData
     #todo: stats

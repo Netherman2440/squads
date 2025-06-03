@@ -13,6 +13,5 @@ class TeamData:
 
 @dataclass
 class TeamDetailData(TeamData):
-    def post_init(self):
-        from .player_data import PlayerData
-        self.players : list[PlayerData]
+    players: list = None
+

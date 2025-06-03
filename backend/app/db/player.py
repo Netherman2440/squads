@@ -13,7 +13,7 @@ class Player(Base):
     name = Column(String, nullable=False)
     position = Column(String, nullable=False) # goalie or field
     base_score = Column(Integer, nullable=False)
-    score = Column(Float, nullable=False, default=0.0)
+    score = Column(Float, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     # age = Column(Integer, nullable=False)
     # height = Column(Integer, nullable=False)

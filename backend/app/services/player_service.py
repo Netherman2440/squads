@@ -12,11 +12,12 @@ class PlayerService:
             return None
         # Convert ORM Player to PlayerData
         return PlayerData(
+            squad_id=player.squad_id,
             player_id=player.player_id,
             name=player.name,
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
-            score=player.score,
+            _score=player.score,
             matches_played=len(player.matches)
         )
     
@@ -33,18 +34,24 @@ class PlayerService:
                 team_b=match.team_b
             ))
         return PlayerDetailData(
+            squad_id=player.squad_id,
             player_id=player.player_id,
+            name=player.name,
+            position=Position(player.position) if player.position else Position.NONE,
+            base_score=player.base_score,
+            _score=player.score,
+            matches_played=len(player.matches),
+            matches=matches
         )
 
-    def create_player(self, squad_id: str, name: str, base_score: int, position: Position = Position.NONE, score: float = 0.0, matches_played: int = 0) -> PlayerData:
+    def create_player(self, squad_id: str, name: str, base_score: int, position: Position = Position.NONE) -> PlayerData:
         # Create a new Player ORM object
         player = Player(
             squad_id=squad_id,
             name=name,
             position=position.value if hasattr(position, "value") else position,
             base_score=base_score,
-            score=score,
-            matches_played=matches_played
+            score=base_score,
         )
         self.session.add(player)
         self.session.commit()
@@ -55,28 +62,42 @@ class PlayerService:
             name=player.name,
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
-            score=player.score,
+            _score=player.score,
             matches_played=len(player.matches)
         )
-
-    def update_player(self, player_data: PlayerData) -> PlayerData | None:
-        player = self.session.query(Player).filter(Player.player_id == player_data.player_id).first()
-        if not player:
-            return None
-        player.squad_id = player_data.squad_id
-        player.name = player_data.name
-        player.position = player_data.position.value if hasattr(player_data.position, "value") else player_data.position
-        player.base_score = player_data.base_score
-        player.score = player_data.score
-        player.matches_played = player_data.matches_played
-        self.session.commit()
-        return player_data
-
+    
     def delete_player(self, player_id: str) -> None:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
         if player:
             self.session.delete(player)
             self.session.commit()
+
+    def update_player_name(self, player_id: str, name: str) -> PlayerData | None:
+        player = self.session.query(Player).filter(Player.player_id == player_id).first()
+        if not player:
+            return None
+        player.name = name
+        self.session.commit()
+        return self.get_player(player_id)
+    
+    def update_player_base_score(self, player_id: str, base_score: int) -> PlayerData | None:
+        player = self.session.query(Player).filter(Player.player_id == player_id).first()
+        if not player:
+            return None
+        player.base_score = base_score
+        self.session.commit()
+
+        self.recalculate_and_update_score(player_id)
+        
+        return self.get_player(player_id)
+    
+    def update_player_position(self, player_id: str, position: Position) -> PlayerData | None:
+        player = self.session.query(Player).filter(Player.player_id == player_id).first()
+        if not player:
+            return None
+        player.position = position.value if hasattr(position, "value") else position
+        self.session.commit()
+        return self.get_player(player_id)
     
     def recalculate_and_update_score(self, player_id: str) -> PlayerData | None:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
