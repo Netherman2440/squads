@@ -48,6 +48,8 @@ class TeamService:
         players = []
         for player in team.players:
             players.append(player_service.get_player(player.player_id))
+
+        players.sort(key=lambda x: x.score, reverse=True)
         return TeamDetailData(
             team_id=str(team.team_id),
             name=team.name,

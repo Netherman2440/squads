@@ -69,11 +69,24 @@ class MatchService:
 
         )  
 
-    def draw_teams(self, players: list[PlayerData], amount_of_teams: int = 2) -> tuple[list[PlayerData], list[int]]:
-        
-        players.sort(key=lambda x: x.score, reverse=True)
+    def draw_teams(self, match_id: str) -> tuple[list[PlayerData], list[int]]:
+        match = self.session.query(Match).filter(Match.match_id == match_id).first()
+        if not match:
+            return None
+
+        match_players = match.teams[0].players + match.teams[1].players
+
+        players = [PlayerData(
+            player_id=player.player_id, 
+            name=player.name, 
+            _score=player.score, 
+            base_score=player.base_score,
+            position=player.position,
+            squad_id=player.squad_id,
+            ) for player in match_players]
+        players.sort(key=lambda x: x._score, reverse=True)
         from app.services import DrawTeamsService
-        draw_teams_service = DrawTeamsService(players, amount_of_teams)
+        draw_teams_service = DrawTeamsService(players, 2)
         list_of_teams = draw_teams_service.draw_teams()
         print(len(list_of_teams))
         return players, list_of_teams

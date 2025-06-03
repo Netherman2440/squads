@@ -14,15 +14,16 @@ class Relation:
 
 #players are sorted by score from highest to lowest
 class DrawTeamsService:
-    def __init__(self, players: list[PlayerData], amount_of_teams: int = 2):
+    def __init__(self, players: list[PlayerData], amount_of_teams: int = 2, amount_of_draws: int = 20):
         self.players = sorted(players, key=lambda x: x.score, reverse=True)
         self.amount_of_teams = amount_of_teams
+        self.amount_of_draws = amount_of_draws
 
-    def draw_teams(self,amount_of_draws: int = 20) -> list[int]:
+    def draw_teams(self) -> list[int]:
         if self.amount_of_teams == 2:
-            return self.draw_teams_2()[0:amount_of_draws]
+            return self.draw_teams_2()[0:self.amount_of_draws]
         elif self.amount_of_teams == 3:
-                return self.draw_teams_3()[0:amount_of_draws]
+            return self.draw_teams_3()[0:self.amount_of_draws]
         else:
             raise ValueError("Invalid amount of teams")
 

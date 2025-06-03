@@ -18,4 +18,3 @@ class Match(Base):
 
     tournament = relationship("Tournament", back_populates="matches")
 
-    
