@@ -1,36 +1,27 @@
 import os
 
-
 import dotenv
-from fastapi import FastAPI, File3, UploadFile
+from fastapi import FastAPI
 from app.routes import auth
-from app.services.database_service import DatabaseService
+from app.routes import players
+from app.routes import squads
 #.\.venv\Scripts\activate
 #uvicorn app.main:app --reload  
-app = FastAPI()
+app = FastAPI(
+    title="Squads API",
+    description="API for managing football squads, players, and matches",
+    version="1.0.0"
+)
 
-app.include_router(auth.router)
+app.include_router(auth.router, prefix="/api/v1")
+#app.include_router(players.router, prefix="/api/v1/")
+app.include_router(squads.router, prefix="/api/v1")
 dotenv.load_dotenv()
-database_service = DatabaseService(os.getenv("DATABASE_URL"))
-
-
-create_table_query = """
-    CREATE TABLE IF NOT EXISTS players (
-        player_id SERIAL PRIMARY KEY,
-        name VARCHAR(100),
-        age INTEGER,
-        team VARCHAR(100)
-    );
-    """
-database_service.insert_data(create_table_query)
-
-@app.on_event("shutdown")
-def shutdown_event():
-    database_service.close()
 
 @app.get("/")
 def read_root():
-    return {"message": "Hello World"}
+    return {"message": "Squads API is running", "version": "1.0.0"}
+
 
 
 
