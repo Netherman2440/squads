@@ -31,10 +31,13 @@ class DrawTeamsService:
         team_size = len(self.players) // self.amount_of_teams
         players_amount = len(self.players)
         total_score = sum(player.score for player in self.players)
-        #print(total_score)
+        
         combos = []
         for combo in combinations(range(players_amount), team_size):
-            combos.append(combo)
+            # Filter out duplicate team combinations by ensuring the first player 
+            # (lowest index) is in the first half of all players
+            if min(combo) < players_amount // 2:
+                combos.append(combo)
 
         # Sort combos by how close their score is to half of the total score
         combos = sorted(
