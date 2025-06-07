@@ -38,6 +38,10 @@ async def get_squad(squad_id: str, squad_service: SquadService = Depends(get_squ
     #return {squad_service.get_squad(squad_id)}
     return {"message": f"Squad {squad_id} retrieved successfully"}
 
+#@router.post("/")
+#async def create_squad(squad_data: SquadCreate, squad_service: SquadService = Depends(get_squad_service)):
+ #   return {"message": f"Squad created successfully"}
+
 @router.get("/{squad_id}/players")
 async def get_players(squad_id: str, player_service: PlayerService = Depends(get_player_service)):
     return {"message": f"Players for squad {squad_id} retrieved successfully"}
