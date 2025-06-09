@@ -1,5 +1,4 @@
-
-from app.db import Player, Match
+from app.db import Player, Match, ScoreHistory
 from app.entities import PlayerData, PlayerDetailData, Position, MatchData
 
 class PlayerService:
@@ -18,6 +17,31 @@ class PlayerService:
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
             _score=player.score,
+            matches_played=len(player.matches)
+        )
+    
+    def get_player_data_for_match(self, player_id: str, match_id: str) -> PlayerData | None:
+        """Get player data with score adjusted for specific match - if score history exists for this match, return previous_score"""
+        player = self.session.query(Player).filter(Player.player_id == player_id).first()
+        if not player:
+            return None
+        
+        # Check if there's a score history for this player and match
+        score_history = self.session.query(ScoreHistory).filter(
+            ScoreHistory.player_id == player_id,
+            ScoreHistory.match_id == match_id
+        ).first()
+        
+        # If score history exists, use previous_score, otherwise use current score
+        score_to_use = score_history.previous_score if score_history else player.score
+        
+        return PlayerData(
+            squad_id=player.squad_id,
+            player_id=player.player_id,
+            name=player.name,
+            position=Position(player.position) if player.position else Position.NONE,
+            base_score=player.base_score,
+            _score=score_to_use,
             matches_played=len(player.matches)
         )
     
@@ -91,6 +115,37 @@ class PlayerService:
         
         return self.get_player(player_id)
     
+    def update_player_score(self, player_id: str, score: float, match_id: str = None) -> PlayerData | None:
+        """Manually update player's current score"""
+        player = self.session.query(Player).filter(Player.player_id == player_id).first()
+        if not player:
+            return None
+
+        # Update score history for this player
+        score_history = None
+        if match_id:
+            score_history = self.session.query(ScoreHistory).filter(
+                ScoreHistory.player_id == player_id,
+                ScoreHistory.match_id == match_id
+            ).first()
+        if not score_history:
+            score_history = ScoreHistory(
+                player_id=player_id,
+                match_id=match_id,
+                previous_score=player.score,
+                new_score=score,
+                delta=score - player.score
+            )
+            self.session.add(score_history)
+        else:
+            score_history.new_score = score
+            score_history.delta = score - score_history.previous_score
+
+        player.score = score
+        
+        self.session.commit()
+        return self.get_player(player_id)
+    
     def update_player_position(self, player_id: str, position: Position) -> PlayerData | None:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
         if not player:
@@ -100,21 +155,26 @@ class PlayerService:
         return self.get_player(player_id)
     
     def recalculate_and_update_score(self, player_id: str) -> PlayerData | None:
+        """Recalculate player score by going through score history to check for changes"""
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
         if not player:
             return None
 
         # Start with base_score
-        score = player.base_score
+        current_score = player.base_score
 
-        # Sort matches by date (oldest first)
-        matches = sorted(player.matches, key=lambda x: x.created_at)
-        for i, match in enumerate(matches):
-            score += self.calculate_score_delta(player, match, i)
+        # Get all score history records for this player, sorted by match creation date
+        score_histories = player.score_history
 
-        # Update score in the database
-        player.score = score
-        self.session.commit()
+        # Go through each score history record and apply deltas
+        for score_history in score_histories:
+            current_score += score_history.delta
+
+        # Update player's score if it has changed
+        if player.score != current_score:
+            print(f"Updating player {player.name} score from {player.score} to {current_score}")
+            player.score = current_score
+            self.session.commit()
 
         # Return updated PlayerData
         return PlayerData(
@@ -127,19 +187,18 @@ class PlayerService:
             matches_played=len(player.matches)
         )
 
-
     def calculate_score_delta(self, player: Player, match: Match, match_index: int) -> float:
-        # znajdz mecz w którym grał gracz
+        # Find the match in which the player played
         player_team = next((team for team in match.teams if any(p.player_id == player.player_id for p in team.players)), None)
         if not player_team:
             return 0
-        # znajdz drużynę przeciwną
+        # Find the opposing team
         opponent_team = next((team for team in match.teams if team != player_team), None)
         if not opponent_team:
             return 0
         
         factor = match_index * 0.2 + 1
-        # policz ile gracz zyskał/stracił w tym meczu
+        # Calculate how much the player gained/lost in this match
         return (player_team.score - opponent_team.score) / factor
 
     

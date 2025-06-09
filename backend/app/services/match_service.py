@@ -1,4 +1,4 @@
-from app.db import Match
+from app.db import Match, ScoreHistory
 
 from app.entities import MatchData, PlayerData, MatchDetailData, TeamDetailData
 
@@ -20,6 +20,19 @@ class MatchService:
         team_a = team_service.create_team(squad_id=squad_id, match_id=match.match_id, players=team_a_players, color="white")
         team_b = team_service.create_team(squad_id=squad_id, match_id=match.match_id, players=team_b_players, color="black")
 
+        # Create score history entries for all players with delta = 0
+        all_players = team_a_players + team_b_players
+        for player in all_players:
+            score_history = ScoreHistory(
+                match_id=match.match_id,
+                player_id=player.player_id,
+                previous_score=player.score,
+                new_score=player.score,
+                delta=0.0
+            )
+            self.session.add(score_history)
+        
+        self.session.commit()
 
         return MatchData(
             squad_id=squad_id,
@@ -55,10 +68,9 @@ class MatchService:
         from app.services import TeamService
         team_service = TeamService(self.session)
 
-        
-
-        team_a_data = team_service.get_team_details(team_a.team_id)
-        team_b_data = team_service.get_team_details(team_b.team_id)
+        # Use the updated get_team_details method with match_id
+        team_a_data = team_service.get_team_details(team_a.team_id, match_id)
+        team_b_data = team_service.get_team_details(team_b.team_id, match_id)
 
         return MatchDetailData(
             squad_id=match.squad_id,
@@ -96,10 +108,48 @@ class MatchService:
         if not match:
             return None
         
-        from app.services import TeamService
+        from app.services import TeamService, PlayerService
         team_service = TeamService(self.session)
+        player_service = PlayerService(self.session)
+        
+        # Update team scores
         team_a = team_service.update_team_score(match.teams[0].team_id, team_a_score)
         team_b = team_service.update_team_score(match.teams[1].team_id, team_b_score)
+
+        # Update score history for each player
+        all_players = match.teams[0].players + match.teams[1].players
+        for player in all_players:
+            # Get existing score history for this player and match
+            score_history = self.session.query(ScoreHistory).filter(
+                ScoreHistory.player_id == player.player_id,
+                ScoreHistory.match_id == match_id
+            ).first()
+            
+            if score_history:
+                # Calculate new delta based on updated match scores
+                player_team = next((team for team in match.teams if any(p.player_id == player.player_id for p in team.players)), None)
+                opponent_team = next((team for team in match.teams if team != player_team), None)
+                
+                if player_team and opponent_team:
+                    # Get match index for this player (count of previous matches)
+                    player_matches = sorted(player.matches, key=lambda x: x.created_at)
+                    match_index = next((i for i, m in enumerate(player_matches) if m.match_id == match_id), 0)
+                    
+                    # Calculate new delta
+                    factor = match_index * 0.2 + 1
+                    new_delta = (player_team.score - opponent_team.score) / factor
+                    
+                    # Update score history
+                    new_score = score_history.previous_score + new_delta
+                    score_history.new_score = new_score
+                    score_history.delta = new_delta
+                    
+                    # Update player's current score
+                    player.score = player.base_score
+                    # Recalculate total score from all matches
+                    player_service.recalculate_and_update_score(player.player_id)
+        
+        self.session.commit()
 
         return MatchDetailData(
             squad_id=match.squad_id,
@@ -116,8 +166,48 @@ class MatchService:
         
         from app.services import TeamService
         team_service = TeamService(self.session)
+        
+        # Get current players in the match
+        current_players = set()
+        for team in match.teams:
+            for player in team.players:
+                current_players.add(player.player_id)
+        
+        # Get new players
+        new_players = set()
+        all_new_players = team_a_players + team_b_players
+        for player in all_new_players:
+            new_players.add(player.player_id)
+        
+        # Remove score history for players who are no longer in the match
+        removed_players = current_players - new_players
+        for player_id in removed_players:
+            score_history = self.session.query(ScoreHistory).filter(
+                ScoreHistory.player_id == player_id,
+                ScoreHistory.match_id == match_id
+            ).first()
+            if score_history:
+                self.session.delete(score_history)
+        
+        # Create score history for new players
+        added_players = new_players - current_players
+        for player_id in added_players:
+            player_data = next((p for p in all_new_players if p.player_id == player_id), None)
+            if player_data:
+                score_history = ScoreHistory(
+                    match_id=match_id,
+                    player_id=player_id,
+                    previous_score=player_data.score,
+                    new_score=player_data.score,
+                    delta=0.0
+                )
+                self.session.add(score_history)
+        
+        # Update team players
         team_a = team_service.update_team_players(match.teams[0].team_id, team_a_players)
         team_b = team_service.update_team_players(match.teams[1].team_id, team_b_players)
+
+        self.session.commit()
 
         return MatchDetailData(
             squad_id=match.squad_id,

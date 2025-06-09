@@ -30,5 +30,6 @@ class MatchDetailResponse(MatchResponse):
 #todo: stats
 
 class MatchUpdate(MatchBase):
+    teams: Optional[list]
     score: Optional[tuple[int, int]]
 

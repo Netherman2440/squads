@@ -26,3 +26,9 @@ class Player(Base):
         secondaryjoin="Match.match_id==TeamPlayer.match_id",
         viewonly=True
     )
+
+    score_history = relationship(
+        "ScoreHistory",
+        foreign_keys="ScoreHistory.player_id",
+        cascade="all, delete-orphan"
+    )

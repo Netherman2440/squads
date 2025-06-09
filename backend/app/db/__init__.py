@@ -8,6 +8,7 @@ from .team import Team
 from .team_player import TeamPlayer
 from .match import Match
 from .tournament import Tournament
+from .score_history import ScoreHistory
 
 # Export commonly used items
 __all__ = [
@@ -21,5 +22,6 @@ __all__ = [
     "Team",
     "TeamPlayer", 
     "Match",
-    "Tournament"
+    "Tournament",
+    "ScoreHistory"
 ]

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from .team_data import TeamData, TeamDetailData
+from .team_data import TeamDetailData
 
 @dataclass
 class MatchData:

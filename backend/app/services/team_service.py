@@ -1,4 +1,3 @@
-
 from typing import Optional
 from app.entities import TeamData, TeamDetailData, PlayerData
 from app.db import Team, TeamPlayer
@@ -41,13 +40,19 @@ class TeamService:
             players_count=len(team.players)
         )
 
-    def get_team_details(self, team_id: str) -> TeamDetailData:
+    def get_team_details(self, team_id: str, match_id: str = None) -> TeamDetailData:
         from app.services.player_service import PlayerService
         player_service = PlayerService(self.session)
         team = self.session.query(Team).filter(Team.team_id == team_id).first()
         players = []
         for player in team.players:
-            players.append(player_service.get_player(player.player_id))
+            if match_id:
+                # Use the method that considers score history for the specific match
+                player_data = player_service.get_player_data_for_match(player.player_id, match_id)
+            else:
+                # Use regular method
+                player_data = player_service.get_player(player.player_id)
+            players.append(player_data)
 
         players.sort(key=lambda x: x.score, reverse=True)
         return TeamDetailData(

@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 from datetime import datetime, timezone
 
-from app.db import Squad, Player, Match, Team, TeamPlayer, Base
+from app.db import Squad, Player, Match, Team, TeamPlayer, ScoreHistory, Base
 from app.services import PlayerService, SquadService
 from app.entities import PlayerData, PlayerDetailData, Position, MatchData
 
@@ -126,6 +126,69 @@ def sample_match_with_teams(session, sample_squad, sample_players):
     session.commit()
     
     return match, team1, team2
+
+
+@pytest.fixture
+def sample_match_with_score_history(session, sample_squad, sample_players):
+    """Create a match with teams, players, and score history for testing"""
+    # Create match
+    match = Match(
+        match_id=str(uuid.uuid4()),
+        squad_id=sample_squad.squad_id,
+        created_at=datetime.now(timezone.utc)
+    )
+    session.add(match)
+    session.commit()
+    
+    # Create two teams
+    team1 = Team(
+        team_id=str(uuid.uuid4()),
+        match_id=match.match_id,
+        score=5,
+        color="white"
+    )
+    team2 = Team(
+        team_id=str(uuid.uuid4()),
+        match_id=match.match_id,
+        score=3,
+        color="black"
+    )
+    session.add_all([team1, team2])
+    session.commit()
+    
+    # Add players to teams
+    team_player1 = TeamPlayer(
+        player_id=sample_players[0].player_id,
+        team_id=team1.team_id,
+        match_id=match.match_id
+    )
+    team_player2 = TeamPlayer(
+        player_id=sample_players[1].player_id,
+        team_id=team2.team_id,
+        match_id=match.match_id
+    )
+    session.add_all([team_player1, team_player2])
+    session.commit()
+    
+    # Create score history entries
+    score_history1 = ScoreHistory(
+        match_id=match.match_id,
+        player_id=sample_players[0].player_id,
+        previous_score=sample_players[0].score,
+        new_score=sample_players[0].score + 2.0,
+        delta=2.0
+    )
+    score_history2 = ScoreHistory(
+        match_id=match.match_id,
+        player_id=sample_players[1].player_id,
+        previous_score=sample_players[1].score,
+        new_score=sample_players[1].score - 2.0,
+        delta=-2.0
+    )
+    session.add_all([score_history1, score_history2])
+    session.commit()
+    
+    return match, team1, team2, score_history1, score_history2
 
 
 class TestPlayerService:
@@ -318,28 +381,7 @@ class TestPlayerService:
         updated_player = player_service.update_player_position(fake_id, Position.GOALIE)
         assert updated_player is None
 
-    def test_recalculate_and_update_score_existing(self, player_service, sample_match_with_teams):
-        """Test recalculating and updating player score"""
-        match, team1, team2 = sample_match_with_teams
-        
-        # Get player from team1 (should have won 5-3)
-        team_player = team1.players[0] if team1.players else None
-        if not team_player:
-            pytest.skip("No players in team for testing")
-        
-        player_id = team_player.player_id
-        original_player = team_player
-        
-        updated_player = player_service.recalculate_and_update_score(player_id)
-        
-        assert updated_player is not None
-        assert isinstance(updated_player, PlayerData)
-        assert updated_player.player_id == player_id
-        
-        # Score should be base_score + calculated delta
-        expected_delta = (team1.score - team2.score) / 1.0  # First match, factor = 1
-        expected_score = original_player.base_score + expected_delta
-        assert updated_player.score == expected_score
+
 
     def test_recalculate_and_update_score_nonexistent(self, player_service):
         """Test recalculating score for non-existent player returns None"""
@@ -520,3 +562,152 @@ class TestPlayerService:
         assert service_player.name == "Persistent Name"
         assert service_player.base_score == 100
         assert service_player.position == Position.GOALIE
+
+    def test_get_player_data_for_match_with_history(self, player_service, sample_match_with_score_history, session):
+        """Test getting player data for a match with existing score history"""
+        match, team1, team2, score_history1, score_history2 = sample_match_with_score_history
+        
+        player_id = score_history1.player_id
+        player_data = player_service.get_player_data_for_match(player_id, match.match_id)
+        
+        assert player_data is not None
+        assert isinstance(player_data, PlayerData)
+        assert player_data.player_id == player_id
+        # Should return previous_score from score history, not current score
+        assert player_data.score == score_history1.previous_score
+
+    def test_get_player_data_for_match_without_history(self, player_service, sample_player):
+        """Test getting player data for a match without score history"""
+        fake_match_id = str(uuid.uuid4())
+        player_data = player_service.get_player_data_for_match(sample_player.player_id, fake_match_id)
+        
+        assert player_data is not None
+        assert isinstance(player_data, PlayerData)
+        assert player_data.player_id == sample_player.player_id
+        # Should return current score since no score history exists
+        assert player_data.score == sample_player.score
+
+    def test_get_player_data_for_match_nonexistent_player(self, player_service):
+        """Test getting player data for a match with non-existent player"""
+        fake_player_id = str(uuid.uuid4())
+        fake_match_id = str(uuid.uuid4())
+        player_data = player_service.get_player_data_for_match(fake_player_id, fake_match_id)
+        
+        assert player_data is None
+
+    def test_update_player_score_with_match_id_new_history(self, player_service, sample_player, session):
+        """Test updating player score with match_id creates new score history"""
+        match_id = str(uuid.uuid4())
+        original_score = sample_player.score
+        new_score = 25.5
+        
+        # Ensure no existing score history
+        existing_history = session.query(ScoreHistory).filter(
+            ScoreHistory.player_id == sample_player.player_id,
+            ScoreHistory.match_id == match_id
+        ).first()
+        assert existing_history is None
+        
+        updated_player = player_service.update_player_score(sample_player.player_id, new_score, match_id)
+        
+        assert updated_player is not None
+        assert updated_player.score == new_score
+        
+        # Check that score history was created
+        score_history = session.query(ScoreHistory).filter(
+            ScoreHistory.player_id == sample_player.player_id,
+            ScoreHistory.match_id == match_id
+        ).first()
+        
+        assert score_history is not None
+        assert score_history.previous_score == original_score
+        assert score_history.new_score == new_score
+        assert score_history.delta == new_score - original_score
+
+    def test_update_player_score_with_match_id_existing_history(self, player_service, sample_match_with_score_history, session):
+        """Test updating player score with match_id updates existing score history"""
+        match, team1, team2, score_history1, score_history2 = sample_match_with_score_history
+        
+        player_id = score_history1.player_id
+        match_id = match.match_id
+        new_score = 30.0
+        original_previous_score = score_history1.previous_score
+        
+        updated_player = player_service.update_player_score(player_id, new_score, match_id)
+        
+        assert updated_player is not None
+        assert updated_player.score == new_score
+        
+        # Check that existing score history was updated
+        session.refresh(score_history1)
+        assert score_history1.new_score == new_score
+        assert score_history1.delta == new_score - original_previous_score
+
+    def test_update_player_score_without_match_id(self, player_service, sample_player):
+        """Test updating player score without match_id (no score history changes)"""
+        new_score = 22.0
+        
+        updated_player = player_service.update_player_score(sample_player.player_id, new_score)
+        
+        assert updated_player is not None
+        assert updated_player.score == new_score
+
+    def test_recalculate_and_update_score_with_history(self, player_service, sample_match_with_score_history, session):
+        """Test recalculating player score using score history"""
+        match, team1, team2, score_history1, score_history2 = sample_match_with_score_history
+        
+        player_id = score_history1.player_id
+        player = session.query(Player).filter(Player.player_id == player_id).first()
+        original_base_score = player.base_score
+        
+        updated_player = player_service.recalculate_and_update_score(player_id)
+        
+        assert updated_player is not None
+        assert isinstance(updated_player, PlayerData)
+        
+        # Score should be base_score + sum of all deltas from score history
+        expected_score = original_base_score + score_history1.delta
+        assert updated_player.score == expected_score
+
+    def test_recalculate_and_update_score_multiple_matches(self, player_service, sample_squad, sample_player, session):
+        """Test recalculating player score with multiple match histories"""
+        player_id = sample_player.player_id
+        
+        # Create multiple matches with score histories
+        match1 = Match(match_id=str(uuid.uuid4()), squad_id=sample_squad.squad_id, created_at=datetime.now(timezone.utc))
+        match2 = Match(match_id=str(uuid.uuid4()), squad_id=sample_squad.squad_id, created_at=datetime.now(timezone.utc))
+        session.add_all([match1, match2])
+        session.commit()
+        
+        # Create score histories in chronological order
+        history1 = ScoreHistory(
+            match_id=match1.match_id,
+            player_id=player_id,
+            previous_score=15.0,
+            new_score=17.0,
+            delta=2.0
+        )
+        history2 = ScoreHistory(
+            match_id=match2.match_id,
+            player_id=player_id,
+            previous_score=17.0,
+            new_score=15.5,
+            delta=-1.5
+        )
+        session.add_all([history1, history2])
+        session.commit()
+        
+        updated_player = player_service.recalculate_and_update_score(player_id)
+        
+        assert updated_player is not None
+        # Score should be base_score + delta1 + delta2 = 15 + 2.0 + (-1.5) = 15.5
+        expected_score = sample_player.base_score + 2.0 + (-1.5)
+        assert updated_player.score == expected_score
+
+    def test_recalculate_and_update_score_no_history(self, player_service, sample_player):
+        """Test recalculating player score with no score history"""
+        updated_player = player_service.recalculate_and_update_score(sample_player.player_id)
+        
+        assert updated_player is not None
+        # Score should remain as base_score since no history exists
+        assert updated_player.score == sample_player.base_score
