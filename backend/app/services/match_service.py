@@ -7,7 +7,15 @@ class MatchService:
     def __init__(self, session):
         self.session = session
 
-    def create_match(self, squad_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData]) -> MatchData:
+    def get_matches(self, squad_id: str) -> list[MatchData]:
+        matches = self.session.query(Match).filter(Match.squad_id == squad_id).all()
+        return [MatchData(
+            squad_id=match.squad_id,
+            match_id=str(match.match_id),
+            created_at=match.created_at,
+        ) for match in matches]
+
+    def create_match(self, squad_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData]) -> MatchDetailData:
 
         from app.services import TeamService
         team_service = TeamService(self.session)
@@ -34,12 +42,7 @@ class MatchService:
         
         self.session.commit()
 
-        return MatchData(
-            squad_id=squad_id,
-            match_id=str(match.match_id),
-            created_at=match.created_at,
-            score=(0, 0),
-        )
+        return self.get_match_detail(match.match_id)
 
     def get_match(self, match_id: str) -> MatchData | None:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()

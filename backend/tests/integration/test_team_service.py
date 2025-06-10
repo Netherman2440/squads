@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 
 from app.db import Squad, Player, Match, Team, TeamPlayer, Base
 from app.services import TeamService, PlayerService
-from app.entities import TeamData, TeamDetailData, PlayerData, Position
-
+from app.entities import TeamData, TeamDetailData, PlayerData
+from app.constants import Position
 
 @pytest.fixture
 def session():

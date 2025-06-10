@@ -1,9 +1,29 @@
 from app.db import Player, Match, ScoreHistory
-from app.entities import PlayerData, PlayerDetailData, Position, MatchData
+from app.entities import PlayerData, PlayerDetailData, MatchData
+from app.constants import Position
+from app.schemas.player_schemas import PlayerResponse, PlayerListResponse
 
 class PlayerService:
     def __init__(self, session):
         self.session = session
+
+    def get_players(self, squad_id: str) -> list[PlayerData]:
+        """Get all players for a squad and return as PlayerListResponse"""
+        players = self.session.query(Player).filter(Player.squad_id == squad_id).all()
+        player_data_list = [PlayerData(
+            squad_id=player.squad_id,
+            player_id=player.player_id,
+            name=player.name,
+            position=Position(player.position) if player.position else Position.NONE,
+            base_score=player.base_score,
+            _score=player.score,
+            matches_played=len(player.matches)
+        ) for player in players]
+        
+        # Convert to PlayerResponse schemas
+        player_responses = [self._convert_player_data_to_response(player_data) for player_data in player_data_list]
+        
+        return PlayerListResponse(players=player_responses)
 
     def get_player(self, player_id: str) -> PlayerData | None:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
@@ -68,7 +88,7 @@ class PlayerService:
             matches=matches
         )
 
-    def create_player(self, squad_id: str, name: str, base_score: int, position: Position = Position.NONE) -> PlayerData:
+    def create_player(self, squad_id: str, name: str, base_score: int, position: Position = Position.NONE) -> PlayerDetailData:
         # Create a new Player ORM object
         player = Player(
             squad_id=squad_id,
@@ -79,16 +99,8 @@ class PlayerService:
         )
         self.session.add(player)
         self.session.commit()
-        # Return PlayerData with the generated player_id
-        return PlayerData(
-            squad_id=player.squad_id,
-            player_id=player.player_id,
-            name=player.name,
-            position=Position(player.position) if player.position else Position.NONE,
-            base_score=player.base_score,
-            _score=player.score,
-            matches_played=len(player.matches)
-        )
+    
+        return self.get_player_details(player.player_id)
     
     def delete_player(self, player_id: str) -> None:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()

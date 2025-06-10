@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 
 from app.db import Squad, Player, Match, Team, TeamPlayer, Base
 from app.services import MatchService, TeamService, PlayerService
-from app.entities import MatchData, MatchDetailData, PlayerData, TeamDetailData, Position
+from app.entities import MatchData, MatchDetailData, PlayerData, TeamDetailData
+from app.constants import Position
 
 
 @pytest.fixture
@@ -134,7 +135,7 @@ class TestMatchService:
         assert final_team_count == initial_team_count + 2  # Two teams created
         
         # Verify returned data
-        assert isinstance(match_data, MatchData)
+        assert isinstance(match_data, MatchDetailData)
         assert match_data.match_id is not None
         assert match_data.squad_id == sample_squad.squad_id
         assert match_data.score == (0, 0)  # Default scores

@@ -29,16 +29,12 @@ class SquadService:
             players_count=len(squad.players),
         )
 
-    def create_squad(self, name: str) -> SquadData:
+    def create_squad(self, name: str) -> SquadDetailData:
         squad = Squad(name=name)
         self.session.add(squad)
         self.session.commit()
-        return SquadData(
-            squad_id=squad.squad_id,
-            name=squad.name,
-            created_at=squad.created_at,
-            players_count=len(squad.players),
-        )
+        return self.get_squad_detail(squad.squad_id)
+        
 
     def delete_squad(self, squad_id: str):
         squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()

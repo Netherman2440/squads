@@ -1,6 +1,7 @@
 import pytest
 from app.services.draw_teams_service import DrawTeamsService, Relation
-from app.entities import PlayerData, Position
+from app.entities import PlayerData
+from app.constants import Position
 import uuid
 
 

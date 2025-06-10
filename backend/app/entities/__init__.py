@@ -1,6 +1,5 @@
 from .match_data import MatchData, MatchDetailData
 from .player_data import PlayerData, PlayerDetailData
-from .position import Position
 from .squad_data import SquadData, SquadDetailData
 from .team_data import TeamData, TeamDetailData
 from .tournament_data import TournamentData
@@ -11,7 +10,6 @@ __all__ = [
     "match_data",
     "match_detail_data",
     "player_data",
-    "position",
     "squad_data",
     "squad_detail_data",
     "team_data",

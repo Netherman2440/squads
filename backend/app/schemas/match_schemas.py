@@ -1,8 +1,8 @@
-import datetime
+from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-from app.entities import TeamDetailData
+from app.entities.team_data import TeamDetailData
 
 class MatchBase(BaseModel):
     pass

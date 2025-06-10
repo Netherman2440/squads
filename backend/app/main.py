@@ -3,7 +3,6 @@ import os
 import dotenv
 from fastapi import FastAPI
 from app.routes import auth
-from app.routes import players
 from app.routes import squads
 #.\.venv\Scripts\activate
 #uvicorn app.main:app --reload  
