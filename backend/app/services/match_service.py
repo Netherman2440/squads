@@ -105,6 +105,7 @@ class MatchService:
         list_of_teams = draw_teams_service.draw_teams()
         print(len(list_of_teams))
         return players, list_of_teams
+        
 
     def update_match_score(self, match_id: str, team_a_score: int, team_b_score: int) -> MatchDetailData | None:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()
@@ -122,7 +123,7 @@ class MatchService:
         # Update score history for each player
         all_players = match.teams[0].players + match.teams[1].players
         for player in all_players:
-            # Get existing score history for this player and match
+            # Get existing score history to get the previous score
             score_history = self.session.query(ScoreHistory).filter(
                 ScoreHistory.player_id == player.player_id,
                 ScoreHistory.match_id == match_id
@@ -142,17 +143,13 @@ class MatchService:
                     factor = match_index * 0.2 + 1
                     new_delta = (player_team.score - opponent_team.score) / factor
                     
-                    # Update score history
+                    # Calculate new score based on previous score + new delta
                     new_score = score_history.previous_score + new_delta
-                    score_history.new_score = new_score
-                    score_history.delta = new_delta
                     
-                    # Update player's current score
-                    player.score = player.base_score
-                    # Recalculate total score from all matches
-                    player_service.recalculate_and_update_score(player.player_id)
+                    # Use update_player_score to handle both ScoreHistory and Player updates
+                    player_service.update_player_score(player.player_id, new_score, match_id)
         
-        self.session.commit()
+        # No need for additional commit since update_player_score already commits
 
         return MatchDetailData(
             squad_id=match.squad_id,

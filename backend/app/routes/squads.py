@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.db import SessionLocal
 from app.services import SquadService, PlayerService, MatchService, TeamService
-from app.schemas import SquadListResponse, SquadDetailResponse, SquadCreate, PlayerListResponse, PlayerDetailResponse, PlayerCreate, MatchListResponse
-
+from app.schemas import *
 
 router = APIRouter(
     prefix ="/squads",
@@ -86,6 +85,14 @@ async def get_matches(squad_id: str, match_service: MatchService = Depends(get_m
     matches_response = [match.to_response() for match in matches]
     return MatchListResponse(matches=matches_response)
 
+@router.post("/{squad_id}/matches", response_model=MatchDetailResponse)
+async def create_match(squad_id: str, match_data: MatchCreate, match_service: MatchService = Depends(get_match_service)):
+    detail_match = match_service.create_match(squad_id, match_data.team_a, match_data.team_b)
+    if detail_match is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create match")
+    return detail_match.to_response()
+
+
 @router.get("/{squad_id}/matches/{match_id}")
 async def get_match(squad_id: str, match_id: str, match_service: MatchService = Depends(get_match_service)):
     detail_match = match_service.get_match_detail(match_id)
@@ -93,5 +100,12 @@ async def get_match(squad_id: str, match_id: str, match_service: MatchService = 
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
     return detail_match.to_response()
 
+
+@router.put("/{squad_id}/matches/{match_id}", response_model=MatchDetailResponse)
+async def update_match(squad_id: str, match_id: str, match_data: MatchUpdate, match_service: MatchService = Depends(get_match_service)):
+    detail_match = match_service.update_match(match_id, match_data.team_a, match_data.team_b)
+    if detail_match is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+    return detail_match.to_response()
 
 

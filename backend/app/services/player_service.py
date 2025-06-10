@@ -153,10 +153,13 @@ class PlayerService:
             score_history.new_score = score
             score_history.delta = score - score_history.previous_score
 
-        player.score = score
+        # Don't directly set player.score - instead recalculate from all matches
+        # This handles the case where we're updating an old match and need to 
+        # preserve deltas from subsequent matches
+        self.session.commit()  # Commit the score history changes first
         
-        self.session.commit()
-        return self.get_player(player_id)
+        # Recalculate total score from all matches including the updated one
+        return self.recalculate_and_update_score(player_id)
     
     def update_player_position(self, player_id: str, position: Position) -> PlayerData | None:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()

@@ -712,3 +712,106 @@ class TestPlayerService:
         assert updated_player is not None
         # Score should remain as base_score since no history exists
         assert updated_player.score == sample_player.base_score
+
+    def test_update_old_match_preserves_newer_matches_deltas(self, player_service, sample_squad, sample_player, session):
+        """Test that updating an old match score preserves deltas from newer matches"""
+        player_id = sample_player.player_id
+        base_score = sample_player.base_score  # Should be 15
+        
+        # Create three matches in chronological order
+        from datetime import timedelta
+        base_time = datetime.now(timezone.utc)
+        
+        match1 = Match(
+            match_id=str(uuid.uuid4()), 
+            squad_id=sample_squad.squad_id, 
+            created_at=base_time
+        )
+        match2 = Match(
+            match_id=str(uuid.uuid4()), 
+            squad_id=sample_squad.squad_id, 
+            created_at=base_time + timedelta(hours=1)
+        )
+        match3 = Match(
+            match_id=str(uuid.uuid4()), 
+            squad_id=sample_squad.squad_id, 
+            created_at=base_time + timedelta(hours=2)
+        )
+        session.add_all([match1, match2, match3])
+        session.commit()
+        
+        # Create initial score histories in chronological order
+        # Match 1: +10 delta (base 15 -> 25)
+        history1 = ScoreHistory(
+            match_id=match1.match_id,
+            player_id=player_id,
+            previous_score=base_score,  # 15
+            new_score=base_score + 10,  # 25
+            delta=10.0
+        )
+        
+        # Match 2: +5 delta (25 -> 30)
+        history2 = ScoreHistory(
+            match_id=match2.match_id,
+            player_id=player_id,
+            previous_score=base_score + 10,  # 25
+            new_score=base_score + 15,  # 30
+            delta=5.0
+        )
+        
+        # Match 3: -3 delta (30 -> 27)
+        history3 = ScoreHistory(
+            match_id=match3.match_id,
+            player_id=player_id,
+            previous_score=base_score + 15,  # 30
+            new_score=base_score + 12,  # 27
+            delta=-3.0
+        )
+        
+        session.add_all([history1, history2, history3])
+        session.commit()
+        
+        # Set player's current score to reflect all matches
+        player = session.query(Player).filter(Player.player_id == player_id).first()
+        player.score = base_score + 12  # 27 (base + 10 + 5 - 3)
+        session.commit()
+        
+        # Verify initial state
+        initial_player = player_service.get_player(player_id)
+        assert initial_player.score == base_score + 12  # 27
+        
+        # NOW THE EDGE CASE: Update the OLD match (match1) score
+        # Change match1 delta from +10 to +15
+        old_match_new_score = base_score + 15  # 30 instead of 25
+        
+        updated_player = player_service.update_player_score(player_id, old_match_new_score, match1.match_id)
+        
+        # Verify the update worked correctly
+        assert updated_player is not None
+        
+        # Expected calculation:
+        # base_score (15) + new_match1_delta (15) + match2_delta (5) + match3_delta (-3) = 32
+        expected_final_score = base_score + 15 + 5 + (-3)  # 15 + 15 + 5 - 3 = 32
+        assert updated_player.score == expected_final_score
+        
+        # Verify score history was updated correctly for match1
+        updated_history1 = session.query(ScoreHistory).filter(
+            ScoreHistory.match_id == match1.match_id,
+            ScoreHistory.player_id == player_id
+        ).first()
+        assert updated_history1.new_score == old_match_new_score  # 30
+        assert updated_history1.delta == 15.0  # Updated delta
+        assert updated_history1.previous_score == base_score  # Should remain 15
+        
+        # Verify other matches' score histories are unchanged
+        unchanged_history2 = session.query(ScoreHistory).filter(
+            ScoreHistory.match_id == match2.match_id,
+            ScoreHistory.player_id == player_id
+        ).first()
+        assert unchanged_history2.delta == 5.0  # Should be unchanged
+        
+        unchanged_history3 = session.query(ScoreHistory).filter(
+            ScoreHistory.match_id == match3.match_id,
+            ScoreHistory.player_id == player_id
+        ).first()
+        assert unchanged_history3.delta == -3.0  # Should be unchanged
