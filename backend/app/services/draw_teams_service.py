@@ -19,15 +19,17 @@ class DrawTeamsService:
         self.amount_of_teams = amount_of_teams
         self.amount_of_draws = amount_of_draws
 
-    def draw_teams(self) -> list[int]:
+    def draw_teams(self) -> list[tuple[list[PlayerData], list[PlayerData]]]:
         if self.amount_of_teams == 2:
-            return self.draw_teams_2()[0:self.amount_of_draws]
+            combos = self.draw_teams_2()
+            return combos
         elif self.amount_of_teams == 3:
-            return self.draw_teams_3()[0:self.amount_of_draws]
+            combos = self.draw_teams_3()
+            return combos
         else:
             raise ValueError("Invalid amount of teams")
 
-    def draw_teams_2(self) -> list[int]:
+    def draw_teams_2(self) -> list[tuple[list[PlayerData], list[PlayerData]]]:
         team_size = len(self.players) // self.amount_of_teams
         players_amount = len(self.players)
         total_score = sum(player.score for player in self.players)
@@ -45,7 +47,16 @@ class DrawTeamsService:
             key=lambda x: abs(sum(self.players[i].score for i in x) - total_score / 2)
         )
 
-        return combos
+        combos = combos[0:self.amount_of_draws]
+
+        draft_data = []
+
+        for combo in combos:
+            team_a = [self.players[i] for i in combo]
+            team_b = [player for player in self.players if player not in team_a]
+            draft_data.append((team_a, team_b))
+
+        return draft_data
 
     def draw_teams_3(self) -> list[int]:
         team_size = len(self.players) // self.amount_of_teams

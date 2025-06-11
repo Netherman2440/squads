@@ -1,6 +1,7 @@
+from typing import Optional
 from app.db import Match, ScoreHistory
 
-from app.entities import MatchData, PlayerData, MatchDetailData, TeamDetailData
+from app.entities import MatchData, PlayerData, MatchDetailData, DraftData
 
 
 class MatchService:
@@ -84,29 +85,34 @@ class MatchService:
 
         )  
 
-    def draw_teams(self, match_id: str) -> tuple[list[PlayerData], list[int]]:
-        match = self.session.query(Match).filter(Match.match_id == match_id).first()
-        if not match:
-            return None
-
-        match_players = match.teams[0].players + match.teams[1].players
-
-        players = [PlayerData(
-            player_id=player.player_id, 
-            name=player.name, 
-            _score=player.score, 
-            base_score=player.base_score,
-            position=player.position,
-            squad_id=player.squad_id,
-            ) for player in match_players]
+    def draw_teams(self, players: list[PlayerData]) -> list[DraftData]:
+        # Check if players list is empty
+        if not players:
+            return []
+            
         players.sort(key=lambda x: x._score, reverse=True)
         from app.services import DrawTeamsService
         draw_teams_service = DrawTeamsService(players, 2)
-        list_of_teams = draw_teams_service.draw_teams()
-        print(len(list_of_teams))
-        return players, list_of_teams
-        
+        drafts = draw_teams_service.draw_teams()
 
+        draft_data = []
+
+        for draft in drafts:
+            team_a, team_b = draft
+            draft_data.append(DraftData(team_a=team_a, team_b=team_b))
+            
+        return draft_data
+    
+    def update_match(self, match_id: str, 
+                     team_a_players: Optional[list[PlayerData]], 
+                     team_b_players: Optional[list[PlayerData]], 
+                     score: Optional[tuple[int, int]]) -> MatchDetailData | None:
+        if team_a_players and team_b_players:
+            self.update_match_players(match_id, team_a_players, team_b_players)
+        if score:
+            self.update_match_score(match_id, score[0], score[1])
+        return self.get_match_detail(match_id)
+    
     def update_match_score(self, match_id: str, team_a_score: int, team_b_score: int) -> MatchDetailData | None:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()
         if not match:
@@ -216,4 +222,16 @@ class MatchService:
             team_b=team_b,
             created_at=match.created_at
         )
+    
+    def delete_match(self, match_id: str) -> bool:
+        """Delete a match and all associated data"""
+        match = self.session.query(Match).filter(Match.match_id == match_id).first()
+        if not match:
+            return False
+            
+        # Delete the match (cascade should handle teams and score history)
+        self.session.delete(match)
+        self.session.commit()
+        
+        return True
         

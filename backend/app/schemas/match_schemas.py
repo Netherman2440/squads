@@ -10,7 +10,8 @@ class MatchBase(BaseModel):
 #/matches
 
 class MatchCreate(MatchBase):
-    teams: list
+    team_a: list
+    team_b: list
 
 class MatchResponse(MatchBase):
     squad_id: str
@@ -30,6 +31,7 @@ class MatchDetailResponse(MatchResponse):
 #todo: stats
 
 class MatchUpdate(MatchBase):
-    teams: Optional[list]
+    team_a: Optional[list]
+    team_b: Optional[list]
     score: Optional[tuple[int, int]]
 

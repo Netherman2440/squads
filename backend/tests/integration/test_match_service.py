@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from app.db import Squad, Player, Match, Team, TeamPlayer, Base
 from app.services import MatchService, TeamService, PlayerService
-from app.entities import MatchData, MatchDetailData, PlayerData, TeamDetailData
+from app.entities import MatchData, MatchDetailData, PlayerData, TeamDetailData, DraftData
 from app.constants import Position
 
 
@@ -293,78 +293,122 @@ class TestMatchService:
 
     def test_draw_teams_basic(self, match_service, sample_match):
         """Test basic team drawing functionality for existing match"""
-        sorted_players, team_assignments = match_service.draw_teams(sample_match.match_id)
+        # Get match details to extract players
+        match_detail = match_service.get_match_detail(sample_match.match_id)
+        all_players = match_detail.team_a.players + match_detail.team_b.players
         
-        # Verify return types
-        assert isinstance(sorted_players, list)
-        assert isinstance(team_assignments, list)
-        assert len(sorted_players) > 0  # Should have players from the match
+        draft_results = match_service.draw_teams(all_players)
         
-        # Verify players are sorted by score (descending)
-        for i in range(len(sorted_players) - 1):
-            assert sorted_players[i].score >= sorted_players[i + 1].score
+        # Verify return type
+        assert isinstance(draft_results, list)
+        assert len(draft_results) > 0  # Should have at least one draft combination
+        
+        # Verify each result is a DraftData object
+        for draft in draft_results:
+            assert isinstance(draft, DraftData)
+            assert isinstance(draft.team_a, list)
+            assert isinstance(draft.team_b, list)
+            assert all(isinstance(player, PlayerData) for player in draft.team_a)
+            assert all(isinstance(player, PlayerData) for player in draft.team_b)
+            
+            # Should have players from the match
+            total_players = len(draft.team_a) + len(draft.team_b)
+            assert total_players > 0
         
         # Should return amount_of_draws different team compositions (default 20)
-        assert len(team_assignments) <= 20  # May be less if not enough combinations
+        assert len(draft_results) <= 20  # May be less if not enough combinations
 
     def test_draw_teams_returns_multiple_compositions(self, match_service, sample_match):
         """Test that draw_teams returns multiple different team compositions"""
-        sorted_players, team_assignments = match_service.draw_teams(sample_match.match_id)
+        # Get match details to extract players
+        match_detail = match_service.get_match_detail(sample_match.match_id)
+        all_players = match_detail.team_a.players + match_detail.team_b.players
+        
+        draft_results = match_service.draw_teams(all_players)
         
         # Should return multiple different compositions
-        assert len(team_assignments) >= 1
-        assert isinstance(team_assignments, list)
+        assert len(draft_results) >= 1
+        assert isinstance(draft_results, list)
         
-        # Each composition should be a tuple/list of player indices for one team
-        for composition in team_assignments:
-            assert isinstance(composition, (tuple, list))
+        # Each composition should be a DraftData with team_a and team_b
+        for draft in draft_results:
+            assert isinstance(draft, DraftData)
+            assert hasattr(draft, 'team_a')
+            assert hasattr(draft, 'team_b')
+            assert isinstance(draft.team_a, list)
+            assert isinstance(draft.team_b, list)
 
     def test_draw_teams_always_two_teams(self, match_service, sample_squad, sample_player_data):
         """Test that draw_teams works with 2-team constraint"""
-        # Remove this test or modify it since DrawTeamsService is fixed at 2 teams
         match_data = match_service.create_match(
             squad_id=sample_squad.squad_id,
             team_a_players=sample_player_data[:3],
             team_b_players=sample_player_data[3:]
         )
         
-        sorted_players, team_assignments = match_service.draw_teams(match_data.match_id)
+        # Get match details to extract players
+        match_detail = match_service.get_match_detail(match_data.match_id)
+        all_players = match_detail.team_a.players + match_detail.team_b.players
         
-        # DrawTeamsService is hardcoded for 2 teams in MatchService
-        assert len(team_assignments) >= 1  # Should return at least one composition
+        draft_results = match_service.draw_teams(all_players)
+        
+        # DrawTeamsService always creates 2 teams
+        assert len(draft_results) >= 1  # Should return at least one composition
+        
+        for draft in draft_results:
+            assert isinstance(draft, DraftData)
+            # Each draft should have exactly 2 teams (team_a and team_b)
+            assert hasattr(draft, 'team_a')
+            assert hasattr(draft, 'team_b')
 
     def test_draw_teams_integration_with_draw_teams_service(self, match_service, sample_match):
         """Test that draw_teams properly integrates with DrawTeamsService"""
-        sorted_players, team_assignments = match_service.draw_teams(sample_match.match_id)
+        # Get match details to extract players
+        match_detail = match_service.get_match_detail(sample_match.match_id)
+        all_players = match_detail.team_a.players + match_detail.team_b.players
         
-        # Verify team_assignments structure - each should be combination indices
-        assert isinstance(team_assignments, list)
+        draft_results = match_service.draw_teams(all_players)
         
-        for composition in team_assignments:
-            assert isinstance(composition, (tuple, list))
-            # Each composition represents indices of players for one team
-            for index in composition:
-                assert isinstance(index, int)
-                assert 0 <= index < len(sorted_players)
+        # Verify draft_results structure
+        assert isinstance(draft_results, list)
+        
+        for draft in draft_results:
+            assert isinstance(draft, DraftData)
+            
+            # Verify teams contain PlayerData objects
+            for player in draft.team_a + draft.team_b:
+                assert isinstance(player, PlayerData)
+                assert hasattr(player, 'player_id')
+                assert hasattr(player, 'score')
+                
+            # Verify no player appears in both teams
+            team_a_ids = {player.player_id for player in draft.team_a}
+            team_b_ids = {player.player_id for player in draft.team_b}
+            assert len(team_a_ids.intersection(team_b_ids)) == 0
 
     def test_draw_teams_player_data_completeness(self, match_service, sample_match):
         """Test that draw_teams returns complete PlayerData objects"""
-        sorted_players, team_assignments = match_service.draw_teams(sample_match.match_id)
+        # Get match details to extract players
+        match_detail = match_service.get_match_detail(sample_match.match_id)
+        all_players = match_detail.team_a.players + match_detail.team_b.players
         
-        for player in sorted_players:
-            # Verify all required PlayerData fields are present
-            assert hasattr(player, 'player_id')
-            assert hasattr(player, 'name')
-            assert hasattr(player, 'score')
-            assert hasattr(player, 'position')
-            assert hasattr(player, 'squad_id')
-            
-            # Verify field values are not None
-            assert player.player_id is not None
-            assert player.name is not None
-            assert player.score is not None
-            assert player.position is not None
-            assert player.squad_id is not None
+        draft_results = match_service.draw_teams(all_players)
+        
+        for draft in draft_results:
+            for player in draft.team_a + draft.team_b:
+                # Verify all required PlayerData fields are present
+                assert hasattr(player, 'player_id')
+                assert hasattr(player, 'name')
+                assert hasattr(player, 'score')
+                assert hasattr(player, 'position')
+                assert hasattr(player, 'squad_id')
+                
+                # Verify field values are not None
+                assert player.player_id is not None
+                assert player.name is not None
+                assert player.score is not None
+                assert player.position is not None
+                assert player.squad_id is not None
 
     def test_draw_teams_score_sorting(self, match_service, sample_squad, sample_player_data):
         """Test that draw_teams correctly sorts players by score"""
@@ -375,25 +419,42 @@ class TestMatchService:
             team_b_players=sample_player_data[3:]
         )
         
-        sorted_players, team_assignments = match_service.draw_teams(match_data.match_id)
+        # Get match details to extract players
+        match_detail = match_service.get_match_detail(match_data.match_id)
+        all_players = match_detail.team_a.players + match_detail.team_b.players
         
-        # Verify descending score order
-        scores = [player.score for player in sorted_players]
-        assert scores == sorted(scores, reverse=True)
+        draft_results = match_service.draw_teams(all_players)
+        
+        # Get all players from first draft to check sorting
+        first_draft = draft_results[0]
+        all_players_in_draft = first_draft.team_a + first_draft.team_b
+        
+        # Create expected sorted order from original players
+        original_scores = sorted([p.score for p in sample_player_data], reverse=True)
+        draft_scores = sorted([p.score for p in all_players_in_draft], reverse=True)
+        
+        # Should contain all players with correct scores
+        assert len(all_players_in_draft) == len(sample_player_data)
+        assert draft_scores == original_scores
 
     def test_draw_teams_player_data_fields_match_original(self, match_service, sample_match, sample_player_data):
         """Test that PlayerData objects from draw_teams match original player data"""
-        sorted_players, team_assignments = match_service.draw_teams(sample_match.match_id)
+        # Get match details to extract players
+        match_detail = match_service.get_match_detail(sample_match.match_id)
+        all_players = match_detail.team_a.players + match_detail.team_b.players
+        
+        draft_results = match_service.draw_teams(all_players)
         
         # Create a mapping of original players for comparison
         original_players_map = {p.player_id: p for p in sample_player_data}
         
-        for returned_player in sorted_players:
-            original_player = original_players_map.get(returned_player.player_id)
-            if original_player:  # Should be found
-                assert returned_player.name == original_player.name
-                assert returned_player.score == original_player.score
-                assert returned_player.squad_id == original_player.squad_id
+        for draft in draft_results:
+            for returned_player in draft.team_a + draft.team_b:
+                original_player = original_players_map.get(returned_player.player_id)
+                if original_player:  # Should be found
+                    assert returned_player.name == original_player.name
+                    assert returned_player.score == original_player.score
+                    assert returned_player.squad_id == original_player.squad_id
 
     def test_match_data_model_conversion_completeness(self, match_service, sample_match):
         """Test that all required fields are properly converted from Match model to MatchData"""

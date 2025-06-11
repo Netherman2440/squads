@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal
 from app.services import SquadService, PlayerService, MatchService, TeamService
 from app.schemas import *
+from app.entities import PlayerData
 
 router = APIRouter(
     prefix ="/squads",
@@ -103,9 +104,38 @@ async def get_match(squad_id: str, match_id: str, match_service: MatchService = 
 
 @router.put("/{squad_id}/matches/{match_id}", response_model=MatchDetailResponse)
 async def update_match(squad_id: str, match_id: str, match_data: MatchUpdate, match_service: MatchService = Depends(get_match_service)):
-    detail_match = match_service.update_match(match_id, match_data.team_a, match_data.team_b)
+    detail_match = match_service.update_match(match_id, match_data.team_a, match_data.team_b, match_data.score)
     if detail_match is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
     return detail_match.to_response()
 
+@router.delete("/{squad_id}/matches/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_match(squad_id: str, match_id: str, match_service: MatchService = Depends(get_match_service)):
+    success = match_service.delete_match(match_id)
+    if not success:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+    
+@router.post("/{squad_id}/matches/draw", response_model=DraftListResponse)
+async def draw_match(draft_data: DraftCreate, match_service: MatchService = Depends(get_match_service)):
+    players = [PlayerData(
+        squad_id=player.squad_id,
+        player_id=player.player_id, 
+        name=player.name, 
+        base_score=player.base_score,
+        _score=player.score, 
+        position=player.position
+    ) for player in draft_data.players]
 
+    drafts = match_service.draw_teams(players)
+    if drafts is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+    
+    draft_responses = []
+    for draft in drafts:
+        team_a = [player.to_response() for player in draft.team_a]
+        team_b = [player.to_response() for player in draft.team_b]
+        draft_response = DraftResponse(team_a=team_a, team_b=team_b)
+        draft_responses.append(draft_response)
+    
+
+    return DraftListResponse(drafts=draft_responses)

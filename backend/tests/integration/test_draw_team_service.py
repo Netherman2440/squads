@@ -142,13 +142,25 @@ class TestDrawTeamsService:
         assert isinstance(results, list)
         assert len(results) <= service.amount_of_draws
         
-        # Each result should be a tuple of player indices
-        for team_combo in results:
-            assert isinstance(team_combo, tuple)
-            assert len(team_combo) == len(sample_players_balanced) // 2  # Team size
-            # All indices should be valid
-            for player_index in team_combo:
-                assert 0 <= player_index < len(sample_players_balanced)
+        # Each result should be a tuple of two teams (lists of PlayerData)
+        for team_pair in results:
+            assert isinstance(team_pair, tuple)
+            assert len(team_pair) == 2  # Two teams
+            team_a, team_b = team_pair
+            
+            # Each team should be a list of PlayerData objects
+            assert isinstance(team_a, list)
+            assert isinstance(team_b, list)
+            assert all(isinstance(player, PlayerData) for player in team_a)
+            assert all(isinstance(player, PlayerData) for player in team_b)
+            
+            # Total players should equal original players
+            assert len(team_a) + len(team_b) == len(sample_players_balanced)
+            
+            # No player should be in both teams
+            team_a_ids = {player.player_id for player in team_a}
+            team_b_ids = {player.player_id for player in team_b}
+            assert len(team_a_ids.intersection(team_b_ids)) == 0
 
     def test_draw_teams_invalid_amount(self, sample_players_balanced):
         """Test draw_teams method with invalid team amount"""
@@ -162,23 +174,32 @@ class TestDrawTeamsService:
         service = DrawTeamsService(sample_players_balanced)
         results = service.draw_teams_2()
         
-        team_size = len(sample_players_balanced) // 2
         total_score = sum(player.score for player in sample_players_balanced)
         
         assert isinstance(results, list)
         assert len(results) > 0
         
         # Verify each combination
-        for team_combo in results:
-            assert isinstance(team_combo, tuple)
-            assert len(team_combo) == team_size
+        for team_pair in results:
+            assert isinstance(team_pair, tuple)
+            assert len(team_pair) == 2  # Two teams
+            team_a, team_b = team_pair
+            
+            # Verify teams are lists of PlayerData
+            assert isinstance(team_a, list)
+            assert isinstance(team_b, list)
+            assert all(isinstance(player, PlayerData) for player in team_a)
+            assert all(isinstance(player, PlayerData) for player in team_b)
             
             # Verify team score balance (results should be sorted by balance)
-            team_score = sum(service.players[i].score for i in team_combo)
-            balance_diff = abs(team_score - total_score / 2)
+            team_a_score = sum(player.score for player in team_a)
+            team_b_score = sum(player.score for player in team_b)
+            assert abs(team_a_score + team_b_score - total_score) < 0.01  # Should equal total score
+            
+            balance_diff = abs(team_a_score - total_score / 2)
             
             # First result should be the most balanced
-            if team_combo == results[0]:
+            if team_pair == results[0]:
                 first_balance = balance_diff
             else:
                 assert balance_diff >= first_balance
@@ -193,9 +214,10 @@ class TestDrawTeamsService:
         
         # Results should be sorted by balance (closest to target first)
         previous_diff = -1
-        for team_combo in results:
-            team_score = sum(service.players[i].score for i in team_combo)
-            diff = abs(team_score - target_score)
+        for team_pair in results:
+            team_a, team_b = team_pair
+            team_a_score = sum(player.score for player in team_a)
+            diff = abs(team_a_score - target_score)
             
             if previous_diff >= 0:
                 assert diff >= previous_diff
@@ -228,7 +250,10 @@ class TestDrawTeamsService:
         results = service.draw_teams()
         
         assert len(results) == 1  # Only one way to split 2 players into 2 teams
-        assert results[0] == (0,) or results[0] == (1,)
+        team_a, team_b = results[0]
+        assert len(team_a) == 1
+        assert len(team_b) == 1
+        assert team_a[0].player_id != team_b[0].player_id
 
     def test_edge_case_uneven_division(self, sample_players_uneven):
         """Test with players that don't divide evenly into teams"""
@@ -239,8 +264,10 @@ class TestDrawTeamsService:
         # Should still work, taking floor division
         team_size = len(sample_players_uneven) // 2  # = 1
         
-        for team_combo in results:
-            assert len(team_combo) == team_size
+        for team_pair in results:
+            team_a, team_b = team_pair
+            assert len(team_a) == team_size
+            assert len(team_b) == len(sample_players_uneven) - team_size
 
     def test_amount_of_draws_limit(self, sample_players_balanced):
         """Test that amount_of_draws limits the results"""
@@ -330,8 +357,10 @@ class TestDrawTeamsService:
         
         # Should work regardless of squad_id differences
         assert len(results) > 0
-        for team_combo in results:
-            assert len(team_combo) == 2  # 4 players / 2 teams = 2 per team
+        for team_pair in results:
+            team_a, team_b = team_pair
+            assert len(team_a) == 2  # 4 players / 2 teams = 2 per team
+            assert len(team_b) == 2
 
     def test_performance_with_larger_dataset(self):
         """Test performance with a larger dataset"""
@@ -355,5 +384,49 @@ class TestDrawTeamsService:
         assert len(results) <= 50
         
         # Verify structure
-        for team_combo in results:
-            assert len(team_combo) == 6  # 12 players / 2 teams = 6 per team
+        for team_pair in results:
+            team_a, team_b = team_pair
+            assert len(team_a) == 6  # 12 players / 2 teams = 6 per team
+            assert len(team_b) == 6
+            
+            # Verify all players are accounted for
+            all_team_players = team_a + team_b
+            assert len(all_team_players) == 12
+            
+            # Verify no duplicate players
+            player_ids = [player.player_id for player in all_team_players]
+            assert len(player_ids) == len(set(player_ids))
+
+    def test_team_composition_completeness(self, sample_players_balanced):
+        """Test that all original players are included in team combinations"""
+        service = DrawTeamsService(sample_players_balanced)
+        results = service.draw_teams()
+        
+        original_player_ids = {player.player_id for player in sample_players_balanced}
+        
+        for team_pair in results:
+            team_a, team_b = team_pair
+            combined_team_ids = {player.player_id for player in team_a + team_b}
+            
+            # All original players should be present in the team combination
+            assert combined_team_ids == original_player_ids
+
+    def test_team_score_balance_ordering(self, sample_players_balanced):
+        """Test that team combinations are ordered by balance (most balanced first)"""
+        service = DrawTeamsService(sample_players_balanced)
+        results = service.draw_teams()
+        
+        total_score = sum(player.score for player in sample_players_balanced)
+        target_score = total_score / 2
+        
+        previous_balance_diff = -1
+        
+        for team_pair in results:
+            team_a, team_b = team_pair
+            team_a_score = sum(player.score for player in team_a)
+            balance_diff = abs(team_a_score - target_score)
+            
+            if previous_balance_diff >= 0:
+                assert balance_diff >= previous_balance_diff, "Results should be ordered by balance"
+            
+            previous_balance_diff = balance_diff

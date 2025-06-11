@@ -8,7 +8,7 @@ class PlayerService:
         self.session = session
 
     def get_players(self, squad_id: str) -> list[PlayerData]:
-        """Get all players for a squad and return as PlayerListResponse"""
+        """Get all players for a squad and return as list of PlayerData"""
         players = self.session.query(Player).filter(Player.squad_id == squad_id).all()
         player_data_list = [PlayerData(
             squad_id=player.squad_id,
@@ -20,10 +20,7 @@ class PlayerService:
             matches_played=len(player.matches)
         ) for player in players]
         
-        # Convert to PlayerResponse schemas
-        player_responses = [self._convert_player_data_to_response(player_data) for player_data in player_data_list]
-        
-        return PlayerListResponse(players=player_responses)
+        return player_data_list
 
     def get_player(self, player_id: str) -> PlayerData | None:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()

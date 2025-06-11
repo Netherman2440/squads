@@ -11,7 +11,6 @@ class PlayerBase(BaseModel):
 
 class PlayerCreate(PlayerBase):
     """Schema for creating a new player"""
-    squad_id: str
     position: Optional[Position] = Field(None, description="Player position")
     
 
