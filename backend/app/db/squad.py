@@ -7,9 +7,9 @@ from .database import Base
 class Squad(Base):
     __tablename__ = "squads"
 
-    squad_id = Column(String, primary_key=True, default= lambda: str(uuid.uuid4()))
-    name = Column(String, nullable=False)
-    created_at = Column(DateTime, default= lambda: datetime.now(timezone.utc))
+    squad_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    name = Column(String(255), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     # List of players in the squad
     players = relationship("Player", back_populates=None, cascade="all, delete-orphan")
     # List of matches in the squad

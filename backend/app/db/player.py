@@ -8,10 +8,10 @@ from .database import Base
 class Player(Base):
     __tablename__ = "players"
 
-    player_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
-    squad_id = Column(String, ForeignKey("squads.squad_id", ondelete="CASCADE"))
-    name = Column(String, nullable=False)
-    position = Column(String, nullable=False) # goalie or field
+    player_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    squad_id = Column(String(36), ForeignKey("squads.squad_id", ondelete="CASCADE"))
+    name = Column(String(255), nullable=False)
+    position = Column(String(255), nullable=False) # goalie or field
     base_score = Column(Integer, nullable=False)
     score = Column(Float, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

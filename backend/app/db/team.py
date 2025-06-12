@@ -9,9 +9,9 @@ class Team(Base):
 
     squad_id = Column(String, ForeignKey("squads.squad_id", ondelete="CASCADE"))
     match_id = Column(String, ForeignKey("matches.match_id", ondelete="CASCADE"))
-    team_id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    team_id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     color = Column(String, nullable=False) # white , black or color or maybe really a RGB value
-    name = Column(String, nullable=True)
+    name = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     score = Column(Integer, nullable=False, default=0)
     # Reference to match
