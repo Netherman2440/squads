@@ -35,5 +35,6 @@ def check_tables():
     print("Tables in the database:", tables)
 
 if __name__ == "__main__":
+    create_tables_if_not_exist()
     check_tables()
 
