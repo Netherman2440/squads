@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.db import SessionLocal
+from app.models import SessionLocal
 from app.services import SquadService, PlayerService, MatchService, TeamService
 from app.schemas import *
 from app.entities import PlayerData

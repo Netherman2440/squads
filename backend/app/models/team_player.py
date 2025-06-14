@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from sqlalchemy import String, Column, ForeignKey, DateTime, PrimaryKeyConstraint
-from .database import Base
+from ..database import Base
 
 
 class TeamPlayer(Base):

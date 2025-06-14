@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, ForeignKey, String, PrimaryKeyConstraint, Float, Integer
 from sqlalchemy.orm import relationship
 
-from app.db.database import Base
+from ..database import Base
 
 
 class ScoreHistory(Base):

@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import uuid
 from sqlalchemy import Column, Float, Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from .database import Base
+from ..database import Base
 
 
 class Player(Base):

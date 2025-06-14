@@ -1,4 +1,4 @@
-from app.db import Player, Match, ScoreHistory
+from app.models import Player, Match, ScoreHistory
 from app.entities import PlayerData, PlayerDetailData, MatchData
 from app.constants import Position
 from app.schemas.player_schemas import PlayerResponse, PlayerListResponse

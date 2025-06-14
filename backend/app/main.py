@@ -4,7 +4,7 @@ import dotenv
 from fastapi import FastAPI
 from app.routes import auth
 from app.routes import squads
-from app.db.database import create_tables_if_not_exist
+from backend.app.database import create_tables_if_not_exist
 
 #.\.venv\Scripts\activate
 #pip freeze > requirements.txt

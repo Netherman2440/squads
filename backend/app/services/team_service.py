@@ -1,6 +1,6 @@
 from typing import Optional
 from app.entities import TeamData, TeamDetailData, PlayerData
-from app.db import Team, TeamPlayer
+from app.models import Team, TeamPlayer
 
 
 class TeamService:

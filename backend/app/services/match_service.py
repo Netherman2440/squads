@@ -1,5 +1,5 @@
 from typing import Optional
-from app.db import Match, ScoreHistory
+from app.models import Match, ScoreHistory
 
 from app.entities import MatchData, PlayerData, MatchDetailData, DraftData
 

@@ -1,7 +1,7 @@
 
 from re import Match
 from pytest import Session
-from app.db import Squad, Player, Match
+from app.models import Squad, Player, Match
 from app.entities import SquadData, SquadDetailData, MatchData, PlayerData
 
 

@@ -1,5 +1,5 @@
 # Import all models to ensure they are registered with SQLAlchemy
-from .database import Base, engine, SessionLocal
+from ..database import Base, engine, SessionLocal
 from .user import User
 from .squad import Squad
 from .player import Player

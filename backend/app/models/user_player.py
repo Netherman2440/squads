@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import uuid
 from sqlalchemy import Column, String, ForeignKey, DateTime
-from .database import Base
+from ..database import Base
 
 class UserPlayer(Base):
     __tablename__ = "user_players"

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Optional
 
 from app.schemas import PlayerResponse, PlayerDetailResponse
-from app.db import Player
+from app.models import Player
 from app.entities import MatchData
 from app.constants import Position
 

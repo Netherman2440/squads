@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 from datetime import datetime, timezone
 
-from app.db import Squad, Player, Match, Team, TeamPlayer, ScoreHistory, Base
+from app.models import Squad, Player, Match, Team, TeamPlayer, ScoreHistory, Base
 from app.services import PlayerService, SquadService
 from app.entities import PlayerData, PlayerDetailData
 from app.constants import Position

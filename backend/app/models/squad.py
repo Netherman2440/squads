@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 import uuid
 from sqlalchemy import UUID, Column, String, DateTime
 from sqlalchemy.orm import relationship
-from .database import Base
+from ..database import Base
 
 class Squad(Base):
     __tablename__ = "squads"
