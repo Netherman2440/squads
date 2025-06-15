@@ -101,10 +101,10 @@ def upgrade() -> None:
     sa.Column('squad_id', sa.String(length=36), nullable=True),
     sa.Column('match_id', sa.String(length=36), nullable=False),
     sa.Column('team_id', sa.String(length=36), nullable=False),
-    sa.Column('player_id', sa.String(length=36), nullable=True),
+    sa.Column('player_id', sa.String(length=36), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['match_id'], ['matches.match_id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['player_id'], ['players.player_id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['player_id'], ['players.player_id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['squad_id'], ['squads.squad_id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['team_id'], ['teams.team_id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('player_id', 'team_id', 'match_id')
