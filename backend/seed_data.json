@@ -1,0 +1,34 @@
+{
+    "squads": [
+        {
+            "name": "Test Squad 1",
+            "players": [
+                {
+                    "name": "John Doe",
+                    "position": "Forward",
+                    "base_score": 80
+                },
+                {
+                    "name": "Jane Smith",
+                    "position": "Defender",
+                    "base_score": 75
+                }
+            ]
+        },
+        {
+            "name": "Test Squad 2",
+            "players": [
+                {
+                    "name": "Mike Johnson",
+                    "position": "Midfielder",
+                    "base_score": 85
+                },
+                {
+                    "name": "Sarah Wilson",
+                    "position": "Goalkeeper",
+                    "base_score": 82
+                }
+            ]
+        }
+    ]
+} 
