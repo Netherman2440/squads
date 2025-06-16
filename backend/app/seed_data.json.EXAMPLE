@@ -5,12 +5,10 @@
             "players": [
                 {
                     "name": "John Doe",
-                    "position": "Forward",
                     "base_score": 80
                 },
                 {
                     "name": "Jane Smith",
-                    "position": "Defender",
                     "base_score": 75
                 }
             ]
@@ -20,12 +18,10 @@
             "players": [
                 {
                     "name": "Mike Johnson",
-                    "position": "Midfielder",
                     "base_score": 85
                 },
                 {
                     "name": "Sarah Wilson",
-                    "position": "Goalkeeper",
                     "base_score": 82
                 }
             ]

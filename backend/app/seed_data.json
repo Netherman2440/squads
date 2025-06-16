@@ -1,0 +1,47 @@
+{
+    "squads": [
+        {
+            "name": "Politechnika",
+            "players": [
+                {"name": "Ignacy", "base_score": 84},
+                {"name": "Stach R", "base_score": 80},
+                {"name": "Mateusz O", "base_score": 80},
+                {"name": "Karol", "base_score": 74},
+                {"name": "Piotr K", "base_score": 46},
+                {"name": "Piotr Wan", "base_score": 46},
+                {"name": "Robert z TV", "base_score": 46},
+                {"name": "Wojtek Rosa", "base_score": 57},
+                {"name": "Marcin Sz", "base_score": 62},
+                {"name": "Julek", "base_score": 65},
+                {"name": "Wojtek S", "base_score": 67},
+                {"name": "Rafał", "base_score": 43},
+                {"name": "Mietek Ryba", "base_score": 46},
+                {"name": "Paweł Zap", "base_score": 62},
+                {"name": "Krzysztof Bramkarz", "base_score": 64},
+                {"name": "Franek Kubal", "base_score": 52},
+                {"name": "Andrzej Szewczak", "base_score": 57},
+                {"name": "Antek Sz", "base_score": 61},
+                {"name": "Jarek brat Grześka", "base_score": 50},
+                {"name": "Michał O", "base_score": 74},
+                {"name": "Nikodem", "base_score": 59},
+                {"name": "Anita", "base_score": 44},
+                {"name": "Ignacy Grabowski", "base_score": 55},
+                {"name": "Mikołaj Młynarski", "base_score": 55},
+                {"name": "Mariusz L", "base_score": 55},
+                {"name": "Paweł T", "base_score": 54},
+                {"name": "Kuba Gaj", "base_score": 52},
+                {"name": "Kuba K", "base_score": 54},
+                {"name": "Kuba Wan", "base_score": 54},
+                {"name": "Tomasz K", "base_score": 42},
+                {"name": "Paweł Zaj", "base_score": 59},
+                {"name": "Łukasz Jabłoński", "base_score": 50},
+                {"name": "Mateusz Absolwent", "base_score": 71},
+                {"name": "Grzesiek brat Jarka", "base_score": 55},
+                {"name": "Janek Zając", "base_score": 45},
+                {"name": "Szymon", "base_score": 28},
+                {"name": "Bartosz Świerk", "base_score": 63},
+                {"name": "Jurek Sz", "base_score": 63}
+            ]
+        }
+    ]
+} 
