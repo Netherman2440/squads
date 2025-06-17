@@ -4,10 +4,11 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 from datetime import datetime, timezone
 
-from app.models import Squad, Player, Match, Team, TeamPlayer, Base
+from app.models import Squad, Player, Match, Team, TeamPlayer, User, Base
 from app.services import MatchService, TeamService, PlayerService
 from app.entities import MatchData, MatchDetailData, PlayerData, TeamDetailData, DraftData
 from app.constants import Position
+from app.services.squad_service import SquadService
 
 
 @pytest.fixture
@@ -39,12 +40,33 @@ def player_service(session):
 
 
 @pytest.fixture
-def sample_squad(session):
+def squad_service(session):
+    """Create SquadService instance with test session"""
+    return SquadService(session)
+
+
+@pytest.fixture
+def sample_user(session):
+    """Create a sample user for testing"""
+    user = User(
+        user_id=str(uuid.uuid4()),
+        email="test@example.com",
+        password_hash="hashed_password",
+        created_at=datetime.now(timezone.utc)
+    )
+    session.add(user)
+    session.commit()
+    return user
+
+
+@pytest.fixture
+def sample_squad(session, sample_user):
     """Create a sample squad for testing"""
     squad = Squad(
         squad_id=str(uuid.uuid4()),
         name="Test Squad",
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        owner_id=sample_user.user_id
     )
     session.add(squad)
     session.commit()
@@ -93,14 +115,14 @@ def sample_player_data(sample_players):
 
 @pytest.fixture
 def team_a_players(sample_player_data):
-    """Get players for team A"""
-    return sample_player_data[:3]  # First 3 players
+    """Get first half of players for team A"""
+    return sample_player_data[:3]
 
 
 @pytest.fixture
 def team_b_players(sample_player_data):
-    """Get players for team B"""
-    return sample_player_data[3:]  # Last 3 players
+    """Get second half of players for team B"""
+    return sample_player_data[3:]
 
 
 @pytest.fixture

@@ -1,4 +1,3 @@
-
 from re import Match
 from pytest import Session
 from app.models import Squad, Player, Match
@@ -29,14 +28,16 @@ class SquadService:
             players_count=len(squad.players),
         )
 
-    def create_squad(self, name: str) -> SquadDetailData:
-        squad = Squad(name=name)
+    def create_squad(self, name: str, owner_id: str) -> SquadDetailData:
+        squad = Squad(name=name, owner_id=owner_id)
         self.session.add(squad)
         self.session.commit()
         return self.get_squad_detail(squad.squad_id)
-        
+
+
 
     def delete_squad(self, squad_id: str):
+            
         squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
         if not squad:
             raise ValueError("Squad not found")
@@ -49,8 +50,6 @@ class SquadService:
         if not squad:
             raise ValueError("Squad not found")
         
-        
-
         players_data = [PlayerData(
             squad_id=squad.squad_id,
             player_id=player.player_id,
@@ -59,8 +58,6 @@ class SquadService:
             base_score=player.base_score,
             _score=player.score,
         ) for player in squad.players]
-
-        
 
         matches_data = [MatchData(
             squad_id=squad.squad_id,
@@ -78,4 +75,22 @@ class SquadService:
             matches=matches_data,
         )
 
+    def update_squad_name(self, squad_id: str, name: str) -> SquadDetailData:
+            
+        squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
+        if not squad:
+            raise ValueError("Squad not found")
+            
+        squad.name = name
+        self.session.commit()
+        return self.get_squad_detail(squad_id)
+    
+    def update_squad_owner(self, squad_id: str, owner_id: str) -> SquadDetailData:
+        squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
+        if not squad:
+            raise ValueError("Squad not found")
+            
+        squad.owner_id = owner_id
+        self.session.commit()
+        return self.get_squad_detail(squad_id)
     #todo: update squad admin or name, connect player with users

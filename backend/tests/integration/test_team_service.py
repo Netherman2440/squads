@@ -4,8 +4,9 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 from datetime import datetime, timezone
 
-from app.models import Squad, Player, Match, Team, TeamPlayer, Base
+from app.models import Squad, Player, Match, Team, TeamPlayer, User, Base
 from app.services import TeamService, PlayerService
+from app.services.squad_service import SquadService
 from app.entities import TeamData, TeamDetailData, PlayerData
 from app.constants import Position
 
@@ -32,12 +33,33 @@ def player_service(session):
 
 
 @pytest.fixture
-def sample_squad(session):
+def squad_service(session):
+    """Create SquadService instance with test session"""
+    return SquadService(session)
+
+
+@pytest.fixture
+def sample_user(session):
+    """Create a sample user for testing"""
+    user = User(
+        user_id=str(uuid.uuid4()),
+        email="test@example.com",
+        password_hash="hashed_password",
+        created_at=datetime.now(timezone.utc)
+    )
+    session.add(user)
+    session.commit()
+    return user
+
+
+@pytest.fixture
+def sample_squad(session, sample_user):
     """Create a sample squad for testing"""
     squad = Squad(
         squad_id=str(uuid.uuid4()),
         name="Test Squad",
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        owner_id=sample_user.user_id
     )
     session.add(squad)
     session.commit()
@@ -91,7 +113,7 @@ def sample_player_data(sample_players):
             position=Position(player.position),
             base_score=player.base_score,
             _score=player.score,
-            matches_played=len(player.matches)
+            matches_played=0
         )
         for player in sample_players
     ]

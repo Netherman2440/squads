@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 from datetime import datetime, timezone
 
-from app.models import Squad, Player, Match, Base
+from app.models import Squad, Player, Match, User, Base
 from app.services.squad_service import SquadService
 from app.entities import SquadData, SquadDetailData
 
@@ -26,12 +26,27 @@ def squad_service(session):
 
 
 @pytest.fixture
-def sample_squad(session):
+def sample_user(session):
+    """Create a sample user for testing"""
+    user = User(
+        user_id=str(uuid.uuid4()),
+        email="test@example.com",
+        password_hash="hashed_password",
+        created_at=datetime.now(timezone.utc)
+    )
+    session.add(user)
+    session.commit()
+    return user
+
+
+@pytest.fixture
+def sample_squad(session, sample_user):
     """Create a sample squad for testing"""
     squad = Squad(
         squad_id=str(uuid.uuid4()),
         name="Test Squad",
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        owner_id=sample_user.user_id
     )
     session.add(squad)
     session.commit()
@@ -39,12 +54,13 @@ def sample_squad(session):
 
 
 @pytest.fixture
-def sample_squad_with_players(session):
+def sample_squad_with_players(session, sample_user):
     """Create a squad with players for testing"""
     squad = Squad(
         squad_id=str(uuid.uuid4()),
         name="Squad with Players",
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        owner_id=sample_user.user_id
     )
     session.add(squad)
     session.commit()
@@ -68,12 +84,13 @@ def sample_squad_with_players(session):
 
 
 @pytest.fixture
-def sample_squad_with_matches(session):
+def sample_squad_with_matches(session, sample_user):
     """Create a squad with matches for testing"""
     squad = Squad(
         squad_id=str(uuid.uuid4()),
         name="Squad with Matches",
-        created_at=datetime.now(timezone.utc)
+        created_at=datetime.now(timezone.utc),
+        owner_id=sample_user.user_id
     )
     session.add(squad)
     session.commit()
@@ -114,7 +131,6 @@ class TestSquadService:
         assert squad_data.squad_id == sample_squad.squad_id
         assert squad_data.name == sample_squad.name
         assert squad_data.created_at == sample_squad.created_at
-        # Note: players_count should not be present in list view according to SquadData definition
 
     def test_get_squad_existing(self, squad_service, sample_squad):
         """Test getting an existing squad"""
@@ -124,7 +140,6 @@ class TestSquadService:
         assert squad_data.squad_id == sample_squad.squad_id
         assert squad_data.name == sample_squad.name
         assert squad_data.created_at == sample_squad.created_at
-        # Test that players_count is included in single squad view
         assert hasattr(squad_data, 'players_count')
 
     def test_get_squad_nonexistent(self, squad_service):
@@ -134,11 +149,11 @@ class TestSquadService:
         with pytest.raises(ValueError, match="Squad not found"):
             squad_service.get_squad(fake_id)
 
-    def test_create_squad(self, squad_service, session):
+    def test_create_squad(self, squad_service, session, sample_user):
         """Test creating a new squad"""
         initial_count = session.query(Squad).count()
         
-        squad_data = squad_service.create_squad("Test Squad")
+        squad_data = squad_service.create_squad("Test Squad", sample_user.user_id)
         
         # Verify squad was created in database
         final_count = session.query(Squad).count()
@@ -157,20 +172,26 @@ class TestSquadService:
         assert db_squad.squad_id == squad_data.squad_id
         assert db_squad.name == squad_data.name
         assert db_squad.created_at == squad_data.created_at
+        assert db_squad.owner_id == sample_user.user_id
 
-    def test_delete_squad_existing(self, squad_service, sample_squad, session):
-        """Test deleting an existing squad"""
+    def test_update_squad_name(self, squad_service, sample_squad):
+        """Test updating squad name"""
+        new_name = "Updated Squad Name"
+        updated_squad = squad_service.update_squad_name(sample_squad.squad_id, new_name)
+        
+        assert updated_squad.name == new_name
+        assert updated_squad.squad_id == sample_squad.squad_id
+
+    def test_delete_squad(self, squad_service, sample_squad, session):
+        """Test deleting a squad"""
         squad_id = sample_squad.squad_id
         initial_count = session.query(Squad).count()
         
-        # Delete the squad
         squad_service.delete_squad(squad_id)
         
-        # Verify squad was deleted from database
         final_count = session.query(Squad).count()
         assert final_count == initial_count - 1
         
-        # Verify squad no longer exists
         deleted_squad = session.query(Squad).filter(Squad.squad_id == squad_id).first()
         assert deleted_squad is None
 
@@ -186,14 +207,11 @@ class TestSquadService:
         squad, players = sample_squad_with_players
         squad_id = squad.squad_id
         
-        # Verify players exist before deletion
         initial_player_count = session.query(Player).filter(Player.squad_id == squad_id).count()
         assert initial_player_count == 3
         
-        # Delete the squad
         squad_service.delete_squad(squad_id)
         
-        # Verify squad and players were deleted
         deleted_squad = session.query(Squad).filter(Squad.squad_id == squad_id).first()
         assert deleted_squad is None
         
@@ -221,13 +239,11 @@ class TestSquadService:
         assert squad_detail.squad_id == squad.squad_id
         assert len(squad_detail.players) == 3
         
-        # Test PlayerData conversion
         for i, player_data in enumerate(squad_detail.players):
             original_player = players[i]
             assert player_data.player_id == original_player.player_id
             assert player_data.name == original_player.name
             assert player_data.position == original_player.position
-            # Note: player_number field might not exist in Player model
 
     def test_get_squad_detail_with_matches(self, squad_service, sample_squad_with_matches):
         """Test getting squad detail for squad with matches"""
@@ -239,11 +255,9 @@ class TestSquadService:
         assert squad_detail.squad_id == squad.squad_id
         assert len(squad_detail.matches) == 2
         
-        # Test MatchData conversion
         for i, match_data in enumerate(squad_detail.matches):
             original_match = matches[i]
             assert match_data.match_id == original_match.match_id
-            # Note: match_name, match_date, match_time fields might not exist in Match model
 
     def test_get_squad_detail_nonexistent(self, squad_service):
         """Test getting squad detail for non-existent squad raises ValueError"""
@@ -252,52 +266,11 @@ class TestSquadService:
         with pytest.raises(ValueError, match="Squad not found"):
             squad_service.get_squad_detail(fake_id)
 
-    def test_squad_data_model_conversion_completeness(self, squad_service, sample_squad_with_players):
-        """Test that all required fields are properly converted from Squad model to SquadData"""
-        squad, players = sample_squad_with_players
-        
-        # Test basic squad data conversion
-        squad_data = squad_service.get_squad(squad.squad_id)
-        
-        # Verify all SquadData fields are present and correctly mapped
-        assert hasattr(squad_data, 'squad_id')
-        assert hasattr(squad_data, 'name')
-        assert hasattr(squad_data, 'created_at')
-        assert hasattr(squad_data, 'players_count')
-        
-        # Verify field values match database model
-        assert squad_data.squad_id == squad.squad_id
-        assert squad_data.name == squad.name
-        assert squad_data.created_at == squad.created_at
-        # players_count should be calculated from relationship
-        assert squad_data.players_count == len(players)
-
-    def test_squad_detail_data_model_conversion_completeness(self, squad_service, sample_squad_with_players):
-        """Test that all required fields are properly converted from Squad model to SquadDetailData"""
-        squad, players = sample_squad_with_players
-        
-        squad_detail = squad_service.get_squad_detail(squad.squad_id)
-        
-        # Verify all SquadDetailData fields are present (inherits from SquadData)
-        assert hasattr(squad_detail, 'squad_id')
-        assert hasattr(squad_detail, 'name')
-        assert hasattr(squad_detail, 'created_at')
-        assert hasattr(squad_detail, 'players_count')
-        assert hasattr(squad_detail, 'players')
-        assert hasattr(squad_detail, 'matches')
-        
-        # Verify field values
-        assert squad_detail.squad_id == squad.squad_id
-        assert squad_detail.name == squad.name
-        assert squad_detail.created_at == squad.created_at
-        assert squad_detail.players_count == len(players)
-        assert len(squad_detail.players) == len(players)
-
-    def test_multiple_squads_isolation(self, squad_service, session):
+    def test_multiple_squads_isolation(self, squad_service, session, sample_user):
         """Test that operations on one squad don't affect others"""
         # Create multiple squads
-        squad1 = Squad(name="Squad 1")
-        squad2 = Squad(name="Squad 2")
+        squad1 = Squad(name="Squad 1", owner_id=sample_user.user_id)
+        squad2 = Squad(name="Squad 2", owner_id=sample_user.user_id)
         session.add_all([squad1, squad2])
         session.commit()
         

@@ -12,10 +12,5 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    squads = relationship(
-        "Squad",
-        secondary="user_players",
-        primaryjoin="User.user_id==UserPlayer.user_id",
-        secondaryjoin="UserPlayer.squad_id==Squad.squad_id",
-        back_populates=None
-    )
+    # Squads owned by the user
+    owned_squads = relationship("Squad", back_populates="owner")
