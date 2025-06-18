@@ -39,7 +39,7 @@ async def get_all_squads(squad_service: SquadService = Depends(get_squad_service
 @router.post("/", response_model=SquadDetailResponse)
 async def create_squad(squad_data: SquadCreate, squad_service: SquadService = Depends(get_squad_service)):
     """Create a new squad"""
-    detail_squad = squad_service.create_squad(squad_data.name, )
+    detail_squad = squad_service.create_squad(squad_data.name, squad_data.owner_id)
     if detail_squad is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create squad")
     return detail_squad.to_response()

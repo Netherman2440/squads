@@ -82,12 +82,56 @@ class SquadService:
         self.session.commit()
         return self.get_squad_detail(squad_id)
     
-    def update_squad_owner(self, squad_id: str, owner_id: str) -> SquadDetailData:
+    def update_squad_owner(self, squad_id: str, new_owner_id: str) -> SquadDetailData:
         squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
         if not squad:
             raise ValueError("Squad not found")
+        
+        previous_owner = self.session.query(UserSquad).filter(UserSquad.squad_id == squad_id, UserSquad.role == UserRole.OWNER.value).first()
+        if not previous_owner:
+            raise ValueError("Previous owner not found in the squad")
+        
+        new_owner = self.session.query(UserSquad).filter(UserSquad.squad_id == squad_id, UserSquad.user_id == new_owner_id).first()
+        if not new_owner:
+            raise ValueError("New owner not found in the squad")
+        
+        previous_owner.role = UserRole.MEMBER.value
+        new_owner.role = UserRole.OWNER.value
             
-        squad.owner_id = owner_id
+        squad.owner_id = new_owner_id
+
+        #todo: update user_squad role
+
         self.session.commit()
         return self.get_squad_detail(squad_id)
+    
+    def add_user_to_squad(self, squad_id: str, user_id: str, role: UserRole = UserRole.MEMBER) -> SquadDetailData:
+        user_squad = UserSquad(user_id=user_id, squad_id=squad_id, role=role.value)
+        self.session.add(user_squad)
+        self.session.commit()
+        return self.get_squad_detail(squad_id)
+    
+    def remove_user_from_squad(self, squad_id: str, user_id: str) -> SquadDetailData:
+        user_squad = self.session.query(UserSquad).filter(UserSquad.squad_id == squad_id, UserSquad.user_id == user_id).first()
+        if not user_squad:
+            raise ValueError("User not found in the squad")
+        self.session.delete(user_squad)
+        self.session.commit()
+        return self.get_squad_detail(squad_id)
+    
+    def update_user_role(self, squad_id: str, user_id: str, new_role: UserRole) -> SquadDetailData:
+        if new_role == UserRole.OWNER:
+            raise ValueError("Owner role cannot be updated, use update_squad_owner instead")
+
+        
+        user_squad = self.session.query(UserSquad).filter(UserSquad.squad_id == squad_id, UserSquad.user_id == user_id).first()
+        if not user_squad:
+            raise ValueError("User not found in the squad")
+        user_squad.role = new_role.value
+        self.session.commit()
+        return self.get_squad_detail(squad_id)
+    
+    #todo connect player with user
+    
+
     

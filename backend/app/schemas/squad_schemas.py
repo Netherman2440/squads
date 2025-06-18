@@ -7,7 +7,7 @@ class SquadBase(BaseModel):
     name: str
 
 class SquadCreate(SquadBase):
-    pass
+    owner_id: str
 
 class SquadResponse(SquadBase):
     squad_id: str

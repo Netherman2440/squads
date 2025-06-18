@@ -4,9 +4,10 @@ from sqlalchemy.orm import sessionmaker
 import uuid
 from datetime import datetime, timezone
 
-from app.models import Squad, Player, Match, User, Base
+from app.models import Squad, Player, Match, User, Base, UserSquad
 from app.services.squad_service import SquadService
 from app.entities import SquadData, SquadDetailData
+from app.constants import UserRole
 
 
 @pytest.fixture
@@ -288,17 +289,22 @@ class TestSquadService:
         assert updated_squad1.name == "Updated Squad 1"
         assert unchanged_squad2.name == "Squad 2"
 
-    def test_update_squad_owner_success(self, squad_service, sample_squad, session):
+    def test_update_squad_owner_success(self, squad_service, session, sample_user):
         """Test updating squad owner successfully"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
         new_owner_id = str(uuid.uuid4())
         
-        updated_squad = squad_service.update_squad_owner(sample_squad.squad_id, new_owner_id)
+        # Add the new user to the squad as a member first
+        squad_service.add_user_to_squad(squad.squad_id, new_owner_id, UserRole.MEMBER)
+        
+        updated_squad = squad_service.update_squad_owner(squad.squad_id, new_owner_id)
         
         assert updated_squad.owner_id == new_owner_id
-        assert updated_squad.squad_id == sample_squad.squad_id
+        assert updated_squad.squad_id == squad.squad_id
         
         # Verify database was updated
-        db_squad = session.query(Squad).filter(Squad.squad_id == sample_squad.squad_id).first()
+        db_squad = session.query(Squad).filter(Squad.squad_id == squad.squad_id).first()
         assert db_squad.owner_id == new_owner_id
 
     def test_update_squad_owner_nonexistent_squad(self, squad_service):
@@ -309,11 +315,278 @@ class TestSquadService:
         with pytest.raises(ValueError, match="Squad not found"):
             squad_service.update_squad_owner(fake_id, new_owner_id)
 
-    def test_update_squad_owner_with_empty_owner_id(self, squad_service, sample_squad):
+    def test_update_squad_owner_with_empty_owner_id(self, squad_service, session, sample_user):
         """Test updating squad owner with empty owner ID"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
         empty_owner_id = ""
         
-        updated_squad = squad_service.update_squad_owner(sample_squad.squad_id, empty_owner_id)
+        # Add empty user ID to squad first
+        squad_service.add_user_to_squad(squad.squad_id, empty_owner_id, UserRole.MEMBER)
+        
+        updated_squad = squad_service.update_squad_owner(squad.squad_id, empty_owner_id)
         
         assert updated_squad.owner_id == empty_owner_id
-        assert updated_squad.squad_id == sample_squad.squad_id
+        assert updated_squad.squad_id == squad.squad_id
+
+    def test_update_squad_owner_success_with_user_squad_roles(self, squad_service, session, sample_user):
+        """Test updating squad owner successfully with UserSquad role changes"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        
+        # Create a new user to be the new owner
+        new_owner_id = str(uuid.uuid4())
+        
+        # Add the new user to the squad as a member first
+        squad_service.add_user_to_squad(squad.squad_id, new_owner_id, UserRole.MEMBER)
+        
+        # Update the owner
+        updated_squad = squad_service.update_squad_owner(squad.squad_id, new_owner_id)
+        
+        assert updated_squad.owner_id == new_owner_id
+        assert updated_squad.squad_id == squad.squad_id
+        
+        # Verify database was updated
+        db_squad = session.query(Squad).filter(Squad.squad_id == squad.squad_id).first()
+        assert db_squad.owner_id == new_owner_id
+        
+        # Verify UserSquad roles were updated
+        previous_owner_user_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == sample_user.user_id
+        ).first()
+        assert previous_owner_user_squad.role == UserRole.MEMBER.value
+        
+        new_owner_user_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == new_owner_id
+        ).first()
+        assert new_owner_user_squad.role == UserRole.OWNER.value
+
+    def test_update_squad_owner_previous_owner_not_found(self, squad_service, session, sample_user):
+        """Test updating squad owner when previous owner not found in UserSquad"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_owner_id = str(uuid.uuid4())
+        
+        # Delete the UserSquad entry for the current owner
+        session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.role == UserRole.OWNER.value
+        ).delete()
+        session.commit()
+        
+        with pytest.raises(ValueError, match="Previous owner not found in the squad"):
+            squad_service.update_squad_owner(squad.squad_id, new_owner_id)
+
+    def test_update_squad_owner_new_owner_not_found(self, squad_service, session, sample_user):
+        """Test updating squad owner when new owner not found in UserSquad"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_owner_id = str(uuid.uuid4())
+        
+        with pytest.raises(ValueError, match="New owner not found in the squad"):
+            squad_service.update_squad_owner(squad.squad_id, new_owner_id)
+
+    def test_add_user_to_squad_success(self, squad_service, session, sample_user):
+        """Test adding user to squad successfully"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_user_id = str(uuid.uuid4())
+        
+        updated_squad = squad_service.add_user_to_squad(squad.squad_id, new_user_id)
+        
+        assert updated_squad.squad_id == squad.squad_id
+        
+        # Verify UserSquad was created in database
+        user_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == new_user_id
+        ).first()
+        assert user_squad is not None
+        assert user_squad.role == UserRole.MEMBER.value
+
+    def test_add_user_to_squad_with_custom_role(self, squad_service, session, sample_user):
+        """Test adding user to squad with custom role"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_user_id = str(uuid.uuid4())
+        
+        updated_squad = squad_service.add_user_to_squad(squad.squad_id, new_user_id, UserRole.ADMIN)
+        
+        assert updated_squad.squad_id == squad.squad_id
+        
+        # Verify UserSquad was created with correct role
+        user_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == new_user_id
+        ).first()
+        assert user_squad is not None
+        assert user_squad.role == UserRole.ADMIN.value
+
+    def test_add_user_to_squad_nonexistent_squad(self, squad_service):
+        """Test adding user to non-existent squad"""
+        fake_squad_id = str(uuid.uuid4())
+        new_user_id = str(uuid.uuid4())
+        
+        with pytest.raises(ValueError, match="Squad not found"):
+            squad_service.add_user_to_squad(fake_squad_id, new_user_id)
+
+    def test_add_user_to_squad_duplicate_user(self, squad_service, session, sample_user):
+        """Test adding user who is already in the squad"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_user_id = str(uuid.uuid4())
+        
+        # Add user first time
+        squad_service.add_user_to_squad(squad.squad_id, new_user_id)
+        
+        # Try to add the same user again - should raise IntegrityError due to unique constraint
+        with pytest.raises(Exception):  # IntegrityError or similar
+            squad_service.add_user_to_squad(squad.squad_id, new_user_id)
+
+    def test_remove_user_from_squad_success(self, squad_service, session, sample_user):
+        """Test removing user from squad successfully"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_user_id = str(uuid.uuid4())
+        
+        # Add user first
+        squad_service.add_user_to_squad(squad.squad_id, new_user_id)
+        
+        # Remove user
+        updated_squad = squad_service.remove_user_from_squad(squad.squad_id, new_user_id)
+        
+        assert updated_squad.squad_id == squad.squad_id
+        
+        # Verify UserSquad was deleted from database
+        user_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == new_user_id
+        ).first()
+        assert user_squad is None
+
+    def test_remove_user_from_squad_nonexistent_user(self, squad_service, session, sample_user):
+        """Test removing non-existent user from squad"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        fake_user_id = str(uuid.uuid4())
+        
+        with pytest.raises(ValueError, match="User not found in the squad"):
+            squad_service.remove_user_from_squad(squad.squad_id, fake_user_id)
+
+    def test_remove_user_from_squad_nonexistent_squad(self, squad_service):
+        """Test removing user from non-existent squad"""
+        fake_squad_id = str(uuid.uuid4())
+        fake_user_id = str(uuid.uuid4())
+        
+        with pytest.raises(ValueError, match="User not found in the squad"):
+            squad_service.remove_user_from_squad(fake_squad_id, fake_user_id)
+
+    def test_remove_owner_from_squad(self, squad_service, session, sample_user):
+        """Test removing owner from squad (should work)"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        owner_id = sample_user.user_id
+        
+        updated_squad = squad_service.remove_user_from_squad(squad.squad_id, owner_id)
+        
+        assert updated_squad.squad_id == squad.squad_id
+        
+        # Verify UserSquad was deleted from database
+        user_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == owner_id
+        ).first()
+        assert user_squad is None
+
+    def test_update_user_role_success(self, squad_service, session, sample_user):
+        """Test updating user role successfully"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_user_id = str(uuid.uuid4())
+        
+        # Add user as member first
+        squad_service.add_user_to_squad(squad.squad_id, new_user_id, UserRole.MEMBER)
+        
+        # Update role to admin
+        updated_squad = squad_service.update_user_role(squad.squad_id, new_user_id, UserRole.ADMIN)
+        
+        assert updated_squad.squad_id == squad.squad_id
+        
+        # Verify role was updated in database
+        user_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == new_user_id
+        ).first()
+        assert user_squad.role == UserRole.ADMIN.value
+
+    def test_update_user_role_to_owner_raises_error(self, squad_service, session, sample_user):
+        """Test updating user role to owner raises error"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        new_user_id = str(uuid.uuid4())
+        
+        # Add user as member first
+        squad_service.add_user_to_squad(squad.squad_id, new_user_id, UserRole.MEMBER)
+        
+        with pytest.raises(ValueError, match="Owner role cannot be updated, use update_squad_owner instead"):
+            squad_service.update_user_role(squad.squad_id, new_user_id, UserRole.OWNER)
+
+    def test_update_user_role_nonexistent_user(self, squad_service, session, sample_user):
+        """Test updating role of non-existent user"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        fake_user_id = str(uuid.uuid4())
+        
+        with pytest.raises(ValueError, match="User not found in the squad"):
+            squad_service.update_user_role(squad.squad_id, fake_user_id, UserRole.ADMIN)
+
+    def test_update_user_role_nonexistent_squad(self, squad_service):
+        """Test updating user role in non-existent squad"""
+        fake_squad_id = str(uuid.uuid4())
+        fake_user_id = str(uuid.uuid4())
+        
+        with pytest.raises(ValueError, match="User not found in the squad"):
+            squad_service.update_user_role(fake_squad_id, fake_user_id, UserRole.ADMIN)
+
+    def test_multiple_users_in_squad_management(self, squad_service, session, sample_user):
+        """Test managing multiple users in a squad"""
+        # Create squad using create_squad to ensure UserSquad entry is created
+        squad = squad_service.create_squad("Test Squad", sample_user.user_id)
+        user1_id = str(uuid.uuid4())
+        user2_id = str(uuid.uuid4())
+        user3_id = str(uuid.uuid4())
+        
+        # Add multiple users
+        squad_service.add_user_to_squad(squad.squad_id, user1_id, UserRole.MEMBER)
+        squad_service.add_user_to_squad(squad.squad_id, user2_id, UserRole.ADMIN)
+        squad_service.add_user_to_squad(squad.squad_id, user3_id, UserRole.MEMBER)
+        
+        # Verify all users were added
+        user_squads = session.query(UserSquad).filter(UserSquad.squad_id == squad.squad_id).all()
+        assert len(user_squads) == 4  # 3 new users + 1 owner
+        
+        # Update one user's role
+        squad_service.update_user_role(squad.squad_id, user1_id, UserRole.ADMIN)
+        
+        # Remove one user
+        squad_service.remove_user_from_squad(squad.squad_id, user2_id)
+        
+        # Verify final state
+        final_user_squads = session.query(UserSquad).filter(UserSquad.squad_id == squad.squad_id).all()
+        assert len(final_user_squads) == 3  # 2 remaining users + 1 owner
+        
+        # Verify specific roles
+        user1_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == user1_id
+        ).first()
+        assert user1_squad.role == UserRole.ADMIN.value
+        
+        # Verify user2 was removed
+        user2_squad = session.query(UserSquad).filter(
+            UserSquad.squad_id == squad.squad_id,
+            UserSquad.user_id == user2_id
+        ).first()
+        assert user2_squad is None
