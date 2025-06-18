@@ -615,18 +615,139 @@ class TestMatchService:
         assert set(updated_match.score) == {3, 1}
 
     def test_match_teams_always_exist(self, match_service, sample_squad, session):
-        """Test that matches always have exactly 2 teams"""
+        """Test that match creation always creates two teams"""
         match_data = match_service.create_match(
             squad_id=sample_squad.squad_id,
             team_a_players=[],
             team_b_players=[]
         )
         
-        # Check database directly
-        db_match = session.query(Match).filter(Match.match_id == match_data.match_id).first()
-        assert len(db_match.teams) == 2
-        
-        # Check through service
+        # Verify through get_match_detail that teams exist
         match_detail = match_service.get_match_detail(match_data.match_id)
-        assert match_detail.team_a is not None
-        assert match_detail.team_b is not None
+        assert len(match_detail.team_a.players) == 0
+        assert len(match_detail.team_b.players) == 0
+        assert match_detail.team_a.team_id is not None
+        assert match_detail.team_b.team_id is not None
+
+    def test_delete_match_success(self, match_service, sample_match, session):
+        """Test deleting a match successfully"""
+        match_id = sample_match.match_id
+        initial_count = session.query(Match).count()
+        
+        result = match_service.delete_match(match_id)
+        
+        assert result is True
+        final_count = session.query(Match).count()
+        assert final_count == initial_count - 1
+        
+        # Verify match no longer exists
+        deleted_match = session.query(Match).filter(Match.match_id == match_id).first()
+        assert deleted_match is None
+
+    def test_delete_match_nonexistent(self, match_service):
+        """Test deleting a non-existent match returns False"""
+        fake_id = str(uuid.uuid4())
+        
+        result = match_service.delete_match(fake_id)
+        
+        assert result is False
+
+    def test_match_to_data_with_empty_teams(self, match_service, sample_squad, session):
+        """Test match_to_data when teams list is empty"""
+        # Create a match without teams
+        match = Match(
+            match_id=str(uuid.uuid4()),
+            squad_id=sample_squad.squad_id,
+            created_at=datetime.now(timezone.utc)
+        )
+        session.add(match)
+        session.commit()
+        
+        match_data = match_service.match_to_data(match)
+        
+        assert match_data.squad_id == sample_squad.squad_id
+        assert match_data.match_id == str(match.match_id)
+        assert match_data.score == (0, 0)  # Default score when teams don't exist
+
+    def test_match_to_data_with_insufficient_teams(self, match_service, sample_squad, session):
+        """Test match_to_data when teams list has less than 2 teams"""
+        # Create a match with only one team
+        match = Match(
+            match_id=str(uuid.uuid4()),
+            squad_id=sample_squad.squad_id,
+            created_at=datetime.now(timezone.utc)
+        )
+        session.add(match)
+        session.commit()
+        
+        # Create one team
+        team = Team(
+            team_id=str(uuid.uuid4()),
+            squad_id=sample_squad.squad_id,
+            match_id=match.match_id,
+            color="white",
+            score=5
+        )
+        session.add(team)
+        session.commit()
+        
+        match_data = match_service.match_to_data(match)
+        
+        assert match_data.squad_id == sample_squad.squad_id
+        assert match_data.match_id == str(match.match_id)
+        assert match_data.score == (0, 0)  # Default score when insufficient teams
+
+    def test_match_to_detail_data_with_missing_teams(self, match_service, sample_squad, session):
+        """Test match_to_detail_data when teams don't exist"""
+        # Create a match without teams
+        match = Match(
+            match_id=str(uuid.uuid4()),
+            squad_id=sample_squad.squad_id,
+            created_at=datetime.now(timezone.utc)
+        )
+        session.add(match)
+        session.commit()
+        
+        with pytest.raises(ValueError, match="Team not found"):
+            match_service.match_to_detail_data(match)
+
+    def test_update_match_partial_parameters(self, match_service, sample_match, sample_player_data):
+        """Test update_match with partial parameters (only score, only players)"""
+        # Test updating only score
+        updated_match = match_service.update_match(
+            match_id=sample_match.match_id,
+            team_a_players=None,
+            team_b_players=None,
+            score=(3, 2)
+        )
+        
+        assert updated_match is not None
+        assert updated_match.score == (3, 2)
+        
+        # Test updating only players
+        new_team_a = sample_player_data[:2]
+        new_team_b = sample_player_data[2:4]
+        
+        updated_match = match_service.update_match(
+            match_id=sample_match.match_id,
+            team_a_players=new_team_a,
+            team_b_players=new_team_b,
+            score=None
+        )
+        
+        assert updated_match is not None
+        assert len(updated_match.team_a.players) == 2
+        assert len(updated_match.team_b.players) == 2
+
+    def test_update_match_all_none_parameters(self, match_service, sample_match):
+        """Test update_match with all parameters as None"""
+        updated_match = match_service.update_match(
+            match_id=sample_match.match_id,
+            team_a_players=None,
+            team_b_players=None,
+            score=None
+        )
+        
+        # Should return the match unchanged
+        assert updated_match is not None
+        assert updated_match.match_id == sample_match.match_id

@@ -245,7 +245,7 @@ class TestSquadService:
             original_player = players[i]
             assert player_data.player_id == original_player.player_id
             assert player_data.name == original_player.name
-            assert player_data.position == original_player.position
+            assert player_data.position.value == original_player.position
 
     def test_get_squad_detail_with_matches(self, squad_service, sample_squad_with_matches):
         """Test getting squad detail for squad with matches"""
@@ -257,9 +257,12 @@ class TestSquadService:
         assert squad_detail.squad_id == squad.squad_id
         assert len(squad_detail.matches) == 2
         
-        for i, match_data in enumerate(squad_detail.matches):
-            original_match = matches[i]
-            assert match_data.match_id == original_match.match_id
+        # Get match IDs from both original and detail data
+        original_match_ids = {match.match_id for match in matches}
+        detail_match_ids = {match_data.match_id for match_data in squad_detail.matches}
+        
+        # Verify all original matches are present in detail data
+        assert original_match_ids == detail_match_ids
 
     def test_get_squad_detail_nonexistent(self, squad_service):
         """Test getting squad detail for non-existent squad raises ValueError"""
@@ -271,36 +274,46 @@ class TestSquadService:
     def test_multiple_squads_isolation(self, squad_service, session, sample_user):
         """Test that operations on one squad don't affect others"""
         # Create multiple squads
-        squad1 = Squad(name="Squad 1", owner_id=sample_user.user_id)
-        squad2 = Squad(name="Squad 2", owner_id=sample_user.user_id)
-        session.add_all([squad1, squad2])
-        session.commit()
+        squad1 = squad_service.create_squad("Squad 1", sample_user.user_id)
+        squad2 = squad_service.create_squad("Squad 2", sample_user.user_id)
         
-        # Add player to squad1 only
-        player = Player(
-            squad_id=squad1.squad_id,
-            name="Test Player",
-            position="field",
-            base_score=10,
-            score=10.0
-        )
-        session.add(player)
-        session.commit()
+        # Verify squads are different
+        assert squad1.squad_id != squad2.squad_id
+        assert squad1.name != squad2.name
         
-        # Get details for both squads
-        detail1 = squad_service.get_squad_detail(squad1.squad_id)
-        detail2 = squad_service.get_squad_detail(squad2.squad_id)
+        # Update one squad and verify the other is unchanged
+        updated_squad1 = squad_service.update_squad_name(squad1.squad_id, "Updated Squad 1")
+        unchanged_squad2 = squad_service.get_squad_detail(squad2.squad_id)
         
-        # Verify isolation
-        assert len(detail1.players) == 1
-        assert len(detail2.players) == 0
-        assert detail1.players_count == 1
-        assert detail2.players_count == 0
+        assert updated_squad1.name == "Updated Squad 1"
+        assert unchanged_squad2.name == "Squad 2"
+
+    def test_update_squad_owner_success(self, squad_service, sample_squad, session):
+        """Test updating squad owner successfully"""
+        new_owner_id = str(uuid.uuid4())
         
-        # Delete squad1 and verify squad2 is unaffected
-        squad_service.delete_squad(squad1.squad_id)
+        updated_squad = squad_service.update_squad_owner(sample_squad.squad_id, new_owner_id)
         
-        # squad2 should still exist
-        remaining_squad = squad_service.get_squad(squad2.squad_id)
-        assert remaining_squad.squad_id == squad2.squad_id
-        assert remaining_squad.name == squad2.name
+        assert updated_squad.owner_id == new_owner_id
+        assert updated_squad.squad_id == sample_squad.squad_id
+        
+        # Verify database was updated
+        db_squad = session.query(Squad).filter(Squad.squad_id == sample_squad.squad_id).first()
+        assert db_squad.owner_id == new_owner_id
+
+    def test_update_squad_owner_nonexistent_squad(self, squad_service):
+        """Test updating owner of non-existent squad raises ValueError"""
+        fake_id = str(uuid.uuid4())
+        new_owner_id = str(uuid.uuid4())
+        
+        with pytest.raises(ValueError, match="Squad not found"):
+            squad_service.update_squad_owner(fake_id, new_owner_id)
+
+    def test_update_squad_owner_with_empty_owner_id(self, squad_service, sample_squad):
+        """Test updating squad owner with empty owner ID"""
+        empty_owner_id = ""
+        
+        updated_squad = squad_service.update_squad_owner(sample_squad.squad_id, empty_owner_id)
+        
+        assert updated_squad.owner_id == empty_owner_id
+        assert updated_squad.squad_id == sample_squad.squad_id

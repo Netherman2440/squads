@@ -34,8 +34,14 @@ class MatchService:
     def match_to_detail_data(self, match: Match) -> MatchDetailData:
         from app.services import TeamService
         team_service = TeamService(self.session)
-        team_a = team_service.get_team_details(match.teams[0].team_id)
-        team_b = team_service.get_team_details(match.teams[1].team_id)
+
+        if len(match.teams) >= 2:
+            team_a = team_service.get_team_details(match.teams[0].team_id)
+            team_b = team_service.get_team_details(match.teams[1].team_id)
+        else:
+            raise ValueError("Team not found")
+        if not team_a or not team_b:
+            raise ValueError("Team not found")
 
         return MatchDetailData(
             squad_id=match.squad_id,

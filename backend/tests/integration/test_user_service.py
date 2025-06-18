@@ -155,4 +155,10 @@ class TestUserService:
         retrieved_user2 = user_service.get_user_by_id(user2.user_id)
         
         assert retrieved_user1.user_id == user1.user_id
-        assert retrieved_user2.user_id == user2.user_id 
+        assert retrieved_user2.user_id == user2.user_id
+
+    def test_logout_method(self, user_service):
+        """Test logout method (currently empty implementation)"""
+        # The logout method is currently empty, so we just test it doesn't raise an exception
+        user_service.logout()
+        # If we reach here, the test passes (no exception raised) 

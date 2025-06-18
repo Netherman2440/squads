@@ -830,3 +830,93 @@ class TestPlayerService:
             ScoreHistory.player_id == player_id
         ).first()
         assert unchanged_history3.delta == -3.0  # Should be unchanged
+
+    def test_get_players_empty_squad(self, player_service, sample_squad):
+        """Test get_players with empty squad"""
+        players = player_service.get_players(sample_squad.squad_id)
+        
+        assert isinstance(players, list)
+        assert len(players) == 0
+
+    def test_get_players_with_multiple_players(self, player_service, sample_squad, sample_players):
+        """Test get_players with multiple players in squad"""
+        players = player_service.get_players(sample_squad.squad_id)
+        
+        assert isinstance(players, list)
+        assert len(players) == len(sample_players)
+        
+        # Verify all returned objects are PlayerData
+        for player in players:
+            assert isinstance(player, PlayerData)
+            assert player.squad_id == sample_squad.squad_id
+        
+        # Verify all original players are included
+        original_player_ids = {player.player_id for player in sample_players}
+        returned_player_ids = {player.player_id for player in players}
+        assert original_player_ids == returned_player_ids
+
+    def test_get_players_nonexistent_squad(self, player_service):
+        """Test get_players with non-existent squad ID"""
+        fake_squad_id = str(uuid.uuid4())
+        
+        players = player_service.get_players(fake_squad_id)
+        
+        assert isinstance(players, list)
+        assert len(players) == 0
+
+    def test_get_players_data_completeness(self, player_service, sample_squad, sample_players):
+        """Test that get_players returns complete PlayerData objects"""
+        players = player_service.get_players(sample_squad.squad_id)
+        
+        assert len(players) == len(sample_players)
+        
+        for i, player_data in enumerate(players):
+            original_player = sample_players[i]
+            
+            assert player_data.player_id == original_player.player_id
+            assert player_data.squad_id == original_player.squad_id
+            assert player_data.name == original_player.name
+            assert player_data.position == Position(original_player.position)
+            assert player_data.base_score == original_player.base_score
+            assert player_data.score == original_player.score
+            assert player_data.matches_played == len(original_player.matches)
+
+    def test_get_players_isolation_between_squads(self, player_service, sample_squad, sample_players, session):
+        """Test that get_players only returns players from the specified squad"""
+        # Create another squad with different players
+        other_squad = Squad(
+            squad_id=str(uuid.uuid4()),
+            name="Other Squad",
+            created_at=datetime.now(timezone.utc),
+            owner_id=str(uuid.uuid4())
+        )
+        session.add(other_squad)
+        session.commit()
+        
+        # Create a player in the other squad
+        other_player = Player(
+            player_id=str(uuid.uuid4()),
+            squad_id=other_squad.squad_id,
+            name="Other Player",
+            position="field",
+            base_score=20,
+            score=20.0
+        )
+        session.add(other_player)
+        session.commit()
+        
+        # Get players from original squad
+        original_squad_players = player_service.get_players(sample_squad.squad_id)
+        
+        # Get players from other squad
+        other_squad_players = player_service.get_players(other_squad.squad_id)
+        
+        # Verify isolation
+        assert len(original_squad_players) == len(sample_players)
+        assert len(other_squad_players) == 1
+        
+        original_player_ids = {player.player_id for player in original_squad_players}
+        other_player_ids = {player.player_id for player in other_squad_players}
+        
+        assert other_player.player_id in other_player_ids
+        assert other_player.player_id not in original_player_ids
