@@ -2,10 +2,10 @@
 
 A lightweight app for creating and browsing sports team squads, built as a monorepo:
 
-- **Frontend**: Flutter (Android, iOS, Web)
-- **Backend**: Python + FastAPI
-- **Database**: PostgreSQL
-- **CI/CD**: GitHub Actions
+- **Backend**: ✅ Python + FastAPI + PostgreSQL (completed)
+- **Frontend**: 🚧 Flutter (Android, iOS, Web) - not yet implemented
+- **Database**: PostgreSQL with Alembic migrations
+- **Testing**: pytest for backend
 - **Documentation**: .md files in `docs/`
 
 ---
@@ -13,24 +13,27 @@ A lightweight app for creating and browsing sports team squads, built as a monor
 ## 📂 Repository structure
 
 ```
-squads-monorepo/
+squads/
 ├── README.md             ← this file
 ├── .gitignore
 ├── docs/                 ← technical documentation (.md + config)
-├── frontend/             ← Flutter app
+├── frontend/             ← Flutter app (not yet implemented)
 │   ├── lib/              ← source code (screens/, widgets/, services/)
 │   ├── test/             ← unit & widget tests
 │   └── pubspec.yaml      ← Dart dependencies
-├── backend/              ← FastAPI service + PostgreSQL
+├── backend/              ← FastAPI service + PostgreSQL (completed)
 │   ├── app/
 │   │   ├── main.py       ← creates FastAPI app, JWT, DB connection
-│   │   ├── routes/       ← endpoints (teams, players, matches…)
-│   │   ├── services/     ← business logic (CRUD, rankings…)
+│   │   ├── routes/       ← endpoints (squads, players, matches…)
+│   │   ├── services/     ← business logic (CRUD, team drawing…)
+│   │   ├── models/       ← SQLAlchemy models
+│   │   ├── schemas/      ← Pydantic schemas
+│   │   ├── entities/     ← data entities
 │   │   └── utils/        ← auth, error handlers, CORS
 │   ├── tests/            ← pytest (unit & integration)
+│   ├── migrations/       ← Alembic database migrations
 │   ├── requirements.txt
-│   ├── Dockerfile
-│   └── alembic/          ← DB migrations (optional, if using Alembic)
+│   └── Dockerfile
 ├── docker-compose.yml    ← runs backend + PostgreSQL locally
 └── .github/              ← CI/CD (GitHub Actions)
 ```
@@ -48,14 +51,23 @@ cd squads
 
 ### 2. Common setup
 
-- Install [Flutter SDK](https://flutter.dev/docs/get-started/install)
 - Install [Python 3.11+](https://www.python.org/downloads/)
 - Install [Docker Desktop](https://www.docker.com/products/docker-desktop) (for local backend + database)
 - (Optional) [DBeaver](https://dbeaver.io/) or [pgAdmin](https://www.pgadmin.org/) for managing PostgreSQL
 
 ---
 
-## 🖥️ Backend (FastAPI + PostgreSQL)
+## 🖥️ Backend (FastAPI + PostgreSQL) - ✅ Completed
+
+### Features implemented:
+- ✅ FastAPI REST API with JWT authentication
+- ✅ PostgreSQL database with SQLAlchemy ORM
+- ✅ Alembic database migrations
+- ✅ Squad management (CRUD operations)
+- ✅ Player management within squads
+- ✅ Match management and team drawing
+- ✅ Comprehensive pytest test suite
+- ✅ Docker support
 
 ### 1. Local development (recommended: Docker Compose)
 
@@ -76,53 +88,50 @@ cd squads
      pip install --upgrade pip
      pip install -r requirements.txt
      ```
+   - Run database migrations:
+     ```bash
+     alembic upgrade head
+     ```
    - Run the app:
      ```bash
      uvicorn app.main:app --reload
      ```
 
-### 3. Authentication
+### 3. API Endpoints
+
+The backend provides the following endpoints:
+
+- **Squads**: `/squads/` - Create, read, update, delete squads
+- **Players**: `/squads/{squad_id}/players/` - Manage players within squads
+- **Matches**: `/squads/{squad_id}/matches/` - Create and manage matches
+- **Team Drawing**: `/squads/{squad_id}/matches/draw` - Draw balanced teams
+
+### 4. Authentication
 - JWT-based authentication is implemented in the backend.
 - On login, the backend returns a JWT token.
 - The frontend must store the token securely and send it in the `Authorization: Bearer <token>` header for protected endpoints.
 
 ---
 
-## 📱 Frontend (Flutter)
+## 📱 Frontend (Flutter) - 🚧 Not yet implemented
 
-1. **Go to the directory and get dependencies**
-   ```bash
-   cd frontend
-   flutter pub get
-   ```
+The frontend is planned but not yet implemented. When ready, it will include:
 
-2. **Run the app**
-   - **Android/iOS** (device or emulator):
-     ```bash
-     flutter run
-     ```
-   - **Web**:
-     ```bash
-     flutter run -d chrome
-     ```
-
-3. **Set API address**
-   By default, the frontend connects to `http://localhost:8000`.
-   You can override this:
-   ```bash
-   flutter run --dart-define=API_URL=https://your-backend-url.com
-   ```
+- Flutter app for Android, iOS, and Web
+- Integration with the FastAPI backend
+- Squad and player management UI
+- Match creation and team drawing interface
 
 ---
 
 ## 🧪 Tests
 
-- **Backend**:
+- **Backend** (completed):
   ```bash
   cd backend
   pytest
   ```
-- **Frontend**:
+- **Frontend** (not yet implemented):
   ```bash
   cd frontend
   flutter test
@@ -132,8 +141,8 @@ cd squads
 
 ## 📦 CI/CD
 
-- **Backend**: `.github/workflows/python.yml`
-- **Frontend**: `.github/workflows/flutter.yml`
+- **Backend**: `.github/workflows/python.yml` (ready for implementation)
+- **Frontend**: `.github/workflows/flutter.yml` (ready for implementation)
 - On every push to `main`:
   1. Lint & tests
   2. Build (Docker for backend, `flutter build web` for frontend)
@@ -145,10 +154,8 @@ cd squads
 
 All architectural decisions and specifications are in the `docs/` folder:
 
-- `docs/tech-stack.md`
-- `docs/scope-mvp.md`
-
-You can build and preview it locally using MkDocs or Docusaurus.
+- `docs/tech_stack.md`
+- `docs/mvp.md`
 
 ---
 
@@ -162,11 +169,13 @@ You can build and preview it locally using MkDocs or Docusaurus.
 
 ## 🔗 Useful links
 
-- [Flutter Docs](https://flutter.dev/docs)
 - [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [SQLAlchemy Documentation](https://docs.sqlalchemy.org/)
+- [Alembic Documentation](https://alembic.sqlalchemy.org/)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Docker Documentation](https://docs.docker.com/)
-- [GitHub Actions](https://docs.github.com/actions)
+- [pytest Documentation](https://docs.pytest.org/)
+- [Flutter Docs](https://flutter.dev/docs) (for future frontend development)
 
 ---
 
