@@ -15,7 +15,14 @@ class Match(Base):
 
 
     # List of teams in the match
-    teams = relationship("Team", back_populates="match", cascade="all, delete-orphan")
+    teams = relationship("Team",
+                         foreign_keys="Team.match_id",
+                         primaryjoin="Match.match_id==Team.match_id",
+                         back_populates="match",
+                         cascade="all, delete-orphan")
 
-    tournament = relationship("Tournament", back_populates="matches")
+    tournament = relationship("Tournament",
+                             foreign_keys="Tournament.tournament_id",
+                             primaryjoin="Match.tournament_id==Tournament.tournament_id",
+                             back_populates="matches")
 

@@ -3,7 +3,7 @@ from ..database import Base, engine, SessionLocal
 from .user import User
 from .squad import Squad
 from .player import Player
-from .user_player import UserPlayer
+from .user_squad import UserSquad
 from .team import Team
 from .team_player import TeamPlayer
 from .match import Match
@@ -18,7 +18,7 @@ __all__ = [
     "User",
     "Squad", 
     "Player",
-    "UserPlayer",
+    "UserSquad",
     "Team",
     "TeamPlayer", 
     "Match",

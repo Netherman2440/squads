@@ -12,5 +12,9 @@ class Tournament(Base):
     name = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     # List of tournament matches
-    matches = relationship("Match", back_populates="tournament", cascade="all, delete-orphan")
-     
+    matches = relationship("Match",
+                           foreign_keys="Match.tournament_id",
+                           primaryjoin="Tournament.tournament_id==Match.tournament_id",
+                           back_populates="tournament",
+                           cascade="all, delete-orphan")
+

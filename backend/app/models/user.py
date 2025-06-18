@@ -13,4 +13,12 @@ class User(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Squads owned by the user
-    owned_squads = relationship("Squad", back_populates="owner")
+    owned_squads = relationship("Squad",
+                                foreign_keys="Squad.owner_id",
+                                primaryjoin="User.user_id==Squad.owner_id",
+                                back_populates="owner")
+    
+    squads = relationship("UserSquad",
+                          foreign_keys="UserSquad.user_id",
+                          primaryjoin="User.user_id==UserSquad.user_id",
+                          back_populates=None)
