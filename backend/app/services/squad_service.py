@@ -1,40 +1,60 @@
 from re import Match
 from pytest import Session
-from app.models import Squad, Player, Match
+from app.models import Squad, UserSquad
 from app.entities import SquadData, SquadDetailData, MatchData, PlayerData
+from app.constants import UserRole
+
+
+from app.services import PlayerService, MatchService
 
 
 class SquadService:
     def __init__(self, session: Session):
         self.session = session
 
-    def list_squads(self) -> list[SquadData]:
-        squads = self.session.query(Squad).all()
-        return [SquadData(
-            squad_id=squad.squad_id,
-            name=squad.name,
-            created_at=squad.created_at,
-            players_count=len(squad.players),
-        ) for squad in squads]
-
-    def get_squad(self, squad_id: str) -> SquadData:
-        squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
-        if not squad:
-            raise ValueError("Squad not found")
+    def squad_to_data(self, squad: Squad) -> SquadData:
         return SquadData(
             squad_id=squad.squad_id,
             name=squad.name,
             created_at=squad.created_at,
             players_count=len(squad.players),
+            owner_id=squad.owner_id,
         )
+    
+    def squad_to_detail_data(self, squad: Squad) -> SquadDetailData:
+        player_service = PlayerService(self.session)
+        match_service = MatchService(self.session)
+
+        return SquadDetailData(
+            squad_id=squad.squad_id,
+            name=squad.name,
+            created_at=squad.created_at,
+            players_count=len(squad.players),
+            owner_id=squad.owner_id,
+            players=[player_service.player_to_data(player) for player in squad.players],
+            matches=[match_service.match_to_data(match) for match in squad.matches],
+        )
+
+    def list_squads(self) -> list[SquadData]:
+        squads = self.session.query(Squad).all()
+        return [self.squad_to_data(squad) for squad in squads]
+
+    def get_squad(self, squad_id: str) -> SquadData:
+        squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
+        if not squad:
+            raise ValueError("Squad not found")
+        return self.squad_to_data(squad)
 
     def create_squad(self, name: str, owner_id: str) -> SquadDetailData:
         squad = Squad(name=name, owner_id=owner_id)
         self.session.add(squad)
+        self.session.commit()  # Commit first to generate squad_id
+
+        user_squad = UserSquad(user_id=owner_id, squad_id=squad.squad_id, role=UserRole.OWNER.value)
+        self.session.add(user_squad)
         self.session.commit()
+        
         return self.get_squad_detail(squad.squad_id)
-
-
 
     def delete_squad(self, squad_id: str):
             
@@ -50,31 +70,8 @@ class SquadService:
         if not squad:
             raise ValueError("Squad not found")
         
-        players_data = [PlayerData(
-            squad_id=squad.squad_id,
-            player_id=player.player_id,
-            name=player.name,
-            position=player.position,
-            base_score=player.base_score,
-            _score=player.score,
-        ) for player in squad.players]
-
-        matches_data = [MatchData(
-            squad_id=squad.squad_id,
-            match_id=match.match_id,
-            created_at=match.created_at,
-            score=(0, 0),
-        ) for match in squad.matches]
-
-        return SquadDetailData(
-            squad_id=squad.squad_id,
-            name=squad.name,
-            created_at=squad.created_at,
-            players_count=len(squad.players),
-            players=players_data,
-            matches=matches_data,
-        )
-
+        return self.squad_to_detail_data(squad)
+    
     def update_squad_name(self, squad_id: str, name: str) -> SquadDetailData:
             
         squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
@@ -93,4 +90,4 @@ class SquadService:
         squad.owner_id = owner_id
         self.session.commit()
         return self.get_squad_detail(squad_id)
-    #todo: update squad admin or name, connect player with users
+    

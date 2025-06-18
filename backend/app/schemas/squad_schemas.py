@@ -13,6 +13,7 @@ class SquadResponse(SquadBase):
     squad_id: str
     created_at: datetime
     players_count: int
+    owner_id: str
 
 #/squads
 class SquadListResponse(BaseModel):

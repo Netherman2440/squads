@@ -8,3 +8,11 @@ class Position(Enum):
     DEFENDER = "defender"
     MIDFIELDER = "midfielder"
     FORWARD = "forward" 
+
+class UserRole(Enum):
+    """User role enumeration"""
+    NONE = "none"
+    OWNER = "owner"
+    ADMIN = "admin"
+    MODERATOR = "moderator"
+    MEMBER = "member"

@@ -7,6 +7,18 @@ class TeamService:
     def __init__(self, session):
         self.session = session
 
+    def team_to_data(self, team: Team) -> TeamData:
+        return TeamData(
+            squad_id=team.squad_id,
+            match_id=team.match_id,
+            team_id=str(team.team_id),
+            name=team.name,
+            color=team.color,
+            score=team.score,
+            players_count=len(team.players)
+        )
+
+
     def create_team(self,squad_id: str, match_id: str, players: list[PlayerData], color: str, name: Optional[str] = None) -> TeamData:
 
         team = Team(squad_id=squad_id, match_id=match_id, color=color, name=name)
@@ -22,23 +34,11 @@ class TeamService:
             self.session.add(team_player)
 
         self.session.commit()
-        return TeamData(
-            team_id=str(team.team_id),
-            name=team.name,
-            color=team.color,
-            score=team.score,
-            players_count=len(players)
-        )
+        return self.team_to_data(team)
 
     def get_team(self, team_id: str) -> TeamData:
         team = self.session.query(Team).filter(Team.team_id == team_id).first()
-        return TeamData(
-            team_id=str(team.team_id),
-            name=team.name,
-            color=team.color,
-            score=team.score,
-            players_count=len(team.players)
-        )
+        return self.team_to_data(team)
 
     def get_team_details(self, team_id: str, match_id: str = None) -> TeamDetailData:
         from app.services.player_service import PlayerService
@@ -56,6 +56,8 @@ class TeamService:
 
         players.sort(key=lambda x: x.score, reverse=True)
         return TeamDetailData(
+            squad_id=team.squad_id,
+            match_id=team.match_id,
             team_id=str(team.team_id),
             name=team.name,
             color=team.color,

@@ -19,3 +19,4 @@ class UserResponse(BaseModel):
     password_hash: str
     created_at: datetime
     owned_squads: list[SquadResponse]
+    squads: list[SquadResponse]

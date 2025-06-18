@@ -3,6 +3,8 @@ from typing import Optional
 
 @dataclass
 class TeamData:
+    squad_id: str
+    match_id: str
     team_id: str
     name: Optional[str]
     color: Optional[str]

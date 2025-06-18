@@ -15,6 +15,7 @@ class SquadData:
     name: str
     created_at: datetime    
     players_count: int
+    owner_id: str
 
     def to_response(self) -> SquadResponse:
         return SquadResponse(
@@ -22,6 +23,7 @@ class SquadData:
             name=self.name,
             created_at=self.created_at,
             players_count=self.players_count,
+            owner_id=self.owner_id,
         )
     
 
