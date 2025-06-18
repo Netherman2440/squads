@@ -10,6 +10,7 @@ class UserSquad(Base):
     player_id = Column(String(36), ForeignKey("players.player_id", ondelete="CASCADE"), nullable = True)
     role = Column(String(255), nullable=True) # none, admin
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    
     __table_args__ = (
         PrimaryKeyConstraint('user_id', 'squad_id'),
     )

@@ -30,5 +30,5 @@ class Player(Base):
     score_history = relationship(
         "ScoreHistory",
         foreign_keys="ScoreHistory.player_id",
-        cascade="all, delete-orphan"
+        primaryjoin="Player.player_id==ScoreHistory.player_id"
     )

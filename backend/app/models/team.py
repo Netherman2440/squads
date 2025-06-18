@@ -22,6 +22,5 @@ class Team(Base):
         secondary="team_players",
         primaryjoin="Team.team_id==TeamPlayer.team_id",
         secondaryjoin="TeamPlayer.player_id==Player.player_id",
-        back_populates=None,
         viewonly=True
     )

@@ -11,6 +11,7 @@ from app.routes import squads
 #uvicorn app.main:app --reload  
 #alembic init migrations
 #alembic upgrade head
+#alembic revision --autogenerate -m "Add ScoreHistory table"
 app = FastAPI(
     title="Squads API",
     description="API for managing football squads, players, and matches",

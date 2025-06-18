@@ -14,10 +14,10 @@ from app.models.player import Player
 from app.models.team import Team
 from app.models.squad import Squad
 from app.models.team_player import TeamPlayer
-from app.models.user_player import UserPlayer
 from app.models.match import Match
 from app.models.tournament import Tournament
 from app.models.score_history import ScoreHistory
+from app.models.user_squad import UserSquad
 
 # Load environment variables from .env file
 dotenv.load_dotenv()

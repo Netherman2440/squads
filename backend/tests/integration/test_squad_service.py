@@ -215,7 +215,9 @@ class TestSquadService:
         deleted_squad = session.query(Squad).filter(Squad.squad_id == squad_id).first()
         assert deleted_squad is None
         
+        
         remaining_players = session.query(Player).filter(Player.squad_id == squad_id).count()
+        
         assert remaining_players == 0
 
     def test_get_squad_detail_empty_squad(self, squad_service, sample_squad):
