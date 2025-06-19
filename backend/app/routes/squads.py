@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Security
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 from app.models import SessionLocal
@@ -7,8 +7,9 @@ from app.schemas import *
 from app.entities import PlayerData
 
 router = APIRouter(
-    prefix ="/squads",
-    tags=["squads"]
+    prefix="/squads",
+    tags=["squads"],
+    dependencies=[Depends(HTTPBearer())]
 )
 
 def get_db() -> Session:
@@ -32,7 +33,7 @@ def get_team_service(db = Depends(get_db)):
 
 security = HTTPBearer()
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)):
     """Extract user_id from JWT token"""
     from app.utils.jwt import verify_token
     from fastapi import HTTPException, status
@@ -111,10 +112,13 @@ async def get_squad(
     squad_service: SquadService = Depends(get_squad_service)
 ):
     """Get a specific squad by ID - accessible to all authenticated users"""
-    detail_squad = squad_service.get_squad(squad_id)
-    if detail_squad is None:
+    try:
+        detail_squad = squad_service.get_squad(squad_id)
+        if detail_squad is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Squad not found")
+        return detail_squad.to_response()
+    except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Squad not found")
-    return detail_squad.to_response()
 
 @router.delete("/{squad_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_squad(

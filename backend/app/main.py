@@ -2,6 +2,7 @@ import os
 
 import dotenv
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.routes import auth
 from app.routes import squads
 
@@ -12,18 +13,30 @@ from app.routes import squads
 #alembic init migrations
 #alembic upgrade head
 #alembic revision --autogenerate -m "Add ScoreHistory table"
+
 app = FastAPI(
     title="Squads API",
     description="API for managing football squads, players, and matches",
-    version="1.0.0"
+    version="1.0.0",
+    openapi_tags=[
+        {"name": "auth", "description": "Authentication operations"},
+        {"name": "squads", "description": "Operations with squads"}
+    ]
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth.router, prefix="/api/v1")
 #app.include_router(players.router, prefix="/api/v1/")
 app.include_router(squads.router, prefix="/api/v1")
 dotenv.load_dotenv()
-
-
 
 @app.get("/")
 def read_root():
