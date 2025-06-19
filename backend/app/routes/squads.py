@@ -113,11 +113,12 @@ async def get_squad(
 ):
     """Get a specific squad by ID - accessible to all authenticated users"""
     try:
-        detail_squad = squad_service.get_squad(squad_id)
+        detail_squad = squad_service.get_squad_detail(squad_id)
         if detail_squad is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Squad not found")
         return detail_squad.to_response()
-    except ValueError:
+    except ValueError as e:
+        print(e)
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Squad not found")
 
 @router.delete("/{squad_id}", status_code=status.HTTP_204_NO_CONTENT)

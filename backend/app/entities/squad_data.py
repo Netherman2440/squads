@@ -46,6 +46,7 @@ class SquadDetailData(SquadData):
             players_count=self.players_count,
             players=players_response,
             matches=matches_response,
+            owner_id=self.owner_id,
         )
 
     
