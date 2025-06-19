@@ -4,6 +4,7 @@ from app.schemas import PlayerResponse
 
 
 class DraftBase(BaseModel):
+    squad_id: str
     players: list[PlayerResponse]
 
 class DraftCreate(DraftBase):

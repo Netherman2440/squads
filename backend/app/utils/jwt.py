@@ -38,4 +38,15 @@ def verify_token(token: str) -> dict:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
-        ) 
+        )
+
+def get_guest_token() -> str:
+    """
+    Create a JWT token for guest users
+    """
+    guest_data = {
+        "sub": "guest",
+        
+    }
+
+    return create_access_token(guest_data) 

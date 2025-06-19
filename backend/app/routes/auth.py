@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.services import UserService
 from app.schemas import UserRegister, UserLogin, UserResponse
-from app.utils.jwt import create_access_token
+from app.utils.jwt import create_access_token, get_guest_token
 from datetime import timedelta
 
 router = APIRouter(
@@ -45,4 +45,13 @@ async def register(
 ):
     user = user_service.register(user_data.email, user_data.password)
     return user.to_response()
+
+@router.post("/guest")
+async def guest_login():
+    """Get a guest token for anonymous access"""
+    guest_token = get_guest_token()
+    return {
+        "access_token": guest_token,
+        "token_type": "bearer",
+    }
 
