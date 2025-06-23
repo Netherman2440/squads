@@ -1,17 +1,16 @@
-
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 from app.schemas import SquadResponse
 
 
 class UserRegister(BaseModel):
-    email: str
-    password: str
+    email: EmailStr = Field(..., description="User email address")
+    password: str = Field(..., min_length=6, description="User password (minimum 6 characters)")
 
 class UserLogin(BaseModel):
-    email: str
-    password: str
+    email: EmailStr = Field(..., description="User email address")
+    password: str = Field(..., description="User password")
 
 class UserResponse(BaseModel):
     user_id: str

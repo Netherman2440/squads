@@ -36,7 +36,8 @@ class MatchDetailData:
             squad_id=self.squad_id,
             match_id=self.match_id,
             created_at=self.created_at,
-            team_a=self.team_a.to_response(),
-            team_b=self.team_b.to_response(),
+            score=self.score,
+            team_a=self.team_a,
+            team_b=self.team_b,
         )   
 

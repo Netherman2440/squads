@@ -53,10 +53,13 @@ class MatchService:
 
     def get_matches(self, squad_id: str) -> list[MatchData]:
         matches = self.session.query(Match).filter(Match.squad_id == squad_id).all()
+
+        
         return [MatchData(
             squad_id=match.squad_id,
             match_id=str(match.match_id),
             created_at=match.created_at,
+            score=(match.teams[0].score, match.teams[1].score) if len(match.teams) >= 2 else (0, 0),
         ) for match in matches]
 
     def create_match(self, squad_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData]) -> MatchDetailData:

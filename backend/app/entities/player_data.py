@@ -35,6 +35,8 @@ class PlayerData:
             squad_id=self.squad_id,
             player_id=self.player_id,
             score=self.score,
+            position=self.position,
+            matches_played=self.matches_played,
         )
     
     @classmethod

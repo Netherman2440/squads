@@ -197,11 +197,11 @@ class TestSquadService:
         assert deleted_squad is None
 
     def test_delete_squad_nonexistent(self, squad_service):
-        """Test deleting a non-existent squad raises ValueError"""
+        """Test deleting a non-existent squad returns False"""
         fake_id = str(uuid.uuid4())
         
-        with pytest.raises(ValueError, match="Squad not found"):
-            squad_service.delete_squad(fake_id)
+        result = squad_service.delete_squad(fake_id)
+        assert result is False
 
     def test_delete_squad_with_players_cascade(self, squad_service, sample_squad_with_players, session):
         """Test that deleting a squad also deletes associated players (cascade)"""

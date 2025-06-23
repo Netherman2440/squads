@@ -56,14 +56,14 @@ class SquadService:
         
         return self.get_squad_detail(squad.squad_id)
 
-    def delete_squad(self, squad_id: str):
-            
+    def delete_squad(self, squad_id: str) -> bool:
         squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
         if not squad:
-            raise ValueError("Squad not found")
+            return False
         
         self.session.delete(squad)
         self.session.commit()
+        return True
 
     def get_squad_detail(self, squad_id: str) -> SquadDetailData:
         squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
