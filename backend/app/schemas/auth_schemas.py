@@ -1,5 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 
 from app.schemas import SquadResponse
 
@@ -15,7 +16,11 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     user_id: str
     email: str
-    password_hash: str
     created_at: datetime
     owned_squads: list[SquadResponse]
     squads: list[SquadResponse]
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: Optional[UserResponse] = None

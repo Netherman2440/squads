@@ -2,7 +2,7 @@ from .player_schemas import PlayerCreate, PlayerResponse, PlayerUpdate, PlayerLi
 from .match_schemas import MatchCreate, MatchResponse, MatchUpdate, MatchListResponse, MatchDetailResponse
 from .squad_schemas import SquadCreate, SquadResponse, SquadUpdate, SquadListResponse, SquadDetailResponse
 from .draft_schemas import DraftCreate, DraftResponse, DraftListResponse
-from .auth_schemas import UserRegister, UserLogin, UserResponse
+from .auth_schemas import UserRegister, UserLogin, UserResponse, AuthResponse
 
 __all__ = [
     "PlayerCreate",
@@ -30,4 +30,5 @@ __all__ = [
     "UserRegister",
     "UserLogin",
     "UserResponse",
+    "AuthResponse",
 ]

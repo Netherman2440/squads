@@ -176,6 +176,24 @@ async def get_player(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
     return detail_player.to_response()
 
+@router.put("/{squad_id}/players/{player_id}", response_model=PlayerDetailResponse)
+async def update_player(
+    squad_id: str, 
+    player_id: str, 
+    player_data: PlayerUpdate, 
+    user_id: str = Depends(get_current_user),
+    player_service: PlayerService = Depends(get_player_service),
+    squad_service: SquadService = Depends(get_squad_service)
+):
+    """Update a player - only squad owner can update players"""
+    if not check_user_can_access_squad(user_id, squad_id, squad_service):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only squad owner can update players")
+    
+    detail_player = player_service.update_player(player_id, player_data.name, player_data.base_score, player_data.position)
+    if detail_player is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+    return detail_player.to_response()
+
 @router.get("/{squad_id}/matches", response_model=MatchListResponse)
 async def get_matches(
     squad_id: str, 
@@ -204,7 +222,7 @@ async def create_match(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create match")
     return detail_match.to_response()
 
-@router.get("/{squad_id}/matches/{match_id}")
+@router.get("/{squad_id}/matches/{match_id}", response_model=MatchDetailResponse)
 async def get_match(
     squad_id: str, 
     match_id: str, 

@@ -77,10 +77,13 @@ class TestAuthRoutes:
         
         assert response.status_code == 200
         data = response.json()
-        assert data["email"] == "newuser@example.com"
-        assert "user_id" in data
-        assert "created_at" in data
-        assert "password" not in data  # Password should not be returned
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+        assert "user" in data
+        assert data["user"]["email"] == "newuser@example.com"
+        assert "user_id" in data["user"]
+        assert "created_at" in data["user"]
+        assert "password" not in data["user"]  # Password should not be returned
 
     def test_register_existing_user(self, client, session, sample_user):
         """Test registering with existing email"""
@@ -127,7 +130,9 @@ class TestAuthRoutes:
             mock_user.to_response.return_value = {
                 "user_id": sample_user.user_id,
                 "email": sample_user.email,
-                "created_at": sample_user.created_at.isoformat()
+                "created_at": sample_user.created_at.isoformat(),
+                "owned_squads": [],
+                "squads": []
             }
             mock_login.return_value = mock_user
             
@@ -185,8 +190,9 @@ class TestAuthRoutes:
         data = response.json()
         assert "access_token" in data
         assert data["token_type"] == "bearer"
-        # Guest login should not return user data
-        assert "user" not in data
+        # Guest login should return user as null
+        assert "user" in data
+        assert data["user"] is None
 
     def test_register_missing_fields(self, client):
         """Test register with missing required fields"""
