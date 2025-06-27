@@ -15,7 +15,7 @@ class SquadService {
   SquadService(this._client, this._ref);
 
   String? get _token => _ref.read(userSessionProvider).token;
-  String get _baseUrl => AppConfig.apiBaseUrl;
+  String get _apiUrl => AppConfig.apiUrl;
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
@@ -26,7 +26,7 @@ class SquadService {
   Future<List<Squad>> getAllSquads() async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads'),
+        Uri.parse('$_apiUrl/squads'),
         headers: _headers,
       );
 
@@ -46,7 +46,7 @@ class SquadService {
   Future<SquadDetailResponse> createSquad(String name) async {
     try {
       final response = await _client.post(
-        Uri.parse('$_baseUrl/squads'),
+        Uri.parse('$_apiUrl/squads'),
         headers: _headers,
         body: json.encode({'name': name}),
       );
@@ -66,7 +66,7 @@ class SquadService {
   Future<SquadDetailResponse> getSquad(String squadId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId'),
+        Uri.parse('$_apiUrl/squads/$squadId'),
         headers: _headers,
       );
 
@@ -85,7 +85,7 @@ class SquadService {
   Future<void> deleteSquad(String squadId) async {
     try {
       final response = await _client.delete(
-        Uri.parse('$_baseUrl/squads/$squadId'),
+        Uri.parse('$_apiUrl/squads/$squadId'),
         headers: _headers,
       );
 
@@ -101,7 +101,7 @@ class SquadService {
   Future<List<Player>> getPlayers(String squadId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/players'),
+        Uri.parse('$_apiUrl/squads/$squadId/players'),
         headers: _headers,
       );
 
@@ -121,7 +121,7 @@ class SquadService {
   Future<PlayerDetailResponse> addPlayer(String squadId, String name, int baseScore, Position position) async {
     try {
       final response = await _client.post(
-        Uri.parse('$_baseUrl/squads/$squadId/players'),
+        Uri.parse('$_apiUrl/squads/$squadId/players'),
         headers: _headers,
         body: json.encode({
           'name': name,
@@ -145,7 +145,7 @@ class SquadService {
   Future<List<Match>> getMatches(String squadId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/matches'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches'),
         headers: _headers,
       );
 
@@ -165,7 +165,7 @@ class SquadService {
   Future<MatchDetailResponse> createMatch(String squadId, List<Player> teamAPlayers, List<Player> teamBPlayers) async {
     try {
       final response = await _client.post(
-        Uri.parse('$_baseUrl/squads/$squadId/matches'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches'),
         headers: _headers,
         body: json.encode({
           'team_a': teamAPlayers.map((p) => p.toJson()).toList(),

@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/error_service.dart';
 import '../state/user_state.dart';
 import '../models/models.dart';
+import 'squad_list_page.dart';
 
 class AuthPage extends ConsumerStatefulWidget {
   @override
@@ -46,8 +47,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         // Show success message
         ErrorService.showSuccess(context, 'Login successful!');
         
-        // TODO: Navigate to main app
-        print('Login successful for user: ${authResponse.user?.email}');
+        // Navigate to squad list page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => SquadListPage()),
+        );
         
       } catch (e) {
         ErrorService.showError(context, e.toString().replaceAll('Exception: ', ''));
@@ -76,8 +80,11 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       // Show success message
       ErrorService.showSuccess(context, 'Welcome as guest!');
       
-      // TODO: Navigate to main app
-      print('Guest login successful');
+      // Navigate to squad list page
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SquadListPage()),
+      );
       
     } catch (e) {
       ErrorService.showError(context, e.toString().replaceAll('Exception: ', ''));

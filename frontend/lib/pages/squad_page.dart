@@ -5,6 +5,7 @@ import '../state/user_state.dart';
 import '../services/error_service.dart';
 import '../utils/permission_utils.dart';
 import '../models/models.dart';
+import '../services/squad_service.dart';
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -16,7 +17,7 @@ class SquadPage extends ConsumerStatefulWidget {
 }
 
 class _SquadPageState extends ConsumerState<SquadPage> {
-  Squad? _squad;
+  SquadDetailResponse? _squad;
   bool _isLoading = true;
 
   @override
@@ -231,21 +232,11 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     });
 
     try {
-      // TODO: Replace with actual API call
-      // For now, simulate loading
-      await Future.delayed(Duration(seconds: 1));
-      
-      // Mock squad data
-      final mockSquad = Squad(
-        squadId: widget.squadId,
-        name: 'Test Squad',
-        createdAt: DateTime.now(),
-        playersCount: 5,
-        ownerId: ref.read(userSessionProvider).user?.userId ?? 'unknown',
-      );
+      final squadService = ref.read(squadServiceProvider);
+      final squadDetail = await squadService.getSquad(widget.squadId);
       
       setState(() {
-        _squad = mockSquad;
+        _squad = squadDetail;
         _isLoading = false;
       });
       
