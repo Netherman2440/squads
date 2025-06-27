@@ -27,6 +27,7 @@ class UserSessionNotifier extends Notifier<UserSessionState> {
   
   void setToken(String token) {
     state = state.copyWith(token: token);
+    print('Token set: $token');
   }
   
   void clearUser() {

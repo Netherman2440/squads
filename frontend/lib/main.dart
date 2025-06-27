@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'theme/app_theme.dart';
 import 'config/app_config.dart';
 import 'pages/auth_page.dart';
@@ -9,7 +10,7 @@ void main() async {
   // Initialize app configuration
   await AppConfig.initialize();
   
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
