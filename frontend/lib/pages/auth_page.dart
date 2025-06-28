@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
-import '../services/error_service.dart';
+import '../services/message_service.dart';
 import '../state/user_state.dart';
 import '../models/models.dart';
 import 'squad_list_page.dart';
@@ -45,7 +45,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         }
         
         // Show success message
-        ErrorService.showSuccess(context, 'Login successful!');
+        MessageService.showSuccess(context, 'Login successful!');
         
         // Navigate to squad list page
         Navigator.pushReplacement(
@@ -54,7 +54,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
         );
         
       } catch (e) {
-        ErrorService.showError(context, e.toString().replaceAll('Exception: ', ''));
+        MessageService.showError(context, e.toString().replaceAll('Exception: ', ''));
       } finally {
         setState(() {
           _isLoading = false;
@@ -78,7 +78,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       }
       
       // Show success message
-      ErrorService.showSuccess(context, 'Welcome as guest!');
+      MessageService.showSuccess(context, 'Welcome as guest!');
       
       // Navigate to squad list page
       Navigator.pushReplacement(
@@ -87,7 +87,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
       );
       
     } catch (e) {
-      ErrorService.showError(context, e.toString().replaceAll('Exception: ', ''));
+      MessageService.showError(context, e.toString().replaceAll('Exception: ', ''));
     } finally {
       setState(() {
         _isLoading = false;

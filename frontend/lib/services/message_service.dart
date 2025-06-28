@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class ErrorService {
+class MessageService {
   static void showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

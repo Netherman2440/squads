@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/squad_service.dart';
-import '../services/error_service.dart';
+import '../services/message_service.dart';
 import '../models/squad.dart';
 import '../state/user_state.dart';
 import 'squad_page.dart';
@@ -209,6 +209,7 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
   }
 
   void _navigateToSquad(Squad squad) {
+    
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -218,6 +219,6 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
   }
 
   void _createNewSquad(BuildContext context) {
-    ErrorService.showInfo(context, 'Create squad functionality coming soon');
+    MessageService.showInfo(context, 'Create squad functionality coming soon');
   }
 } 
