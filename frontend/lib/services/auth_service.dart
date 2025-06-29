@@ -1,92 +1,135 @@
 import 'dart:convert';
+import 'package:frontend/models/user.dart';
 import 'package:http/http.dart' as http;
-import '../models/models.dart';
+import '../config/app_config.dart';
+import 'squad_service.dart';
+import 'match_service.dart';
+import 'player_service.dart';
 
 class AuthService {
-  static const String _baseUrl = 'http://localhost:8000'; // FastAPI default port
-  static const String _apiPath = '/api/v1/auth';
+  static AuthService? _instance;
+  static String? _token;
+  
+  final http.Client _client = http.Client();
 
-  // Login with email and password
+  AuthService._();
+
+  static AuthService get instance {
+    _instance ??= AuthService._();
+    return _instance!;
+  }
+
+  String get _apiUrl => AppConfig.apiUrl;
+
+  Map<String, String> get _headers => {
+    'Content-Type': 'application/json',
+    if (_token != null) 'Authorization': 'Bearer $_token',
+  };
+
+  // Login user
   Future<AuthResponse> login(String email, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_apiPath/login'),
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: {
-          'username': email, // FastAPI OAuth2 uses 'username' field
+      final response = await _client.post(
+        Uri.parse('$_apiUrl/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
           'password': password,
-        },
+        }),
       );
 
       if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        return AuthResponse.fromJson(jsonData);
+        final data = json.decode(response.body);
+        _token = data['access_token'];
+        
+        // Update tokens in all services
+        _updateAllServiceTokens(_token);
+        
+        return AuthResponse.fromJson(data);
       } else {
-        throw Exception('Login failed: ${response.statusCode} - ${response.body}');
+        throw Exception('Login failed: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Network error during login: $e');
+      throw Exception('Login failed: $e');
     }
   }
 
-  // Register new user
-  Future<AuthResponse> register(String email, String password) async {
+  // Register user
+  Future<Map<String, dynamic>> register(String email, String password, String name) async {
     try {
-      final userData = UserRegister(email: email, password: password);
-      
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_apiPath/register'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(userData.toJson()),
+      final response = await _client.post(
+        Uri.parse('$_apiUrl/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'password': password,
+          'name': name,
+        }),
       );
 
       if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        return AuthResponse.fromJson(jsonData);
+        final data = json.decode(response.body);
+        _token = data['access_token'];
+        
+        // Update tokens in all services
+        _updateAllServiceTokens(_token);
+        
+        return data;
       } else {
-        throw Exception('Registration failed: ${response.statusCode} - ${response.body}');
+        throw Exception('Registration failed: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Network error during registration: $e');
+      throw Exception('Registration failed: $e');
     }
   }
 
-  // Get guest token for anonymous access
-  Future<AuthResponse> getGuestToken() async {
+  Future<AuthResponse> guest() async {
     try {
-      final response = await http.post(
-        Uri.parse('$_baseUrl$_apiPath/guest'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      final response = await _client.post(
+        Uri.parse('$_apiUrl/auth/guest'),
+        headers: {'Content-Type': 'application/json'},
       );
 
       if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        return AuthResponse.fromJson(jsonData);
+        final data = json.decode(response.body);
+        _token = data['access_token'];
+        
+        // Update tokens in all services
+        _updateAllServiceTokens(_token);
+
+        return AuthResponse.fromJson(data);
       } else {
-        throw Exception('Guest token request failed: ${response.statusCode} - ${response.body}');
+        throw Exception('Guest login failed: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Network error during guest token request: $e');
+      throw Exception('Guest login failed: $e');
     }
   }
 
-  // Validate token (optional helper method)
-  bool isTokenValid(String token) {
-    if (token.isEmpty) return false;
-    
-    // Basic validation - you might want to add JWT expiration check
-    return token.startsWith('eyJ') && token.length > 50;
-  }
-
-  // Logout (client-side only since backend doesn't have logout endpoint)
+  // Logout user
   void logout() {
-    // Clear stored token and user data
-    // This would typically involve clearing SharedPreferences or similar
+    _token = null;
+    
+    // Clear tokens in all services
+    _updateAllServiceTokens(null);
+  }
+
+  // Get current token
+  String? get token => _token;
+
+  // Check if user is logged in
+  bool get isLoggedIn => _token != null;
+
+  // Update token (useful for token refresh)
+  void updateToken(String? newToken) {
+    _token = newToken;
+    _updateAllServiceTokens(_token);
+  }
+
+  // Private method to update tokens in all services
+  void _updateAllServiceTokens(String? token) {
+    SquadService.setToken(token);
+    MatchService.setToken(token);
+    PlayerService.setToken(token);
   }
 }

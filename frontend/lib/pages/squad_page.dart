@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/squad_state.dart';
 import '../state/user_state.dart';
-import '../services/error_service.dart';
+import '../services/message_service.dart';
 import '../utils/permission_utils.dart';
 import '../models/models.dart';
 import '../services/squad_service.dart';
@@ -30,13 +30,6 @@ class _SquadPageState extends ConsumerState<SquadPage> {
   Widget build(BuildContext context) {
     final squadState = ref.watch(squadProvider);
     final userState = ref.watch(userSessionProvider);
-
-    // Set current squad in state for navigation
-    if (squadState.squad?.squadId != widget.squadId) {
-      if (_squad != null) {
-        ref.read(squadProvider.notifier).setSquad(_squad!);
-      }
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -232,35 +225,37 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     });
 
     try {
-      final squadService = ref.read(squadServiceProvider);
-      final squadDetail = await squadService.getSquad(widget.squadId);
+      final squadDetail = await SquadService.instance.getSquad(widget.squadId);
       
       setState(() {
         _squad = squadDetail;
         _isLoading = false;
       });
       
+      // Set squad in state after loading
+      ref.read(squadProvider.notifier).setSquad(squadDetail);
+      
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ErrorService.showError(context, e.toString());
+      MessageService.showError(context, e.toString());
     }
   }
 
   void _editSquad(BuildContext context) {
-    ErrorService.showInfo(context, 'Edit squad functionality coming soon');
+    MessageService.showInfo(context, 'Edit squad functionality coming soon');
   }
 
   void _navigateToPlayers(BuildContext context) {
-    ErrorService.showInfo(context, 'Players page coming soon');
+    MessageService.showInfo(context, 'Players page coming soon');
   }
 
   void _navigateToMatches(BuildContext context) {
-    ErrorService.showInfo(context, 'Matches page coming soon');
+    MessageService.showInfo(context, 'Matches page coming soon');
   }
 
   void _navigateToSquadDetails(BuildContext context) {
-    ErrorService.showInfo(context, 'Squad details page coming soon');
+    MessageService.showInfo(context, 'Squad details page coming soon');
   }
 } 

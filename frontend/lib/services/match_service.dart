@@ -8,13 +8,22 @@ import '../state/user_state.dart';
 import '../config/app_config.dart';
 
 class MatchService {
-  final http.Client _client;
-  final Ref _ref;
+  static MatchService? _instance;
+  static String? _token;
+  
+  final http.Client _client = http.Client();
+  static final String _baseUrl = AppConfig.apiBaseUrl;
 
-  MatchService(this._client, this._ref);
+  MatchService._();
 
-  String? get _token => _ref.read(userSessionProvider).token;
-  String get _baseUrl => AppConfig.apiBaseUrl;
+  static MatchService get instance {
+    _instance ??= MatchService._();
+    return _instance!;
+  }
+
+  static void setToken(String? token) {
+    _token = token;
+  }
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
@@ -162,7 +171,3 @@ class MatchService {
   }
 }
 
-// Provider for MatchService
-final matchServiceProvider = Provider<MatchService>((ref) {
-  return MatchService(http.Client(), ref);
-}); 

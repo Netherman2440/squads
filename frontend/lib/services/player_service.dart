@@ -1,18 +1,26 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/player.dart';
 import '../models/position.dart';
-import '../state/user_state.dart';
 import '../config/app_config.dart';
 
 class PlayerService {
-  final http.Client _client;
-  final Ref _ref;
+  static PlayerService? _instance;
+  static String? _token;
+  
+  final http.Client _client = http.Client();
 
-  PlayerService(this._client, this._ref);
+  PlayerService._();
 
-  String? get _token => _ref.read(userSessionProvider).token;
+  static PlayerService get instance {
+    _instance ??= PlayerService._();
+    return _instance!;
+  }
+
+  static void setToken(String? token) {
+    _token = token;
+  }
+
   String get _baseUrl => AppConfig.apiBaseUrl;
 
   Map<String, String> get _headers => {
@@ -133,9 +141,4 @@ class PlayerService {
       throw Exception('Failed to load player score history: $e');
     }
   }
-}
-
-// Provider for PlayerService
-final playerServiceProvider = Provider<PlayerService>((ref) {
-  return PlayerService(http.Client(), ref);
-}); 
+} 

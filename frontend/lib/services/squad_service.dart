@@ -9,12 +9,22 @@ import '../state/user_state.dart';
 import '../config/app_config.dart';
 
 class SquadService {
-  final http.Client _client;
-  final Ref _ref;
+  static SquadService? _instance;
+  static String? _token;
+  
+  final http.Client _client = http.Client();
+  
+  SquadService._();
 
-  SquadService(this._client, this._ref);
+  static SquadService get instance {
+    _instance ??= SquadService._();
+    return _instance!;
+  }
 
-  String? get _token => _ref.read(userSessionProvider).token;
+  static void setToken(String? token) {
+    _token = token;
+  }
+
   String get _apiUrl => AppConfig.apiUrl;
 
   Map<String, String> get _headers => {
@@ -184,8 +194,3 @@ class SquadService {
     }
   }
 }
-
-// Provider for SquadService
-final squadServiceProvider = Provider<SquadService>((ref) {
-  return SquadService(http.Client(), ref);
-}); 

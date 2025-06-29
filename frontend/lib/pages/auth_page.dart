@@ -17,7 +17,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  final AuthService _authService = AuthService();
+  final AuthService _authService = AuthService.instance;
 
   @override
   void dispose() {
@@ -69,7 +69,7 @@ class _AuthPageState extends ConsumerState<AuthPage> {
     });
     
     try {
-      final authResponse = await _authService.getGuestToken();
+      final authResponse = await _authService.guest();
       
       // Update user state
       ref.read(userSessionProvider.notifier).setToken(authResponse.accessToken);

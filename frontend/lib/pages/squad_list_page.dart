@@ -193,8 +193,7 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
     });
 
     try {
-      final squadService = ref.read(squadServiceProvider);
-      final squads = await squadService.getAllSquads();
+      final squads = await SquadService.instance.getAllSquads();
       
       setState(() {
         _squads = squads;

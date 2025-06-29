@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/models/squad.dart';
 
 class SquadState {
-  final Squad? squad;
+  final SquadDetailResponse? squad;
   
   const SquadState({this.squad});
 
@@ -14,7 +14,7 @@ class SquadNotifier extends Notifier<SquadState> {
     return const SquadState();
   }
 
-  void setSquad(Squad squad) {
+  void setSquad(SquadDetailResponse squad) {
     state = SquadState(squad: squad);
   }
 
