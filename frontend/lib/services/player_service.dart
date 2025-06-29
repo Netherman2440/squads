@@ -141,4 +141,24 @@ class PlayerService {
       throw Exception('Failed to load player score history: $e');
     }
   }
+
+  // Get players from squad
+  Future<List<Player>> getPlayers(String squadId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$_baseUrl/squads/$squadId/players'),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final playersList = data['players'] as List;
+        return playersList.map((json) => Player.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load players: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load players: $e');
+    }
+  }
 } 

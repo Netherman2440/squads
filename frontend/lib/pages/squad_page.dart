@@ -6,6 +6,7 @@ import '../utils/permission_utils.dart';
 import '../models/models.dart';
 import '../services/squad_service.dart';
 import '../theme/app_theme.dart';
+import 'players_page.dart';
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -38,7 +39,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         foregroundColor: isDark ? AppColors.text : AppColors.lightText,
         elevation: 0,
         actions: [
-          if (PermissionUtils.isOwner(userState, widget.squadId))
+          if (PermissionUtils.isOwner(userState, _squad?.ownerId ?? ''))
             IconButton(
               icon: Icon(Icons.edit),
               onPressed: () => _editSquad(context),
@@ -86,7 +87,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         children: [
           _buildSquadInfo(),
           SizedBox(height: 24),
-          _buildMainSections(context, userState, squadId),
+          _buildMainSections(context, userState),
           SizedBox(height: 24),
           _buildStatisticsSection(),
         ],
@@ -126,7 +127,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     );
   }
 
-  Widget _buildMainSections(BuildContext context, UserSessionState userState, String squadId) {
+  Widget _buildMainSections(BuildContext context, UserSessionState userState) {
     return Row(
       children: [
         Expanded(
@@ -136,7 +137,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             icon: Icons.people,
             color: AppColors.secondary,
             onTap: () => _navigateToPlayers(context),
-            canAccess: PermissionUtils.canManagePlayers(userState, squadId),
+            canAccess: PermissionUtils.canManagePlayers(userState, _squad!.ownerId),
             count: _squad!.playersCount,
           ),
         ),
@@ -148,7 +149,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             icon: Icons.sports_soccer,
             color: AppColors.success,
             onTap: () => _navigateToMatches(context),
-            canAccess: PermissionUtils.canManageMatches(userState, squadId),
+            canAccess: PermissionUtils.canManageMatches(userState, _squad!.ownerId),
             count: _squad!.matches.length,
           ),
         ),
@@ -366,7 +367,18 @@ class _SquadPageState extends ConsumerState<SquadPage> {
   }
 
   void _navigateToPlayers(BuildContext context) {
-    MessageService.showInfo(context, 'Players page coming soon');
+    if (_squad == null) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PlayersPage(
+          squadId: _squad!.squadId,
+          squadName: _squad!.name,
+          ownerId: _squad!.ownerId,
+        ),
+      ),
+    );
   }
 
   void _navigateToMatches(BuildContext context) {
