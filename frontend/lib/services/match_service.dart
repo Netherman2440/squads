@@ -169,5 +169,25 @@ class MatchService {
       throw Exception('Failed to load player match history: $e');
     }
   }
+
+  // Get matches for a squad
+  Future<List<Match>> getSquadMatches(String squadId) async {
+    try {
+      final response = await _client.get(
+        Uri.parse('$_baseUrl/squads/$squadId/matches'),
+        headers: _headers,
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final matchesList = data['matches'] as List;
+        return matchesList.map((json) => Match.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load squad matches: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to load squad matches: $e');
+    }
+  }
 }
 

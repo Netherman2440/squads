@@ -43,7 +43,7 @@ async def register(
     user_data: UserRegister,
     user_service: UserService = Depends(get_user_service)
 ):
-    user = user_service.register(user_data.email, user_data.password)
+    user = user_service.register(user_data.username, user_data.password)
     access_token = create_access_token(
         data={"sub": user.user_id},
         expires_delta=timedelta(minutes=30)

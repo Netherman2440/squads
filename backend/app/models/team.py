@@ -13,7 +13,7 @@ class Team(Base):
     color = Column(String(255), nullable=False) # white , black or color or maybe really a RGB value
     name = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    score = Column(Integer, nullable=False, default=0)
+    score = Column(Integer, nullable=True)
     # Reference to match
     match = relationship("Match", back_populates="teams")
     # List of players in the team

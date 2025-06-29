@@ -6,9 +6,9 @@ class TeamData:
     squad_id: str
     match_id: str
     team_id: str
-    name: Optional[str]
-    color: Optional[str]
-    score: int = 0
+    score: Optional[int] = None
+    name: Optional[str] = None
+    color: Optional[str] = None
     players_count: int = 0
 
 

@@ -6,16 +6,16 @@ from app.schemas import SquadResponse
 
 
 class UserRegister(BaseModel):
-    email: EmailStr = Field(..., description="User email address")
-    password: str = Field(..., min_length=6, description="User password (minimum 6 characters)")
+    username: str = Field(..., description="User username")
+    password: str = Field(..., min_length=3, description="User password (minimum 3 characters)")
 
 class UserLogin(BaseModel):
-    email: EmailStr = Field(..., description="User email address")
+    username: str = Field(..., description="User username")
     password: str = Field(..., description="User password")
 
 class UserResponse(BaseModel):
     user_id: str
-    email: str
+    username: str
     created_at: datetime
     owned_squads: list[SquadResponse]
     squads: list[SquadResponse]

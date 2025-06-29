@@ -171,7 +171,7 @@ class TestTeamService:
         assert team_data.team_id is not None
         assert team_data.name == "Blue Team"
         assert team_data.color == "blue"
-        assert team_data.score == 0  # Default score
+        assert team_data.score is None  # Default score
         assert team_data.players_count == 2
         
         # Verify team exists in database
@@ -179,7 +179,7 @@ class TestTeamService:
         assert db_team is not None
         assert db_team.name == "Blue Team"
         assert db_team.color == "blue"
-        assert db_team.score == 0
+        assert db_team.score is None
         
         # Verify team players were created
         team_players = session.query(TeamPlayer).filter(TeamPlayer.team_id == team_data.team_id).all()
@@ -435,7 +435,7 @@ class TestTeamService:
         team2_check = team_service.get_team(team2_data.team_id)
         assert team2_check.name == "Team 2"
         assert team2_check.color == "blue"
-        assert team2_check.score == 0
+        assert team2_check.score is None
 
     def test_database_persistence_after_updates(self, team_service, sample_team, session):
         """Test that all updates are properly persisted to database"""

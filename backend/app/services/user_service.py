@@ -15,7 +15,7 @@ class UserService:
         squad_service = SquadService(self.db)
         return UserData(
             user_id=user.user_id,
-            email=user.email,
+            username=user.username,
             password_hash=user.password_hash,
             created_at=user.created_at,
             owned_squads=[squad_service.squad_to_data(squad) for squad in user.owned_squads],
@@ -29,23 +29,23 @@ class UserService:
         
         return self.user_to_data(user)
 
-    def register(self, email: str, password: str) -> UserData:
+    def register(self, username: str, password: str) -> UserData:
         # Check if user already exists
-        existing_user = self.db.query(User).filter(User.email == email).first()
+        existing_user = self.db.query(User).filter(User.username == username).first()
         if existing_user:
             raise HTTPException(status_code=400, detail="Email already registered")
         
         # Hash the password
         hashed_password = pwd_context.hash(password)
         
-        user = User(email=email, password_hash=hashed_password)
+        user = User(username=username, password_hash=hashed_password)
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
         return self.user_to_data(user)
 
-    def login(self, email: str, password: str) -> UserData:
-        user = self.db.query(User).filter(User.email == email).first()
+    def login(self, username: str, password: str) -> UserData:
+        user = self.db.query(User).filter(User.username == username).first()
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         

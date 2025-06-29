@@ -17,7 +17,7 @@ class MatchResponse(MatchBase):
     squad_id: str
     match_id: str
     created_at: datetime
-    score: tuple[int, int]
+    score: Optional[tuple[int, int]]
 
 class MatchListResponse(BaseModel):
     matches: list[MatchResponse]

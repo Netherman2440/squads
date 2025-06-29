@@ -41,7 +41,7 @@ class TestUserService:
         # Verify returned data
         assert isinstance(user_data, UserData)
         assert user_data.user_id is not None
-        assert user_data.email == email
+        assert user_data.username == email
         assert user_data.password_hash is not None
         assert user_data.created_at is not None
         assert user_data.owned_squads == []
@@ -86,7 +86,7 @@ class TestUserService:
         
         assert isinstance(logged_in_user, UserData)
         assert logged_in_user.user_id == registered_user.user_id
-        assert logged_in_user.email == email
+        assert logged_in_user.username == email
         assert logged_in_user.owned_squads == []
 
     def test_login_invalid_credentials(self, user_service, session):
@@ -124,7 +124,7 @@ class TestUserService:
         
         assert isinstance(user, UserData)
         assert user.user_id == registered_user.user_id
-        assert user.email == email
+        assert user.username == email
         assert user.owned_squads == []
 
     def test_get_user_by_id_not_found(self, user_service):

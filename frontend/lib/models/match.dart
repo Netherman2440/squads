@@ -4,13 +4,13 @@ class Match {
   final String matchId;
   final String squadId;
   final DateTime createdAt;
-  final List<int> score;
+  final List<int>? score;
 
   Match({
     required this.matchId,
     required this.squadId,
     required this.createdAt,
-    required this.score,
+    this.score,
   });
 
   factory Match.fromJson(Map<String, dynamic> json) {
@@ -18,7 +18,7 @@ class Match {
       matchId: json['match_id'],
       squadId: json['squad_id'],
       createdAt: DateTime.parse(json['created_at']),
-      score: List<int>.from(json['score']),
+      score: json['score'] != null ? List<int>.from(json['score']) : null,
     );
   }
 
@@ -142,7 +142,7 @@ class MatchDetailResponse extends Match {
     required super.matchId,
     required super.squadId,
     required super.createdAt,
-    required super.score,
+    super.score,
     required this.teamA,
     required this.teamB,
   });
@@ -152,7 +152,7 @@ class MatchDetailResponse extends Match {
       matchId: json['match_id'],
       squadId: json['squad_id'],
       createdAt: DateTime.parse(json['created_at']),
-      score: List<int>.from(json['score']),
+      score: json['score'] != null ? List<int>.from(json['score']) : null,
       teamA: TeamDetailData.fromJson(json['team_a']),
       teamB: TeamDetailData.fromJson(json['team_b']),
     );

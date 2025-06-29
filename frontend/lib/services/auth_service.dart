@@ -49,21 +49,21 @@ class AuthService {
       } else {
         throw Exception('Login failed: ${response.statusCode}');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('Login failed: $e' + stackTrace.toString());
       throw Exception('Login failed: $e');
     }
   }
 
   // Register user
-  Future<Map<String, dynamic>> register(String email, String password, String name) async {
+  Future<Map<String, dynamic>> register(String username, String password, String name) async {
     try {
       final response = await _client.post(
         Uri.parse('$_apiUrl/auth/register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          'email': email,
+          'username': username,
           'password': password,
-          'name': name,
         }),
       );
 

@@ -2,14 +2,14 @@ import 'squad.dart';
 
 class User {
   final String userId;
-  final String email;
+  final String username;
   final DateTime createdAt;
   final List<Squad> ownedSquads;
   final List<Squad> squads;
 
   User({
     required this.userId,
-    required this.email,
+    required this.username,
     required this.createdAt,
     this.ownedSquads = const [],
     this.squads = const [],
@@ -18,7 +18,7 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       userId: json['user_id'],
-      email: json['email'],
+      username: json['username'],
       createdAt: DateTime.parse(json['created_at']),
       ownedSquads: json['owned_squads'] != null 
           ? (json['owned_squads'] as List).map((s) => Squad.fromJson(s)).toList()
@@ -32,7 +32,7 @@ class User {
   Map<String, dynamic> toJson() {
     return {
       'user_id': userId,
-      'email': email,
+      'username': username,
       'created_at': createdAt.toIso8601String(),
       'owned_squads': ownedSquads.map((s) => s.toJson()).toList(),
       'squads': squads.map((s) => s.toJson()).toList(),
@@ -41,48 +41,48 @@ class User {
 }
 
 class UserRegister {
-  final String email;
+  final String username;
   final String password;
 
   UserRegister({
-    required this.email,
+    required this.username,
     required this.password,
   });
 
   factory UserRegister.fromJson(Map<String, dynamic> json) {
     return UserRegister(
-      email: json['email'],
+      username: json['username'],
       password: json['password'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'email': email,
+      'username': username,
       'password': password,
     };
   }
 }
 
 class UserLogin {
-  final String email;
+  final String username;
   final String password;
 
   UserLogin({
-    required this.email,
+    required this.username,
     required this.password,
   });
 
   factory UserLogin.fromJson(Map<String, dynamic> json) {
     return UserLogin(
-      email: json['email'],
+      username: json['username'],
       password: json['password'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'email': email,
+      'username': username,
       'password': password,
     };
   } 

@@ -19,10 +19,14 @@ class MatchService:
         if len(teams) >= 2:
             team_a = team_service.get_team(teams[0].team_id)
             team_b = team_service.get_team(teams[1].team_id)
-            score = (team_a.score, team_b.score)
+            # Check if score is actually set (not default 0-0)
+            if team_a.score is None or team_b.score is None:
+                score = None
+            else:
+                score = (team_a.score, team_b.score)
         else:
-            # Return default score if teams don't exist
-            score = (0, 0)
+            # Return None if teams don't exist
+            score = None
 
         return MatchData(
             squad_id=match.squad_id,
@@ -54,13 +58,10 @@ class MatchService:
     def get_matches(self, squad_id: str) -> list[MatchData]:
         matches = self.session.query(Match).filter(Match.squad_id == squad_id).all()
 
-        
-        return [MatchData(
-            squad_id=match.squad_id,
-            match_id=str(match.match_id),
-            created_at=match.created_at,
-            score=(match.teams[0].score, match.teams[1].score) if len(match.teams) >= 2 else (0, 0),
-        ) for match in matches]
+        match_data = []
+        for match in matches:
+            match_data.append(self.match_to_data(match))
+        return match_data
 
     def create_match(self, squad_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData]) -> MatchDetailData:
 

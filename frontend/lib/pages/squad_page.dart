@@ -7,6 +7,7 @@ import '../models/models.dart';
 import '../services/squad_service.dart';
 import '../theme/app_theme.dart';
 import 'players_page.dart';
+import 'match_history_page.dart';
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -382,7 +383,17 @@ class _SquadPageState extends ConsumerState<SquadPage> {
   }
 
   void _navigateToMatches(BuildContext context) {
-    MessageService.showInfo(context, 'Matches page coming soon');
+    if (_squad == null) return;
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MatchHistoryPage(
+          squadId: _squad!.squadId,
+          squadName: _squad!.name,
+        ),
+      ),
+    );
   }
 
   void _navigateToTournaments(BuildContext context) {

@@ -160,7 +160,7 @@ class TestMatchService:
         assert isinstance(match_data, MatchDetailData)
         assert match_data.match_id is not None
         assert match_data.squad_id == sample_squad.squad_id
-        assert match_data.score == (0, 0)  # Default scores
+        assert match_data.score is None  # Default scores
         assert match_data.created_at is not None
         
         # Verify match exists in database
@@ -178,7 +178,7 @@ class TestMatchService:
         )
         
         assert match_data.match_id is not None
-        assert match_data.score == (0, 0)
+        assert match_data.score is None
         
         # Verify teams were created even if empty
         db_match = session.query(Match).filter(Match.match_id == match_data.match_id).first()
@@ -213,8 +213,7 @@ class TestMatchService:
         assert match_data.match_id == sample_match.match_id
         assert match_data.squad_id == sample_match.squad_id
         assert match_data.created_at is not None
-        assert isinstance(match_data.score, tuple)
-        assert len(match_data.score) == 2
+        assert match_data.score is None
 
     def test_get_match_nonexistent(self, match_service):
         """Test getting a non-existent match returns None"""
@@ -491,8 +490,7 @@ class TestMatchService:
         # Verify field types and values
         assert isinstance(match_data.squad_id, str)
         assert isinstance(match_data.match_id, str)
-        assert isinstance(match_data.score, tuple)
-        assert len(match_data.score) == 2
+        assert match_data.score is None
         assert isinstance(match_data.created_at, datetime)
         assert match_data.match_id == sample_match.match_id
         assert match_data.squad_id == sample_match.squad_id
@@ -526,7 +524,7 @@ class TestMatchService:
         for team in [match_detail.team_a, match_detail.team_b]:
             assert team.team_id is not None
             assert team.color in ["white", "black"]
-            assert isinstance(team.score, int)
+            assert team.score is None
             assert isinstance(team.players_count, int)
             assert isinstance(team.players, list)
             
@@ -554,8 +552,8 @@ class TestMatchService:
         
         # Verify match2 is unchanged
         match2_check = match_service.get_match_detail(match2_data.match_id)
-        assert match2_check.team_a.score == 0
-        assert match2_check.team_b.score == 0
+        assert match2_check.team_a.score is None
+        assert match2_check.team_b.score is None
 
     def test_database_persistence_after_updates(self, match_service, sample_match, session):
         """Test that all updates are properly persisted to database"""
@@ -603,9 +601,7 @@ class TestMatchService:
         """Test that match score is always returned as a tuple of two integers"""
         # Test initial score
         match_data = match_service.get_match(sample_match.match_id)
-        assert isinstance(match_data.score, tuple)
-        assert len(match_data.score) == 2
-        assert all(isinstance(score, int) for score in match_data.score)
+        assert match_data.score is None
         
         # Test after score update
         match_service.update_match_score(sample_match.match_id, 3, 1)
@@ -667,7 +663,7 @@ class TestMatchService:
         
         assert match_data.squad_id == sample_squad.squad_id
         assert match_data.match_id == str(match.match_id)
-        assert match_data.score == (0, 0)  # Default score when teams don't exist
+        assert match_data.score is None  # Default score when teams don't exist
 
     def test_match_to_data_with_insufficient_teams(self, match_service, sample_squad, session):
         """Test match_to_data when teams list has less than 2 teams"""
@@ -695,7 +691,7 @@ class TestMatchService:
         
         assert match_data.squad_id == sample_squad.squad_id
         assert match_data.match_id == str(match.match_id)
-        assert match_data.score == (0, 0)  # Default score when insufficient teams
+        assert match_data.score is None  # Default score when insufficient teams
 
     def test_match_to_detail_data_with_missing_teams(self, match_service, sample_squad, session):
         """Test match_to_detail_data when teams don't exist"""
