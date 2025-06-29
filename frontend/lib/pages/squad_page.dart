@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../state/squad_state.dart';
 import '../state/user_state.dart';
 import '../services/message_service.dart';
 import '../utils/permission_utils.dart';
 import '../models/models.dart';
 import '../services/squad_service.dart';
+import '../theme/app_theme.dart';
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -28,28 +28,34 @@ class _SquadPageState extends ConsumerState<SquadPage> {
 
   @override
   Widget build(BuildContext context) {
-    final squadState = ref.watch(squadProvider);
     final userState = ref.watch(userSessionProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(_squad?.name ?? 'Loading Squad...'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: isDark ? AppColors.bgDark : AppColors.lightSurface,
+        foregroundColor: isDark ? AppColors.text : AppColors.lightText,
+        elevation: 0,
         actions: [
-          if (PermissionUtils.isOwner(userState, squadState))
+          if (PermissionUtils.isOwner(userState, widget.squadId))
             IconButton(
               icon: Icon(Icons.edit),
               onPressed: () => _editSquad(context),
             ),
         ],
       ),
-      body: _buildBody(context, userState, squadState),
+      body: _buildBody(context, userState, widget.squadId),
     );
   }
 
-  Widget _buildBody(BuildContext context, UserSessionState userState, SquadState squadState) {
+  Widget _buildBody(BuildContext context, UserSessionState userState, String squadId) {
     if (_isLoading) {
-      return Center(child: CircularProgressIndicator());
+      return Center(
+        child: CircularProgressIndicator(
+          color: AppColors.primary,
+        ),
+      );
     }
 
     if (_squad == null) {
@@ -57,9 +63,12 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error, size: 64, color: Colors.grey),
+            Icon(Icons.error, size: 64, color: AppColors.textMuted),
             SizedBox(height: 16),
-            Text('Squad not found or access denied'),
+            Text(
+              'Squad not found or access denied',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
             SizedBox(height: 16),
             ElevatedButton(
               onPressed: _loadSquad,
@@ -77,9 +86,9 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         children: [
           _buildSquadInfo(),
           SizedBox(height: 24),
-          _buildPermissionInfo(userState, squadState),
+          _buildMainSections(context, userState, squadId),
           SizedBox(height: 24),
-          _buildActionButtons(context, userState, squadState),
+          _buildStatisticsSection(),
         ],
       ),
     );
@@ -92,96 +101,217 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Squad Information',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              children: [
+                Icon(Icons.group, color: AppColors.primary),
+                SizedBox(width: 8),
+                Text(
+                  'Squad Information',
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text,
+                  ),
+                ),
+              ],
             ),
-            SizedBox(height: 12),
+            SizedBox(height: 16),
             _buildInfoRow('Name', _squad!.name),
             _buildInfoRow('Created', _squad!.createdAt.toString().split(' ')[0]),
             _buildInfoRow('Players', _squad!.playersCount.toString()),
-            _buildInfoRow('Owner ID', _squad!.ownerId),
+            _buildInfoRow('Matches', _squad!.matches.length.toString()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildPermissionInfo(UserSessionState userState, SquadState squadState) {
-    final isOwner = PermissionUtils.isOwner(userState, squadState);
-    final canEdit = PermissionUtils.canEdit(userState, squadState);
-    final canManagePlayers = PermissionUtils.canManagePlayers(userState, squadState);
-    final canManageMatches = PermissionUtils.canManageMatches(userState, squadState);
-
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Your Permissions',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 12),
-            _buildPermissionRow('Owner', isOwner),
-            _buildPermissionRow('Can Edit', canEdit),
-            _buildPermissionRow('Can Manage Players', canManagePlayers),
-            _buildPermissionRow('Can Manage Matches', canManageMatches),
-          ],
+  Widget _buildMainSections(BuildContext context, UserSessionState userState, String squadId) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildMainSection(
+            context: context,
+            title: 'Players',
+            icon: Icons.people,
+            color: AppColors.secondary,
+            onTap: () => _navigateToPlayers(context),
+            canAccess: PermissionUtils.canManagePlayers(userState, squadId),
+            count: _squad!.playersCount,
+          ),
         ),
-      ),
+        SizedBox(width: 12),
+        Expanded(
+          child: _buildMainSection(
+            context: context,
+            title: 'Matches',
+            icon: Icons.sports_soccer,
+            color: AppColors.success,
+            onTap: () => _navigateToMatches(context),
+            canAccess: PermissionUtils.canManageMatches(userState, squadId),
+            count: _squad!.matches.length,
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          child: _buildMainSection(
+            context: context,
+            title: 'Tournaments',
+            icon: Icons.emoji_events,
+            color: AppColors.warning,
+            onTap: () => _navigateToTournaments(context),
+            canAccess: true, // Tournaments will be available to all
+            count: 0, // Coming soon
+            isComingSoon: true,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, UserSessionState userState, SquadState squadState) {
-    final canManagePlayers = PermissionUtils.canManagePlayers(userState, squadState);
-    final canManageMatches = PermissionUtils.canManageMatches(userState, squadState);
-
+  Widget _buildMainSection({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    required bool canAccess,
+    required int count,
+    bool isComingSoon = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Card(
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Actions',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 12),
-            if (canManagePlayers)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _navigateToPlayers(context),
-                  icon: Icon(Icons.people),
-                  label: Text('Manage Players'),
+      elevation: 4,
+      child: InkWell(
+        onTap: canAccess ? onTap : null,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 120,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: isComingSoon 
+              ? LinearGradient(
+                  colors: isDark 
+                    ? [AppColors.borderMuted, AppColors.border]
+                    : [Colors.grey.shade300, Colors.grey.shade400],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : LinearGradient(
+                  colors: [
+                    color.withOpacity(isDark ? 0.2 : 0.1), 
+                    color.withOpacity(isDark ? 0.3 : 0.2)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 32,
+                color: isComingSoon 
+                  ? (isDark ? AppColors.textMuted : Colors.grey.shade600)
+                  : color,
+              ),
+              SizedBox(height: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isComingSoon 
+                    ? (isDark ? AppColors.textMuted : Colors.grey.shade600)
+                    : AppColors.text,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 4),
+              Text(
+                isComingSoon ? 'Coming Soon' : '$count',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isComingSoon 
+                    ? (isDark ? AppColors.textMuted : Colors.grey.shade500)
+                    : AppColors.textMuted,
                 ),
               ),
-            SizedBox(height: 8),
-            if (canManageMatches)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _navigateToMatches(context),
-                  icon: Icon(Icons.sports_soccer),
-                  label: Text('Manage Matches'),
-                ),
-              ),
-            SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => _navigateToSquadDetails(context),
-                icon: Icon(Icons.info),
-                label: Text('View Details'),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildStatisticsSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Card(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.info.withOpacity(isDark ? 0.2 : 0.1),
+              AppColors.info.withOpacity(isDark ? 0.3 : 0.2)
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.analytics, size: 24, color: AppColors.info),
+                  SizedBox(width: 8),
+                  Text(
+                    'Statistics',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.info,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark 
+                    ? AppColors.bgLight.withOpacity(0.7)
+                    : Colors.white.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.hourglass_empty, color: AppColors.textMuted),
+                    SizedBox(width: 8),
+                    Text(
+                      'Statistics will be available soon',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
@@ -193,27 +323,18 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             width: 120,
             child: Text(
               '$label:',
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: AppColors.textMuted,
+              ),
             ),
           ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPermissionRow(String permission, bool hasPermission) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(
-            hasPermission ? Icons.check_circle : Icons.cancel,
-            color: hasPermission ? Colors.green : Colors.red,
-            size: 20,
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(color: AppColors.text),
+            ),
           ),
-          SizedBox(width: 8),
-          Text(permission),
         ],
       ),
     );
@@ -231,9 +352,6 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         _squad = squadDetail;
         _isLoading = false;
       });
-      
-      // Set squad in state after loading
-      ref.read(squadProvider.notifier).setSquad(squadDetail);
       
     } catch (e) {
       setState(() {
@@ -255,7 +373,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     MessageService.showInfo(context, 'Matches page coming soon');
   }
 
-  void _navigateToSquadDetails(BuildContext context) {
-    MessageService.showInfo(context, 'Squad details page coming soon');
+  void _navigateToTournaments(BuildContext context) {
+    MessageService.showInfo(context, 'Tournaments page coming soon');
   }
 } 

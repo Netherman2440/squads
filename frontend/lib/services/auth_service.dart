@@ -27,15 +27,15 @@ class AuthService {
   };
 
   // Login user
-  Future<AuthResponse> login(String email, String password) async {
+  Future<AuthResponse> login(String username, String password) async {
     try {
       final response = await _client.post(
         Uri.parse('$_apiUrl/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'email': email,
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {
+          'username': username,
           'password': password,
-        }),
+        },
       );
 
       if (response.statusCode == 200) {
