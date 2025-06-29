@@ -21,7 +21,7 @@ class PlayerService {
     _token = token;
   }
 
-  String get _baseUrl => AppConfig.apiBaseUrl;
+  String get _apiUrl => AppConfig.apiUrl;
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ class PlayerService {
   Future<PlayerDetailResponse> getPlayer(String squadId, String playerId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/players/$playerId'),
+        Uri.parse('$_apiUrl/squads/$squadId/players/$playerId'),
         headers: _headers,
       );
 
@@ -51,7 +51,7 @@ class PlayerService {
   Future<PlayerDetailResponse> updatePlayerName(String squadId, String playerId, String name) async {
     try {
       final response = await _client.put(
-        Uri.parse('$_baseUrl/squads/$squadId/players/$playerId'),
+        Uri.parse('$_apiUrl/squads/$squadId/players/$playerId'),
         headers: _headers,
         body: json.encode({'name': name}),
       );
@@ -71,7 +71,7 @@ class PlayerService {
   Future<PlayerDetailResponse> updatePlayerBaseScore(String squadId, String playerId, int baseScore) async {
     try {
       final response = await _client.put(
-        Uri.parse('$_baseUrl/squads/$squadId/players/$playerId'),
+        Uri.parse('$_apiUrl/squads/$squadId/players/$playerId'),
         headers: _headers,
         body: json.encode({'base_score': baseScore}),
       );
@@ -91,7 +91,7 @@ class PlayerService {
   Future<PlayerDetailResponse> updatePlayerPosition(String squadId, String playerId, Position position) async {
     try {
       final response = await _client.put(
-        Uri.parse('$_baseUrl/squads/$squadId/players/$playerId'),
+        Uri.parse('$_apiUrl/squads/$squadId/players/$playerId'),
         headers: _headers,
         body: json.encode({'position': position.name}),
       );
@@ -111,7 +111,7 @@ class PlayerService {
   Future<void> deletePlayer(String squadId, String playerId) async {
     try {
       final response = await _client.delete(
-        Uri.parse('$_baseUrl/squads/$squadId/players/$playerId'),
+        Uri.parse('$_apiUrl/squads/$squadId/players/$playerId'),
         headers: _headers,
       );
 
@@ -127,7 +127,7 @@ class PlayerService {
   Future<List<Map<String, dynamic>>> getPlayerScoreHistory(String playerId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/players/$playerId/score-history'),
+        Uri.parse('$_apiUrl/players/$playerId/score-history'),
         headers: _headers,
       );
 
@@ -146,7 +146,7 @@ class PlayerService {
   Future<List<Player>> getPlayers(String squadId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/players'),
+        Uri.parse('$_apiUrl/squads/$squadId/players'),
         headers: _headers,
       );
 
