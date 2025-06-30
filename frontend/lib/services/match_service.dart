@@ -12,7 +12,7 @@ class MatchService {
   static String? _token;
   
   final http.Client _client = http.Client();
-  static final String _baseUrl = AppConfig.apiBaseUrl;
+  String get _apiUrl => AppConfig.apiUrl;
 
   MatchService._();
 
@@ -34,7 +34,7 @@ class MatchService {
   Future<MatchDetailResponse> getMatch(String squadId, String matchId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/matches/$matchId'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches/$matchId'),
         headers: _headers,
       );
 
@@ -69,7 +69,7 @@ class MatchService {
       }
 
       final response = await _client.put(
-        Uri.parse('$_baseUrl/squads/$squadId/matches/$matchId'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches/$matchId'),
         headers: _headers,
         body: json.encode(body),
       );
@@ -89,7 +89,7 @@ class MatchService {
   Future<void> deleteMatch(String squadId, String matchId) async {
     try {
       final response = await _client.delete(
-        Uri.parse('$_baseUrl/squads/$squadId/matches/$matchId'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches/$matchId'),
         headers: _headers,
       );
 
@@ -105,7 +105,7 @@ class MatchService {
   Future<List<Draft>> drawTeams(String squadId, List<Player> players) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/matches/draw'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches/draw'),
         headers: _headers,
       );
 
@@ -135,7 +135,7 @@ class MatchService {
   Future<Map<String, dynamic>> getMatchStatistics(String squadId, String matchId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/matches/$matchId/statistics'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches/$matchId/statistics'),
         headers: _headers,
       );
 
@@ -154,7 +154,7 @@ class MatchService {
   Future<List<Match>> getPlayerMatchHistory(String playerId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/players/$playerId/matches'),
+        Uri.parse('$_apiUrl/players/$playerId/matches'),
         headers: _headers,
       );
 
@@ -174,7 +174,7 @@ class MatchService {
   Future<List<Match>> getSquadMatches(String squadId) async {
     try {
       final response = await _client.get(
-        Uri.parse('$_baseUrl/squads/$squadId/matches'),
+        Uri.parse('$_apiUrl/squads/$squadId/matches'),
         headers: _headers,
       );
 

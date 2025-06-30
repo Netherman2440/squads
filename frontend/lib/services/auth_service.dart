@@ -96,7 +96,7 @@ class AuthService {
         
         // Update tokens in all services
         _updateAllServiceTokens(_token);
-
+        print(data);
         return AuthResponse.fromJson(data);
       } else {
         throw Exception('Guest login failed: ${response.statusCode}');

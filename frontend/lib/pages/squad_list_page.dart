@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/squad_service.dart';
 import '../services/message_service.dart';
+import '../services/auth_service.dart';
 import '../models/squad.dart';
 import '../state/user_state.dart';
+import '../utils/permission_utils.dart';
 import 'squad_page.dart';
+import 'auth_page.dart';
 
 class SquadListPage extends ConsumerStatefulWidget {
   const SquadListPage({Key? key}) : super(key: key);
@@ -17,6 +20,7 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
   List<Squad> _squads = [];
   bool _isLoading = true;
   String? _error;
+  final TextEditingController _squadNameController = TextEditingController();
 
   @override
   void initState() {
@@ -25,7 +29,22 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
   }
 
   @override
+  void dispose() {
+    _squadNameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final userSession = ref.watch(userSessionProvider);
+    final isGuest = PermissionUtils.isGuest(userSession);
+    final canCreateSquad = PermissionUtils.canCreateSquad(userSession);
+    
+    // Debug print to check user state
+    print('User session: ${userSession.user}');
+    print('Is guest: $isGuest');
+    print('Can create squad: $canCreateSquad');
+    
     return Scaffold(
       appBar: AppBar(
         title: Text('My Squads'),
@@ -35,13 +54,23 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
             icon: Icon(Icons.refresh),
             onPressed: _loadSquads,
           ),
+          if (canCreateSquad)
+            IconButton(
+              icon: Icon(Icons.add),
+              onPressed: () => _showCreateSquadDialog(context),
+            ),
           IconButton(
-            icon: Icon(Icons.add),
-            onPressed: () => _createNewSquad(context),
+            icon: Icon(Icons.logout),
+            onPressed: _handleLogout,
           ),
         ],
       ),
       body: _buildBody(),
+      floatingActionButton: canCreateSquad ? FloatingActionButton(
+        onPressed: () => _showCreateSquadDialog(context),
+        child: Icon(Icons.add),
+        tooltip: 'Create new squad',
+      ) : null,
     );
   }
 
@@ -78,14 +107,7 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
             Icon(Icons.group, size: 64, color: Colors.grey),
             SizedBox(height: 16),
             Text('No squads found'),
-            SizedBox(height: 8),
-            Text('Create your first squad to get started'),
-            SizedBox(height: 16),
-            ElevatedButton.icon(
-              onPressed: () => _createNewSquad(context),
-              icon: Icon(Icons.add),
-              label: Text('Create Squad'),
-            ),
+
           ],
         ),
       );
@@ -217,7 +239,92 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
     );
   }
 
+  void _handleLogout() async {
+    try {
+      // Clear user session
+      ref.read(userSessionProvider.notifier).clearUser();
+      
+      // Logout from auth service
+      AuthService.instance.logout();
+      
+      // Navigate back to auth page
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => AuthPage()),
+        (route) => false,
+      );
+      
+      MessageService.showSuccess(context, 'Logged out successfully');
+    } catch (e) {
+      MessageService.showError(context, 'Logout failed: $e');
+    }
+  }
+
+  void _showCreateSquadDialog(BuildContext context) {
+    _squadNameController.clear();
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Create New Squad'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _squadNameController,
+                decoration: InputDecoration(
+                  labelText: 'Squad Name',
+                  hintText: 'Enter squad name',
+                  border: OutlineInputBorder(),
+                ),
+                autofocus: true,
+                onSubmitted: (value) => _createSquad(context),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => _createSquad(context),
+              child: Text('Create'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _createSquad(BuildContext context) async {
+    final squadName = _squadNameController.text.trim();
+    
+    if (squadName.isEmpty) {
+      MessageService.showError(context, 'Please enter a squad name');
+      return;
+    }
+    
+    try {
+      Navigator.of(context).pop(); // Close dialog
+      
+      // Show loading indicator
+      MessageService.showInfo(context, 'Creating squad...');
+      
+      final squadResponse = await SquadService.instance.createSquad(squadName);
+      
+      MessageService.showSuccess(context, 'Squad "${squadName}" created successfully!');
+      
+      // Reload squads list
+      await _loadSquads();
+      
+    } catch (e) {
+      MessageService.showError(context, 'Failed to create squad: ${e.toString().replaceAll('Exception: ', '')}');
+    }
+  }
+
   void _createNewSquad(BuildContext context) {
-    MessageService.showInfo(context, 'Create squad functionality coming soon');
+    _showCreateSquadDialog(context);
   }
 } 

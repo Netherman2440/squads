@@ -36,7 +36,7 @@ class SquadService {
   Future<List<Squad>> getAllSquads() async {
     try {
       final response = await _client.get(
-        Uri.parse('$_apiUrl/squads'),
+        Uri.parse('$_apiUrl/squads/'),
         headers: _headers,
       );
 
@@ -56,7 +56,7 @@ class SquadService {
   Future<SquadDetailResponse> createSquad(String name) async {
     try {
       final response = await _client.post(
-        Uri.parse('$_apiUrl/squads'),
+        Uri.parse('$_apiUrl/squads/'),
         headers: _headers,
         body: json.encode({'name': name}),
       );
