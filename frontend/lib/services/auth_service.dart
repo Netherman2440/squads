@@ -96,7 +96,7 @@ class AuthService {
         
         // Update tokens in all services
         _updateAllServiceTokens(_token);
-        print(data);
+
         return AuthResponse.fromJson(data);
       } else {
         throw Exception('Guest login failed: ${response.statusCode}');
@@ -109,9 +109,8 @@ class AuthService {
   // Logout user
   void logout() {
     _token = null;
-    
-    // Clear tokens in all services
     _updateAllServiceTokens(null);
+    
   }
 
   // Get current token

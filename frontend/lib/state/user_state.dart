@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/models/user.dart';
+import 'package:frontend/services/auth_service.dart';
 
 class UserSessionState {
   final User? user;
@@ -7,10 +8,10 @@ class UserSessionState {
   
   const UserSessionState({this.user, this.token});
   
-  UserSessionState copyWith({User? user, String? token}) {
+  UserSessionState copyWith({User? user, String? token, bool clearUser = false, bool clearToken = false}) {
     return UserSessionState(
-      user: user ?? this.user,
-      token: token ?? this.token,
+      user: clearUser ? null : (user ?? this.user),
+      token: clearToken ? null : (token ?? this.token),
     );
   }
 }
@@ -27,15 +28,25 @@ class UserSessionNotifier extends Notifier<UserSessionState> {
   
   void setToken(String token) {
     state = state.copyWith(token: token);
-    print('Token set: $token');
+    // Synchronize with AuthService
+    AuthService.instance.updateToken(token);
   }
   
   void clearUser() {
-    state = state.copyWith(user: null, token: null);
+    state = state.copyWith(clearUser: true, clearToken: true);
+    // Don't call AuthService here - let logout handle it
   }
   
   void clearToken() {
-    state = state.copyWith(token: null);
+    state = state.copyWith(clearToken: true);
+    // Don't call AuthService here - let logout handle it
+  }
+  
+  void logout() {
+    // Clear the state first
+    clearUser();
+    // Then clear AuthService tokens (redundant but safe)
+    AuthService.instance.logout();
   }
 }
 

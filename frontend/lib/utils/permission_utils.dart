@@ -4,14 +4,12 @@ class PermissionUtils {
   // Check if user is a guest (no user data in session)
   static bool isGuest(UserSessionState userState) {
     final isGuest = userState.user == null;
-    print('PermissionUtils.isGuest: userState.user = ${userState.user}, isGuest = $isGuest');
     return isGuest;
   }
 
   // Check if user can create squads (non-guest users only)
   static bool canCreateSquad(UserSessionState userState) {
     final canCreate = !isGuest(userState);
-    print('PermissionUtils.canCreateSquad: canCreate = $canCreate');
     return canCreate;
   }
 

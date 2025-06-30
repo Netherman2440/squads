@@ -37,13 +37,8 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
   @override
   Widget build(BuildContext context) {
     final userSession = ref.watch(userSessionProvider);
-    final isGuest = PermissionUtils.isGuest(userSession);
     final canCreateSquad = PermissionUtils.canCreateSquad(userSession);
-    
-    // Debug print to check user state
-    print('User session: ${userSession.user}');
-    print('Is guest: $isGuest');
-    print('Can create squad: $canCreateSquad');
+    print(userSession.user);
     
     return Scaffold(
       appBar: AppBar(
@@ -241,11 +236,9 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
 
   void _handleLogout() async {
     try {
-      // Clear user session
-      ref.read(userSessionProvider.notifier).clearUser();
-      
-      // Logout from auth service
-      AuthService.instance.logout();
+      // Perform complete logout (clears both state and tokens)
+      print('Logout');
+      ref.read(userSessionProvider.notifier).logout();
       
       // Navigate back to auth page
       Navigator.pushAndRemoveUntil(
