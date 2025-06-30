@@ -23,14 +23,24 @@ class PermissionUtils {
     return isOwner(userState, ownerId);
   }
 
-  // Check if user can manage players
+  // Check if user can manage players (add, edit, delete)
   static bool canManagePlayers(UserSessionState userState, String ownerId) {
     return isOwner(userState, ownerId);
   }
 
-  // Check if user can manage matches
+  // Check if user can view players (read-only access for guests)
+  static bool canViewPlayers(UserSessionState userState, String ownerId) {
+    return true; // Everyone can view players
+  }
+
+  // Check if user can manage matches (create, edit, delete)
   static bool canManageMatches(UserSessionState userState, String ownerId) {
     return isOwner(userState, ownerId);
+  }
+
+  // Check if user can view matches (read-only access for guests)
+  static bool canViewMatches(UserSessionState userState, String ownerId) {
+    return true; // Everyone can view matches
   }
 
   // Check if user can view the squad

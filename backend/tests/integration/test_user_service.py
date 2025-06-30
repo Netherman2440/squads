@@ -27,12 +27,12 @@ class TestUserService:
 
     def test_register_user_success(self, user_service, session):
         """Test successful user registration"""
-        email = "test@example.com"
+        username = "test@example.com"
         password = "testpassword123"
         
         initial_count = session.query(User).count()
         
-        user_data = user_service.register(email, password)
+        user_data = user_service.register(username, password)
         
         # Verify user was created in database
         final_count = session.query(User).count()
@@ -41,7 +41,7 @@ class TestUserService:
         # Verify returned data
         assert isinstance(user_data, UserData)
         assert user_data.user_id is not None
-        assert user_data.username == email
+        assert user_data.username == username
         assert user_data.password_hash is not None
         assert user_data.created_at is not None
         assert user_data.owned_squads == []
@@ -49,22 +49,22 @@ class TestUserService:
         # Verify user exists in database
         db_user = session.query(User).filter(User.user_id == user_data.user_id).first()
         assert db_user is not None
-        assert db_user.email == email
+        assert db_user.username == username
         assert db_user.password_hash is not None
         assert db_user.created_at is not None
 
     def test_register_user_email_exists(self, user_service, session):
-        """Test registration with existing email"""
-        email = "existing@example.com"
+        """Test registration with existing username"""
+        username = "existing@example.com"
         password = "testpassword123"
         
         # Create initial user
-        user_service.register(email, password)
+        user_service.register(username, password)
         initial_count = session.query(User).count()
         
-        # Try to register again with same email
+        # Try to register again with same username
         with pytest.raises(HTTPException) as exc_info:
-            user_service.register(email, password)
+            user_service.register(username, password)
         
         assert exc_info.value.status_code == 400
         assert exc_info.value.detail == "Email already registered"
@@ -75,36 +75,36 @@ class TestUserService:
 
     def test_login_success(self, user_service, session):
         """Test successful login"""
-        email = "test@example.com"
+        username = "test@example.com"
         password = "testpassword123"
         
         # Register user first
-        registered_user = user_service.register(email, password)
+        registered_user = user_service.register(username, password)
         
         # Try to login
-        logged_in_user = user_service.login(email, password)
+        logged_in_user = user_service.login(username, password)
         
         assert isinstance(logged_in_user, UserData)
         assert logged_in_user.user_id == registered_user.user_id
-        assert logged_in_user.username == email
+        assert logged_in_user.username == username
         assert logged_in_user.owned_squads == []
 
     def test_login_invalid_credentials(self, user_service, session):
         """Test login with invalid credentials"""
-        email = "test@example.com"
+        username = "test@example.com"
         password = "testpassword123"
         
         # Register user first
-        user_service.register(email, password)
+        user_service.register(username, password)
         
         # Try to login with wrong password
         with pytest.raises(HTTPException) as exc_info:
-            user_service.login(email, "wrongpassword")
+            user_service.login(username, "wrongpassword")
         
         assert exc_info.value.status_code == 401
         assert exc_info.value.detail == "Invalid credentials"
         
-        # Try to login with non-existent email
+        # Try to login with non-existent username
         with pytest.raises(HTTPException) as exc_info:
             user_service.login("nonexistent@example.com", password)
         
@@ -113,18 +113,18 @@ class TestUserService:
 
     def test_get_user_by_id_success(self, user_service, session):
         """Test getting user by ID when user exists"""
-        email = "test@example.com"
+        username = "test@example.com"
         password = "testpassword123"
         
         # Register user first
-        registered_user = user_service.register(email, password)
+        registered_user = user_service.register(username, password)
         
         # Get user by ID
         user = user_service.get_user_by_id(registered_user.user_id)
         
         assert isinstance(user, UserData)
         assert user.user_id == registered_user.user_id
-        assert user.username == email
+        assert user.username == username
         assert user.owned_squads == []
 
     def test_get_user_by_id_not_found(self, user_service):
@@ -141,7 +141,7 @@ class TestUserService:
         
         # Verify users are different
         assert user1.user_id != user2.user_id
-        assert user1.email != user2.email
+        assert user1.username != user2.username
         
         # Verify login works for both users
         logged_in_user1 = user_service.login("user1@example.com", "password1")

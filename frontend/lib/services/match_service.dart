@@ -104,9 +104,14 @@ class MatchService {
   // Draw teams for a match
   Future<List<Draft>> drawTeams(String squadId, List<Player> players) async {
     try {
-      final response = await _client.get(
+      final draftCreate = DraftCreate(
+        players_ids: players.map((player) => player.playerId).toList(),
+      );
+
+      final response = await _client.post(
         Uri.parse('$_apiUrl/squads/$squadId/matches/draw'),
         headers: _headers,
+        body: json.encode(draftCreate.toJson()),
       );
 
       if (response.statusCode == 200) {

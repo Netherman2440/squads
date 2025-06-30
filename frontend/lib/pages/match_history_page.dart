@@ -4,15 +4,19 @@ import '../services/match_service.dart';
 import '../services/message_service.dart';
 import '../models/match.dart';
 import '../state/user_state.dart';
+import '../utils/permission_utils.dart';
+import 'draft_page.dart';
 
 class MatchHistoryPage extends ConsumerStatefulWidget {
   final String squadId;
   final String squadName;
+  final String ownerId;
 
   const MatchHistoryPage({
     Key? key,
     required this.squadId,
     required this.squadName,
+    required this.ownerId,
   }) : super(key: key);
 
   @override
@@ -32,6 +36,9 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    final userState = ref.watch(userSessionProvider);
+    final canManageMatches = PermissionUtils.canManageMatches(userState, widget.ownerId);
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Match History - ${widget.squadName}'),
@@ -44,6 +51,13 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
         ],
       ),
       body: _buildBody(),
+      floatingActionButton: canManageMatches
+          ? FloatingActionButton(
+              onPressed: () => _navigateToDraft(context),
+              child: const Icon(Icons.add),
+              tooltip: 'Utwórz nowy mecz',
+            )
+          : null,
     );
   }
 
@@ -241,5 +255,17 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
       
       MessageService.showError(context, 'Failed to load matches: $e');
     }
+  }
+
+  void _navigateToDraft(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DraftPage(
+          squadId: widget.squadId,
+          ownerId: widget.ownerId,
+        ),
+      ),
+    );
   }
 } 

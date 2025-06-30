@@ -138,7 +138,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             icon: Icons.people,
             color: AppColors.secondary,
             onTap: () => _navigateToPlayers(context),
-            canAccess: PermissionUtils.canManagePlayers(userState, _squad!.ownerId),
+            canAccess: PermissionUtils.canViewPlayers(userState, _squad!.ownerId),
             count: _squad!.playersCount,
           ),
         ),
@@ -150,7 +150,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             icon: Icons.sports_soccer,
             color: AppColors.success,
             onTap: () => _navigateToMatches(context),
-            canAccess: PermissionUtils.canManageMatches(userState, _squad!.ownerId),
+            canAccess: PermissionUtils.canViewMatches(userState, _squad!.ownerId),
             count: _squad!.matches.length,
           ),
         ),
@@ -391,6 +391,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         builder: (context) => MatchHistoryPage(
           squadId: _squad!.squadId,
           squadName: _squad!.name,
+          ownerId: _squad!.ownerId,
         ),
       ),
     );

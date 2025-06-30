@@ -269,7 +269,7 @@ async def delete_match(
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
 
-@router.get("/{squad_id}/matches/draw", response_model=DraftListResponse)
+@router.post("/{squad_id}/matches/draw", response_model=DraftListResponse)
 async def draw_match(
     squad_id: str,
     draft_data: DraftCreate, 
@@ -277,16 +277,8 @@ async def draw_match(
     match_service: MatchService = Depends(get_match_service)
 ):
     """Draw teams for a match - accessible to all authenticated users (but guest cannot use POST)"""
-    players = [PlayerData(
-        squad_id=player.squad_id,
-        player_id=player.player_id, 
-        name=player.name, 
-        base_score=player.base_score,
-        _score=player.score, 
-        position=player.position
-    ) for player in draft_data.players]
 
-    drafts = match_service.draw_teams(players)
+    drafts = match_service.draw_teams(draft_data.players_ids)
     if drafts is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
     
@@ -298,3 +290,4 @@ async def draw_match(
         draft_responses.append(draft_response)
     
     return DraftListResponse(drafts=draft_responses)
+

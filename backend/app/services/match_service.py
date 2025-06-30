@@ -2,6 +2,7 @@ from typing import Optional
 from app.models import Match, ScoreHistory
 
 from app.entities import MatchData, PlayerData, MatchDetailData, DraftData
+from app.models.player import Player
 
 
 class MatchService:
@@ -110,10 +111,19 @@ class MatchService:
 
         return self.match_to_detail_data(match)
 
-    def draw_teams(self, players: list[PlayerData]) -> list[DraftData]:
+    def draw_teams(self, players_ids: list[str]) -> list[DraftData]:
         # Check if players list is empty
-        if not players:
+        if not players_ids:
             return []
+        
+        from app.services import PlayerService
+        player_service = PlayerService(self.session)
+        
+        players = []
+        for player_id in players_ids:
+            player = player_service.get_player(player_id)
+            if player:
+                players.append(player)
             
         players.sort(key=lambda x: x._score, reverse=True)
         from app.services import DrawTeamsService

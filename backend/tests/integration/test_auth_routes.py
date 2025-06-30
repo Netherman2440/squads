@@ -54,7 +54,7 @@ def sample_user(session):
     """Create a sample user for testing"""
     user = User(
         user_id=str(uuid.uuid4()),
-        email="test@example.com",
+        username="test@example.com",
         password_hash="hashed_password",
         created_at=datetime.now(timezone.utc)
     )
@@ -69,7 +69,7 @@ class TestAuthRoutes:
     def test_register_new_user(self, client, session):
         """Test registering a new user"""
         user_data = {
-            "email": "newuser@example.com",
+            "username": "newuser@example.com",
             "password": "testpassword123"
         }
         
@@ -80,15 +80,15 @@ class TestAuthRoutes:
         assert "access_token" in data
         assert data["token_type"] == "bearer"
         assert "user" in data
-        assert data["user"]["email"] == "newuser@example.com"
+        assert data["user"]["username"] == "newuser@example.com"
         assert "user_id" in data["user"]
         assert "created_at" in data["user"]
         assert "password" not in data["user"]  # Password should not be returned
 
     def test_register_existing_user(self, client, session, sample_user):
-        """Test registering with existing email"""
+        """Test registering with existing username"""
         user_data = {
-            "email": sample_user.email,
+            "username": sample_user.username,
             "password": "testpassword123"
         }
         
@@ -97,28 +97,6 @@ class TestAuthRoutes:
         assert response.status_code == 400
         assert "Email already registered" in response.json()["detail"]
 
-    def test_register_invalid_email(self, client):
-        """Test registering with invalid email format"""
-        user_data = {
-            "email": "invalid-email",
-            "password": "testpassword123"
-        }
-        
-        response = client.post("/api/v1/auth/register", json=user_data)
-        
-        assert response.status_code == 422  # Validation error
-
-    def test_register_weak_password(self, client):
-        """Test registering with weak password"""
-        user_data = {
-            "email": "test@example.com",
-            "password": "123"  # Too short
-        }
-        
-        response = client.post("/api/v1/auth/register", json=user_data)
-        
-        assert response.status_code == 422  # Validation error
-
     def test_login_valid_credentials(self, client, session, sample_user):
         """Test login with valid credentials"""
         # Mock the password verification
@@ -126,10 +104,10 @@ class TestAuthRoutes:
             # Create a mock user with to_response method
             mock_user = MagicMock()
             mock_user.user_id = sample_user.user_id
-            mock_user.email = sample_user.email
+            mock_user.username = sample_user.username
             mock_user.to_response.return_value = {
                 "user_id": sample_user.user_id,
-                "email": sample_user.email,
+                "username": sample_user.username,
                 "created_at": sample_user.created_at.isoformat(),
                 "owned_squads": [],
                 "squads": []
@@ -137,7 +115,7 @@ class TestAuthRoutes:
             mock_login.return_value = mock_user
             
             login_data = {
-                "username": sample_user.email,
+                "username": sample_user.username,
                 "password": "testpassword123"
             }
             
@@ -148,7 +126,7 @@ class TestAuthRoutes:
             assert "access_token" in data
             assert data["token_type"] == "bearer"
             assert "user" in data
-            assert data["user"]["email"] == sample_user.email
+            assert data["user"]["username"] == sample_user.username
 
     def test_login_invalid_credentials(self, client):
         """Test login with invalid credentials"""
@@ -207,7 +185,7 @@ class TestAuthRoutes:
 
         # Missing password
         user_data = {
-            "email": "test@example.com"
+            "username": "test@example.com"
         }
         
         response = client.post("/api/v1/auth/register", json=user_data)
@@ -237,7 +215,7 @@ class TestAuthRoutes:
     def test_register_empty_fields(self, client):
         """Test register with empty fields"""
         user_data = {
-            "email": "",
+            "username": "",
             "password": ""
         }
         

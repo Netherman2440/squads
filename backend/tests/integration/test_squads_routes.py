@@ -59,7 +59,7 @@ def sample_user(session):
     """Create a sample user for testing"""
     user = User(
         user_id=str(uuid.uuid4()),
-        email="test@example.com",
+        username="test@example.com",
         password_hash="hashed_password",
         created_at=datetime.now(timezone.utc)
     )
@@ -187,7 +187,7 @@ class TestSquadsRoutes:
         # Create another user
         other_user = User(
             user_id=str(uuid.uuid4()),
-            email="other@example.com",
+            username="other@example.com",
             password_hash="hashed_password",
             created_at=datetime.now(timezone.utc)
         )
@@ -254,7 +254,7 @@ class TestSquadsRoutes:
         # Create another user
         other_user = User(
             user_id=str(uuid.uuid4()),
-            email="other@example.com",
+            username="other@example.com",
             password_hash="hashed_password",
             created_at=datetime.now(timezone.utc)
         )
@@ -316,7 +316,7 @@ class TestSquadsRoutes:
         # Create another user
         other_user = User(
             user_id=str(uuid.uuid4()),
-            email="other@example.com",
+            username="other@example.com",
             password_hash="hashed_password",
             created_at=datetime.now(timezone.utc)
         )

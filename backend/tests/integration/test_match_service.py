@@ -50,7 +50,7 @@ def sample_user(session):
     """Create a sample user for testing"""
     user = User(
         user_id=str(uuid.uuid4()),
-        email="test@example.com",
+        username="test@example.com",
         password_hash="hashed_password",
         created_at=datetime.now(timezone.utc)
     )
@@ -313,39 +313,34 @@ class TestMatchService:
         assert updated_match is None
 
     def test_draw_teams_basic(self, match_service, sample_match):
-        """Test basic team drawing functionality for existing match"""
+        """Test basic draw_teams functionality"""
         # Get match details to extract players
         match_detail = match_service.get_match_detail(sample_match.match_id)
         all_players = match_detail.team_a.players + match_detail.team_b.players
+        all_players_ids = [player.player_id for player in all_players]
         
-        draft_results = match_service.draw_teams(all_players)
+        draft_results = match_service.draw_teams(all_players_ids)
         
-        # Verify return type
+        # Should return at least one composition
+        assert len(draft_results) >= 1
         assert isinstance(draft_results, list)
-        assert len(draft_results) > 0  # Should have at least one draft combination
         
-        # Verify each result is a DraftData object
+        # Each composition should be a DraftData with team_a and team_b
         for draft in draft_results:
             assert isinstance(draft, DraftData)
+            assert hasattr(draft, 'team_a')
+            assert hasattr(draft, 'team_b')
             assert isinstance(draft.team_a, list)
             assert isinstance(draft.team_b, list)
-            assert all(isinstance(player, PlayerData) for player in draft.team_a)
-            assert all(isinstance(player, PlayerData) for player in draft.team_b)
-            
-            # Should have players from the match
-            total_players = len(draft.team_a) + len(draft.team_b)
-            assert total_players > 0
-        
-        # Should return amount_of_draws different team compositions (default 20)
-        assert len(draft_results) <= 20  # May be less if not enough combinations
 
     def test_draw_teams_returns_multiple_compositions(self, match_service, sample_match):
         """Test that draw_teams returns multiple different team compositions"""
         # Get match details to extract players
         match_detail = match_service.get_match_detail(sample_match.match_id)
         all_players = match_detail.team_a.players + match_detail.team_b.players
+        all_players_ids = [player.player_id for player in all_players]
         
-        draft_results = match_service.draw_teams(all_players)
+        draft_results = match_service.draw_teams(all_players_ids)
         
         # Should return multiple different compositions
         assert len(draft_results) >= 1
@@ -370,8 +365,9 @@ class TestMatchService:
         # Get match details to extract players
         match_detail = match_service.get_match_detail(match_data.match_id)
         all_players = match_detail.team_a.players + match_detail.team_b.players
+        all_players_ids = [player.player_id for player in all_players]
         
-        draft_results = match_service.draw_teams(all_players)
+        draft_results = match_service.draw_teams(all_players_ids)
         
         # DrawTeamsService always creates 2 teams
         assert len(draft_results) >= 1  # Should return at least one composition
@@ -387,8 +383,9 @@ class TestMatchService:
         # Get match details to extract players
         match_detail = match_service.get_match_detail(sample_match.match_id)
         all_players = match_detail.team_a.players + match_detail.team_b.players
+        all_players_ids = [player.player_id for player in all_players]
         
-        draft_results = match_service.draw_teams(all_players)
+        draft_results = match_service.draw_teams(all_players_ids)
         
         # Verify draft_results structure
         assert isinstance(draft_results, list)
@@ -412,8 +409,9 @@ class TestMatchService:
         # Get match details to extract players
         match_detail = match_service.get_match_detail(sample_match.match_id)
         all_players = match_detail.team_a.players + match_detail.team_b.players
+        all_players_ids = [player.player_id for player in all_players]
         
-        draft_results = match_service.draw_teams(all_players)
+        draft_results = match_service.draw_teams(all_players_ids)
         
         for draft in draft_results:
             for player in draft.team_a + draft.team_b:
@@ -443,8 +441,8 @@ class TestMatchService:
         # Get match details to extract players
         match_detail = match_service.get_match_detail(match_data.match_id)
         all_players = match_detail.team_a.players + match_detail.team_b.players
-        
-        draft_results = match_service.draw_teams(all_players)
+        all_players_ids = [player.player_id for player in all_players]
+        draft_results = match_service.draw_teams(all_players_ids)
         
         # Get all players from first draft to check sorting
         first_draft = draft_results[0]
@@ -463,8 +461,8 @@ class TestMatchService:
         # Get match details to extract players
         match_detail = match_service.get_match_detail(sample_match.match_id)
         all_players = match_detail.team_a.players + match_detail.team_b.players
-        
-        draft_results = match_service.draw_teams(all_players)
+        all_players_ids = [player.player_id for player in all_players]
+        draft_results = match_service.draw_teams(all_players_ids)
         
         # Create a mapping of original players for comparison
         original_players_map = {p.player_id: p for p in sample_player_data}

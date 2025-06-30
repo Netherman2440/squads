@@ -161,4 +161,24 @@ class PlayerService {
       throw Exception('Failed to load players: $e');
     }
   }
+
+  // Create new player
+  Future<Player> createPlayer(String squadId, PlayerCreate playerCreate) async {
+    try {
+      final response = await _client.post(
+        Uri.parse('$_apiUrl/squads/$squadId/players'),
+        headers: _headers,
+        body: json.encode(playerCreate.toJson()),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return Player.fromJson(data);
+      } else {
+        throw Exception('Failed to create player: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Failed to create player: $e');
+    }
+  }
 } 
