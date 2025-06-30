@@ -5,7 +5,7 @@ import '../services/squad_service.dart';
 import '../services/message_service.dart';
 import '../models/player.dart';
 import '../models/position.dart';
-import '../widgets/player_list_widget.dart';
+import '../widgets/player_widget.dart';
 import '../widgets/create_player_widget.dart';
 import '../state/user_state.dart';
 import '../utils/permission_utils.dart';
@@ -122,10 +122,16 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
       onRefresh: _loadPlayers,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: PlayerListWidget(
-          players: _players,
-          onPlayerTap: _onPlayerTap,
-          showScores: true,
+        child: ListView.builder(
+          itemCount: _players.length,
+          itemBuilder: (context, index) {
+            final player = _players[index];
+            return PlayerWidget(
+              player: player,
+              onTap: () => _onPlayerTap(player),
+              showScores: true,
+            );
+          },
         ),
       ),
     );

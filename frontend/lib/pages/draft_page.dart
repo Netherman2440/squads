@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/models/player.dart';
+import 'package:frontend/models/draft.dart';
 import 'package:frontend/services/player_service.dart';
 import 'package:frontend/services/match_service.dart';
 import 'package:frontend/state/draft_state.dart';
@@ -10,6 +11,8 @@ import 'package:frontend/state/user_state.dart';
 import 'package:frontend/utils/permission_utils.dart';
 import 'package:frontend/widgets/create_player_widget.dart';
 import 'package:frontend/services/message_service.dart';
+import 'package:frontend/pages/create_match_page.dart';
+import 'package:frontend/widgets/player_widget.dart';
 
 class DraftPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -95,14 +98,25 @@ class _DraftPageState extends ConsumerState<DraftPage> {
     }
 
     try {
-      final response = await MatchService.instance.drawTeams(widget.squadId, draftState.selectedPlayers);
+      final drafts = await MatchService.instance.drawTeams(widget.squadId, draftState.selectedPlayers);
       
       if (mounted) {
         MessageService.showSuccess(context, 'Draft został utworzony!');
 
-        print(jsonEncode(response));
-        // Navigate back or show results
-        Navigator.pop(context);
+        // Reset draft state
+        ref.read(draftProvider.notifier).clearSelectedPlayers();
+
+        // Navigate to create match page with drafts
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CreateMatchPage(
+              squadId: widget.squadId,
+              ownerId: widget.ownerId,
+              drafts: drafts,
+            ),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -198,12 +212,12 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                                           itemCount: _getFilteredPlayers(draftState.availablePlayers).length,
                                           itemBuilder: (context, index) {
                                             final player = _getFilteredPlayers(draftState.availablePlayers)[index];
-                                            return _buildPlayerTile(
-                                              player,
-                                              isSelected: false,
-                                              onTap: canManagePlayers ? () {
-                                                ref.read(draftProvider.notifier).addPlayer(player);
-                                              } : null,
+                                            return PlayerWidget(
+                                              player: player,
+                                              onTap: canManagePlayers
+                                                  ? () => ref.read(draftProvider.notifier).addPlayer(player)
+                                                  : null,
+                                              showScores: true,
                                             );
                                           },
                                         ),
@@ -211,7 +225,6 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                               ],
                             ),
                           ),
-                          // Floating action button for adding players
                           if (canManagePlayers)
                             Positioned(
                               bottom: 16,
@@ -269,12 +282,12 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                                           itemCount: draftState.selectedPlayers.length,
                                           itemBuilder: (context, index) {
                                             final player = draftState.selectedPlayers[index];
-                                            return _buildPlayerTile(
-                                              player,
-                                              isSelected: true,
-                                              onTap: canManagePlayers ? () {
-                                                ref.read(draftProvider.notifier).removePlayer(player);
-                                              } : null,
+                                            return PlayerWidget(
+                                              player: player,
+                                              onTap: canManagePlayers
+                                                  ? () => ref.read(draftProvider.notifier).removePlayer(player)
+                                                  : null,
+                                              showScores: true,
                                             );
                                           },
                                         ),
@@ -282,7 +295,6 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                               ],
                             ),
                           ),
-                          // Floating action button for drafting
                           if (canManagePlayers && draftState.selectedPlayers.isNotEmpty)
                             Positioned(
                               bottom: 16,
@@ -299,32 +311,6 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                     ),
                   ],
                 ),
-    );
-  }
-
-  Widget _buildPlayerTile(Player player, {required bool isSelected, required VoidCallback? onTap}) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: isSelected ? Colors.green : Colors.grey,
-        child: Icon(
-          isSelected ? Icons.check : Icons.person,
-          color: Colors.white,
-        ),
-      ),
-      title: Text(player.name),
-      subtitle: Text('${player.position.displayName} • ${player.score.toStringAsFixed(1)} pkt'),
-      trailing: onTap != null
-          ? (isSelected
-              ? IconButton(
-                  icon: const Icon(Icons.remove_circle, color: Colors.red),
-                  onPressed: onTap,
-                )
-              : IconButton(
-                  icon: const Icon(Icons.add_circle, color: Colors.green),
-                  onPressed: onTap,
-                ))
-          : null,
-      onTap: onTap,
     );
   }
 } 

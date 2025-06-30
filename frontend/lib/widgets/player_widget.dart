@@ -1,46 +1,16 @@
 import 'package:flutter/material.dart';
 import '../models/player.dart';
 
-class PlayerListWidget extends StatelessWidget {
-  final List<Player> players;
-  final Function(Player)? onPlayerTap;
-  final bool showScores;
-
-  const PlayerListWidget({
-    Key? key,
-    required this.players,
-    this.onPlayerTap,
-    this.showScores = true,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: players.length,
-      itemBuilder: (context, index) {
-        final player = players[index];
-        return _PlayerListItem(
-          player: player,
-          onTap: onPlayerTap != null ? () => onPlayerTap!(player) : null,
-          showScore: showScores,
-        );
-      },
-    );
-  }
-}
-
-class _PlayerListItem extends StatelessWidget {
+class PlayerWidget extends StatelessWidget {
   final Player player;
   final VoidCallback? onTap;
-  final bool showScore;
+  final bool showScores;
 
-  const _PlayerListItem({
+  const PlayerWidget({
     Key? key,
     required this.player,
     this.onTap,
-    required this.showScore,
+    this.showScores = true,
   }) : super(key: key);
 
   @override
@@ -81,7 +51,7 @@ class _PlayerListItem extends StatelessWidget {
             ),
           ],
         ),
-        trailing: showScore
+        trailing: showScores
             ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
