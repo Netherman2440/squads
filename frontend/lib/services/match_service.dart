@@ -194,5 +194,34 @@ class MatchService {
       throw Exception('Failed to load squad matches: $e');
     }
   }
+
+  // Create match - returns MatchDetailResponse
+  Future<MatchDetailResponse> createMatch(String squadId, Draft draft, {String? teamAName, String? teamBName}) async {
+    try {
+      final body = {
+        'team_a_ids': draft.teamA.map((p) => p.playerId).toList(),
+        'team_b_ids': draft.teamB.map((p) => p.playerId).toList(),
+        'team_a_name': teamAName,
+        'team_b_name': teamBName,
+      };
+      final response = await _client.post(
+        Uri.parse('$_apiUrl/squads/$squadId/matches'),
+        headers: _headers,
+        body: json.encode(body),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print(data);
+        return MatchDetailResponse.fromJson(data);
+      } else {
+        print(response.body);
+        throw Exception('Failed to create match: \\${response.statusCode}');
+
+      }
+    } catch (e) {
+      print(e);
+      throw Exception('Failed to create match: $e');
+    }
+  }
 }
 

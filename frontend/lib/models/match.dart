@@ -105,64 +105,87 @@ class MatchListResponse {
 }
 
 class TeamDetailData {
+  final String squadId;
+  final String matchId;
+  final String teamId;
+  final int? score;
+  final String? name;
+  final String? color;
+  final int playersCount;
   final List<Player> players;
-  final double totalScore;
-  final int playerCount;
 
   TeamDetailData({
+    required this.squadId,
+    required this.matchId,
+    required this.teamId,
+    required this.score,
+    required this.name,
+    required this.color,
+    required this.playersCount,
     required this.players,
-    required this.totalScore,
-    required this.playerCount,
   });
 
   factory TeamDetailData.fromJson(Map<String, dynamic> json) {
     return TeamDetailData(
+      squadId: json['squad_id'],
+      matchId: json['match_id'],
+      teamId: json['team_id'],
+      score: json['score'],
+      name: json['name'],
+      color: json['color'],
+      playersCount: json['players_count'],
       players: (json['players'] as List)
           .map((playerJson) => Player.fromJson(playerJson))
           .toList(),
-      totalScore: json['total_score'].toDouble(),
-      playerCount: json['player_count'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'squad_id': squadId,
+      'match_id': matchId,
+      'team_id': teamId,
+      'score': score,
+      'name': name,
+      'color': color,
+      'players_count': playersCount,
       'players': players.map((player) => player.toJson()).toList(),
-      'total_score': totalScore,
-      'player_count': playerCount,
     };
   }
 }
 
-class MatchDetailResponse extends Match {
+class MatchDetailResponse {
+  final String squadId;
+  final String matchId;
+  final DateTime createdAt;
   final TeamDetailData teamA;
   final TeamDetailData teamB;
 
   MatchDetailResponse({
-    required super.matchId,
-    required super.squadId,
-    required super.createdAt,
-    super.score,
+    required this.squadId,
+    required this.matchId,
+    required this.createdAt,
     required this.teamA,
     required this.teamB,
   });
 
   factory MatchDetailResponse.fromJson(Map<String, dynamic> json) {
     return MatchDetailResponse(
-      matchId: json['match_id'],
       squadId: json['squad_id'],
+      matchId: json['match_id'],
       createdAt: DateTime.parse(json['created_at']),
-      score: json['score'] != null ? List<int>.from(json['score']) : null,
       teamA: TeamDetailData.fromJson(json['team_a']),
       teamB: TeamDetailData.fromJson(json['team_b']),
     );
   }
 
-  @override
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = super.toJson();
-    data['team_a'] = teamA.toJson();
-    data['team_b'] = teamB.toJson();
-    return data;
+    return {
+      'squad_id': squadId,
+      'match_id': matchId,
+      'created_at': createdAt.toIso8601String(),
+      'team_a': teamA.toJson(),
+      'team_b': teamB.toJson(),
+    };
   }
 } 

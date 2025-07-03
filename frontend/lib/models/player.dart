@@ -25,7 +25,7 @@ class Player {
       squadId: json['squad_id'],
       name: json['name'],
       baseScore: json['base_score'],
-      score: json['score'].toDouble(),
+      score: json['score'] != null ? json['score'].toDouble() : 0.0,
       position: Position.fromString(json['position']),
       matchesPlayed: json['matches_played'],
     );
@@ -151,7 +151,7 @@ class PlayerDetailResponse extends Player {
       squadId: json['squad_id'],
       name: json['name'],
       baseScore: json['base_score'],
-      score: json['score'].toDouble(),
+      score: json['score'] != null ? json['score'].toDouble() : 0.0,
       position: Position.fromString(json['position']),
       matchesPlayed: json['matches_played'],
       matches: json['matches'] as List,

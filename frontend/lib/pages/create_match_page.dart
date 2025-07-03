@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/models/draft.dart';
 import 'package:frontend/models/player.dart';
+import 'package:frontend/pages/match_page.dart';
+import 'package:frontend/services/match_service.dart';
 import 'package:frontend/services/message_service.dart';
 import 'package:frontend/widgets/match_widget.dart';
 
@@ -27,6 +29,8 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
   int _selectedDraftIndex = 0;
   late List<Draft> _originalDrafts;
   late List<Draft> _currentDrafts;
+  late TextEditingController _teamAController;
+  late TextEditingController _teamBController;
 
   @override
   void initState() {
@@ -39,6 +43,15 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
       teamA: List.from(d.teamA),
       teamB: List.from(d.teamB),
     )).toList();
+    _teamAController = TextEditingController(text: 'FC Biali');
+    _teamBController = TextEditingController(text: 'Czarni United');
+  }
+
+  @override
+  void dispose() {
+    _teamAController.dispose();
+    _teamBController.dispose();
+    super.dispose();
   }
 
   void _switchDraft(int newIndex) {
@@ -62,10 +75,26 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
   }
 
   void _createMatch() async {
-    // TODO: Call backend, for now just show snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Create Match (mocked call)')),
-    );
+    final selectedDraft = _currentDrafts[_selectedDraftIndex];
+    final teamAName = _teamAController.text;
+    final teamBName = _teamBController.text;
+    try {
+      final match = await MatchService.instance.createMatch(
+        widget.squadId,
+        selectedDraft,
+        teamAName: teamAName,
+        teamBName: teamBName,
+      );
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MatchPage(matchDetail: match, allPlayers: []),
+        ),
+      );
+    } catch (e) {
+      MessageService.showError(context, e.toString());
+    }
   }
 
   @override
@@ -128,11 +157,13 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
               child: MatchWidget(
                 teamAPlayers: selectedDraft.teamA,
                 teamBPlayers: selectedDraft.teamB,
-                teamAName: 'FC Biali',
-                teamBName: 'Czarni United',
+                teamAName: _teamAController.text,
+                teamBName: _teamBController.text,
                 showScores: true,
                 canEditTeams: true,
                 onPlayerTap: (_) {},
+                teamAController: _teamAController,
+                teamBController: _teamBController,
               ),
             ),
           ],

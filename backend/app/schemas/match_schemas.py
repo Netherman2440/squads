@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 
-from app.entities.team_data import TeamDetailData
+from app.schemas.player_schemas import PlayerResponse
 
 class MatchBase(BaseModel):
     pass
@@ -10,8 +10,10 @@ class MatchBase(BaseModel):
 #/matches
 
 class MatchCreate(MatchBase):
-    team_a: list
-    team_b: list
+    team_a_ids: list[str]
+    team_b_ids: list[str]
+    team_a_name: Optional[str] = None
+    team_b_name: Optional[str] = None
 
 class MatchResponse(MatchBase):
     squad_id: str
@@ -25,9 +27,22 @@ class MatchListResponse(BaseModel):
 #/matches
 #/matches/{match_id}
 
-class MatchDetailResponse(MatchResponse):
-    team_a: TeamDetailData
-    team_b: TeamDetailData
+class TeamDetailResponse(BaseModel):
+    squad_id: str
+    match_id: str
+    team_id: str
+    score: Optional[int] = None
+    name: Optional[str] = None
+    color: Optional[str] = None
+    players_count: int = 0
+    players: list[PlayerResponse]
+
+class MatchDetailResponse(BaseModel):
+    squad_id: str
+    match_id: str
+    created_at: datetime
+    team_a: TeamDetailResponse
+    team_b: TeamDetailResponse
 #todo: stats
 
 class MatchUpdate(MatchBase):

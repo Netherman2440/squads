@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
+from app.schemas.match_schemas import TeamDetailResponse
 
 @dataclass
 class TeamData:
@@ -15,4 +16,16 @@ class TeamData:
 @dataclass
 class TeamDetailData(TeamData):
     players: list = None
+
+    def to_response(self) -> TeamDetailResponse:
+        return TeamDetailResponse(
+            squad_id=self.squad_id,
+            match_id=self.match_id,
+            team_id=self.team_id,
+            score=self.score,
+            name=self.name,
+            color=self.color,
+            players_count=self.players_count,
+            players=[p.to_response() for p in self.players] if self.players else [],
+        )
 

@@ -13,6 +13,7 @@ import 'package:frontend/widgets/create_player_widget.dart';
 import 'package:frontend/services/message_service.dart';
 import 'package:frontend/pages/create_match_page.dart';
 import 'package:frontend/widgets/player_widget.dart';
+import 'package:frontend/widgets/players_list_widget.dart';
 
 class DraftPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -173,54 +174,16 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                             margin: const EdgeInsets.all(8.0),
                             child: Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    children: [
-                                      Text(
-                                        'Dostępni gracze',
-                                        style: Theme.of(context).textTheme.titleMedium,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      TextField(
-                                        decoration: const InputDecoration(
-                                          hintText: 'Szukaj gracza...',
-                                          prefixIcon: Icon(Icons.search),
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        onChanged: (value) {
-                                          setState(() {
-                                            _searchQuery = value;
-                                          });
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
+
                                 Expanded(
-                                  child: _getFilteredPlayers(draftState.availablePlayers).isEmpty
-                                      ? const Center(
-                                          child: Text(
-                                            'Brak dostępnych graczy',
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                          ),
-                                        )
-                                      : ListView.builder(
-                                          itemCount: _getFilteredPlayers(draftState.availablePlayers).length,
-                                          itemBuilder: (context, index) {
-                                            final player = _getFilteredPlayers(draftState.availablePlayers)[index];
-                                            return PlayerWidget(
-                                              player: player,
-                                              onTap: canManagePlayers
-                                                  ? () => ref.read(draftProvider.notifier).addPlayer(player)
-                                                  : null,
-                                              showScores: true,
-                                            );
-                                          },
-                                        ),
+                                  child: PlayersListWidget(
+                                    players: _getFilteredPlayers(draftState.availablePlayers),
+                                    onPlayerSelected: canManagePlayers
+                                        ? (player) => ref.read(draftProvider.notifier).addPlayer(player)
+                                        : null,
+                                    allowAdd: false,
+                                    allowSelect: true,
+                                  ),
                                 ),
                               ],
                             ),

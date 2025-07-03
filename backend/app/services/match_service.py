@@ -53,7 +53,7 @@ class MatchService:
             match_id=str(match.match_id),
             created_at=match.created_at,
             team_a=team_a,
-            team_b=team_b,
+            team_b=team_b
         )
 
     def get_matches(self, squad_id: str) -> list[MatchData]:
@@ -64,8 +64,7 @@ class MatchService:
             match_data.append(self.match_to_data(match))
         return match_data
 
-    def create_match(self, squad_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData]) -> MatchDetailData:
-
+    def create_match(self, squad_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData], team_a_name: str = None, team_b_name: str = None) -> MatchDetailData:
         from app.services import TeamService
         team_service = TeamService(self.session)
         # Create match and add to session
@@ -74,8 +73,8 @@ class MatchService:
         self.session.commit()  # Commit to generate match_id
 
         # Create teams and add to session
-        team_a = team_service.create_team(squad_id=squad_id, match_id=match.match_id, players=team_a_players, color="white")
-        team_b = team_service.create_team(squad_id=squad_id, match_id=match.match_id, players=team_b_players, color="black")
+        team_a = team_service.create_team(squad_id=squad_id, match_id=match.match_id, players=team_a_players, color="white", name=team_a_name)
+        team_b = team_service.create_team(squad_id=squad_id, match_id=match.match_id, players=team_b_players, color="black", name=team_b_name)
 
         # Create score history entries for all players with delta = 0
         all_players = team_a_players + team_b_players

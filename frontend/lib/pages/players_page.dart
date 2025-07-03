@@ -9,6 +9,7 @@ import '../widgets/player_widget.dart';
 import '../widgets/create_player_widget.dart';
 import '../state/user_state.dart';
 import '../utils/permission_utils.dart';
+import '../widgets/players_list_widget.dart';
 
 class PlayersPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -122,16 +123,11 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
       onRefresh: _loadPlayers,
       child: Padding(
         padding: const EdgeInsets.all(8.0),
-        child: ListView.builder(
-          itemCount: _players.length,
-          itemBuilder: (context, index) {
-            final player = _players[index];
-            return PlayerWidget(
-              player: player,
-              onTap: () => _onPlayerTap(player),
-              showScores: true,
-            );
-          },
+        child: PlayersListWidget(
+          players: _players,
+          onPlayerSelected: _onPlayerTap,
+          allowAdd: false,
+          allowSelect: true,
         ),
       ),
     );

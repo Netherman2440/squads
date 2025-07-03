@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 from .team_data import TeamDetailData
-from app.schemas.match_schemas import MatchResponse, MatchDetailResponse
+from app.schemas.match_schemas import MatchResponse, MatchDetailResponse, TeamDetailResponse
+from app.schemas.player_schemas import PlayerResponse
 
 @dataclass
 class MatchData:
@@ -28,20 +29,12 @@ class MatchDetailData:
     team_b: TeamDetailData
     #todo: stats
 
-    @property
-    def score(self) -> Optional[tuple[int, int]]:
-        # Check if score is actually set (not default 0-0)
-        if self.team_a.score is None or self.team_b.score is None:
-            return None
-        return (self.team_a.score, self.team_b.score)
-
     def to_response(self) -> MatchDetailResponse:
         return MatchDetailResponse(
             squad_id=self.squad_id,
             match_id=self.match_id,
             created_at=self.created_at,
-            score=self.score,
-            team_a=self.team_a,
-            team_b=self.team_b,
+            team_a=self.team_a.to_response(),
+            team_b=self.team_b.to_response(),
         )   
 

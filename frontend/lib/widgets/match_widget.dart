@@ -10,6 +10,8 @@ class MatchWidget extends StatefulWidget {
   final Function(Player)? onPlayerTap;
   final bool showScores;
   final bool canEditTeams;
+  final TextEditingController? teamAController;
+  final TextEditingController? teamBController;
 
   const MatchWidget({
     Key? key,
@@ -20,6 +22,8 @@ class MatchWidget extends StatefulWidget {
     this.onPlayerTap,
     this.showScores = true,
     this.canEditTeams = true,
+    this.teamAController,
+    this.teamBController,
   }) : super(key: key);
 
   @override
@@ -39,8 +43,8 @@ class _MatchWidgetState extends State<MatchWidget> {
     super.initState();
     _teamAPlayers = List<Player>.from(widget.teamAPlayers);
     _teamBPlayers = List<Player>.from(widget.teamBPlayers);
-    _teamAController = TextEditingController(text: widget.teamAName ?? 'FC Biali');
-    _teamBController = TextEditingController(text: widget.teamBName ?? 'Czarni United');
+    _teamAController = widget.teamAController ?? TextEditingController(text: widget.teamAName ?? 'FC Biali');
+    _teamBController = widget.teamBController ?? TextEditingController(text: widget.teamBName ?? 'Czarni United');
   }
 
   @override
@@ -54,8 +58,12 @@ class _MatchWidgetState extends State<MatchWidget> {
 
   @override
   void dispose() {
-    _teamAController.dispose();
-    _teamBController.dispose();
+    if (widget.teamAController == null) {
+      _teamAController.dispose();
+    }
+    if (widget.teamBController == null) {
+      _teamBController.dispose();
+    }
     super.dispose();
   }
 

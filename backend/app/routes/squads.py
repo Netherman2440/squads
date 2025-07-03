@@ -211,13 +211,28 @@ async def create_match(
     match_data: MatchCreate, 
     user_id: str = Depends(get_current_user),
     match_service: MatchService = Depends(get_match_service),
-    squad_service: SquadService = Depends(get_squad_service)
+    squad_service: SquadService = Depends(get_squad_service),
+    player_service: PlayerService = Depends(get_player_service)
 ):
     """Create a match in a squad - only squad owner can create matches"""
     if not check_user_can_access_squad(user_id, squad_id, squad_service):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only squad owner can create matches")
-    
-    detail_match = match_service.create_match(squad_id, match_data.team_a, match_data.team_b)
+
+    # Pobierz PlayerData po idkach
+    team_a_players = [player_service.get_player(player_id) for player_id in match_data.team_a_ids]
+    team_b_players = [player_service.get_player(player_id) for player_id in match_data.team_b_ids]
+
+    # Sprawdź czy wszyscy gracze istnieją
+    if None in team_a_players or None in team_b_players:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid player id in team")
+
+    detail_match = match_service.create_match(
+        squad_id,
+        team_a_players,
+        team_b_players,
+        team_a_name=match_data.team_a_name,
+        team_b_name=match_data.team_b_name
+    )
     if detail_match is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to create match")
     return detail_match.to_response()
