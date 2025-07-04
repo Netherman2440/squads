@@ -8,6 +8,7 @@ import '../services/squad_service.dart';
 import '../theme/app_theme.dart';
 import 'players_page.dart';
 import 'match_history_page.dart';
+import 'squad_list_page.dart';
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -39,6 +40,17 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         backgroundColor: isDark ? AppColors.bgDark : AppColors.lightSurface,
         foregroundColor: isDark ? AppColors.text : AppColors.lightText,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => SquadListPage(),
+              ),
+              (route) => false,
+            );
+          },
+        ),
         actions: [
           if (PermissionUtils.isOwner(userState, _squad?.ownerId ?? ''))
             IconButton(
@@ -398,6 +410,6 @@ class _SquadPageState extends ConsumerState<SquadPage> {
   }
 
   void _navigateToTournaments(BuildContext context) {
-    MessageService.showInfo(context, 'Tournaments page coming soon');
+    //MessageService.showInfo(context, 'Tournaments page coming soon');
   }
 } 

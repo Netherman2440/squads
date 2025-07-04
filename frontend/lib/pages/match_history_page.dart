@@ -121,26 +121,13 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
         itemCount: _matches.length,
         itemBuilder: (context, index) {
           final match = _matches[index];
-          return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => MatchPage(
-                    squadId: widget.squadId,
-                    matchId: match.matchId,
-                  ),
-                ),
-              );
-            },
-            child: _buildMatchCard(match),
-          );
+          return _buildMatchCard(match, context);
         },
       ),
     );
   }
 
-  Widget _buildMatchCard(Match match) {
+  Widget _buildMatchCard(Match match, BuildContext context) {
     final formattedDate = _formatDateTime(match.createdAt);
     
     // Check if score is set (not null and not [0, 0] or empty)
@@ -151,11 +138,21 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
     
     return Card(
       margin: EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Row(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MatchPage(
+                squadId: widget.squadId,
+                matchId: match.matchId,
+              ),
+            ),
+          );
+        },
+        title: Row(
           children: [
-            // Date/Time - main element
             Expanded(
               flex: 2,
               child: Column(
@@ -180,7 +177,6 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
               ),
             ),
             SizedBox(width: 16),
-            // Score boxes
             Row(
               children: [
                 _buildScoreBox(
