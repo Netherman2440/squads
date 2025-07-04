@@ -89,7 +89,10 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => MatchPage(matchDetail: match, allPlayers: []),
+          builder: (context) => MatchPage(
+            squadId: widget.squadId,
+            matchId: match.matchId,
+          ),
         ),
       );
     } catch (e) {

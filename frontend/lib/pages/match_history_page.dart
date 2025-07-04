@@ -6,6 +6,8 @@ import '../models/match.dart';
 import '../state/user_state.dart';
 import '../utils/permission_utils.dart';
 import 'draft_page.dart';
+import 'match_page.dart';
+import 'squad_page.dart';
 
 class MatchHistoryPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -43,6 +45,17 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
       appBar: AppBar(
         title: Text('Match History - ${widget.squadName}'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => SquadPage(squadId: widget.squadId),
+              ),
+              (route) => false,
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -108,7 +121,20 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
         itemCount: _matches.length,
         itemBuilder: (context, index) {
           final match = _matches[index];
-          return _buildMatchCard(match);
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MatchPage(
+                    squadId: widget.squadId,
+                    matchId: match.matchId,
+                  ),
+                ),
+              );
+            },
+            child: _buildMatchCard(match),
+          );
         },
       ),
     );
