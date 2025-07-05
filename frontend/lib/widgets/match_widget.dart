@@ -12,6 +12,7 @@ class MatchWidget extends StatefulWidget {
   final bool canEditTeams;
   final TextEditingController? teamAController;
   final TextEditingController? teamBController;
+  final void Function(List<Player> teamA, List<Player> teamB)? onTeamsChanged;
 
   const MatchWidget({
     Key? key,
@@ -24,6 +25,7 @@ class MatchWidget extends StatefulWidget {
     this.canEditTeams = true,
     this.teamAController,
     this.teamBController,
+    this.onTeamsChanged,
   }) : super(key: key);
 
   @override
@@ -73,6 +75,7 @@ class _MatchWidgetState extends State<MatchWidget> {
       _teamAPlayers = _teamBPlayers;
       _teamBPlayers = tempPlayers;
     });
+    widget.onTeamsChanged?.call(_teamAPlayers, _teamBPlayers);
   }
 
   void _movePlayer(Player player, bool toTeamA) {
@@ -85,6 +88,7 @@ class _MatchWidgetState extends State<MatchWidget> {
         _teamBPlayers.add(player);
       }
     });
+    widget.onTeamsChanged?.call(_teamAPlayers, _teamBPlayers);
   }
 
   double _calculateTeamScore(List<Player> players) {

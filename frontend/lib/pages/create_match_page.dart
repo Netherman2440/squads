@@ -167,6 +167,7 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
                 onPlayerTap: (_) {},
                 teamAController: _teamAController,
                 teamBController: _teamBController,
+                onTeamsChanged: _onTeamChanged, // <-- ensure this is passed
               ),
             ),
           ],
