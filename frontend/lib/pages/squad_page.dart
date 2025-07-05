@@ -9,6 +9,9 @@ import '../theme/app_theme.dart';
 import 'players_page.dart';
 import 'match_history_page.dart';
 import 'squad_list_page.dart';
+import '../state/squad_state.dart';
+import '../state/players_state.dart';
+import '../state/matches_state.dart';
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -20,7 +23,6 @@ class SquadPage extends ConsumerStatefulWidget {
 }
 
 class _SquadPageState extends ConsumerState<SquadPage> {
-  SquadDetailResponse? _squad;
   bool _isLoading = true;
 
   @override
@@ -29,14 +31,36 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     _loadSquad();
   }
 
+  Future<void> _loadSquad() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final squadDetail = await SquadService.instance.getSquad(widget.squadId);
+      ref.read(squadProvider.notifier).setSquad(squadDetail);
+      ref.read(playersProvider.notifier).setPlayers(squadDetail.players);
+      ref.read(matchesProvider.notifier).setMatches(squadDetail.matches);
+    } catch (e) {
+      // Możesz dodać obsługę błędów jeśli chcesz
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final userState = ref.watch(userSessionProvider);
+    final squadState = ref.watch(squadProvider);
+    final playersState = ref.watch(playersProvider);
+    final matchesState = ref.watch(matchesProvider);
+    final userId = ref.watch(userSessionProvider).user?.userId ?? '';
+    final isOwner = squadState.isOwner(userId);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_squad?.name ?? 'Loading Squad...'),
+        title: Text(squadState.squad?.name ?? 'Loading Squad...'),
         backgroundColor: isDark ? AppColors.bgDark : AppColors.lightSurface,
         foregroundColor: isDark ? AppColors.text : AppColors.lightText,
         elevation: 0,
@@ -52,18 +76,18 @@ class _SquadPageState extends ConsumerState<SquadPage> {
           },
         ),
         actions: [
-          if (PermissionUtils.isOwner(userState, _squad?.ownerId ?? ''))
+          if (isOwner)
             IconButton(
               icon: Icon(Icons.edit),
               onPressed: () => _editSquad(context),
             ),
         ],
       ),
-      body: _buildBody(context, userState, widget.squadId),
+      body: _buildBody(context, squadState, playersState, matchesState),
     );
   }
 
-  Widget _buildBody(BuildContext context, UserSessionState userState, String squadId) {
+  Widget _buildBody(BuildContext context, SquadState squadState, PlayersState playersState, MatchesState matchesState) {
     if (_isLoading) {
       return Center(
         child: CircularProgressIndicator(
@@ -72,7 +96,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
       );
     }
 
-    if (_squad == null) {
+    if (squadState.squad == null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -98,9 +122,9 @@ class _SquadPageState extends ConsumerState<SquadPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSquadInfo(),
+          _buildSquadInfo(squadState, playersState, matchesState),
           SizedBox(height: 24),
-          _buildMainSections(context, userState),
+          _buildMainSections(context, squadState, playersState, matchesState),
           SizedBox(height: 24),
           _buildStatisticsSection(),
         ],
@@ -108,7 +132,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     );
   }
 
-  Widget _buildSquadInfo() {
+  Widget _buildSquadInfo(SquadState squadState, PlayersState playersState, MatchesState matchesState) {
+    final squad = squadState.squad!;
     return Card(
       child: Padding(
         padding: EdgeInsets.all(16),
@@ -130,17 +155,17 @@ class _SquadPageState extends ConsumerState<SquadPage> {
               ],
             ),
             SizedBox(height: 16),
-            _buildInfoRow('Name', _squad!.name),
-            _buildInfoRow('Created', _squad!.createdAt.toString().split(' ')[0]),
-            _buildInfoRow('Players', _squad!.playersCount.toString()),
-            _buildInfoRow('Matches', _squad!.matches.length.toString()),
+            _buildInfoRow('Name', squad.name),
+            _buildInfoRow('Created', squad.createdAt.toString().split(' ')[0]),
+            _buildInfoRow('Players', playersState.players.length.toString()),
+            _buildInfoRow('Matches', matchesState.matches.length.toString()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildMainSections(BuildContext context, UserSessionState userState) {
+  Widget _buildMainSections(BuildContext context, SquadState squadState, PlayersState playersState, MatchesState matchesState) {
     return Row(
       children: [
         Expanded(
@@ -150,8 +175,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             icon: Icons.people,
             color: AppColors.secondary,
             onTap: () => _navigateToPlayers(context),
-            canAccess: PermissionUtils.canViewPlayers(userState, _squad!.ownerId),
-            count: _squad!.playersCount,
+            canAccess: true,
+            count: playersState.players.length,
           ),
         ),
         SizedBox(width: 12),
@@ -162,8 +187,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             icon: Icons.sports_soccer,
             color: AppColors.success,
             onTap: () => _navigateToMatches(context),
-            canAccess: PermissionUtils.canViewMatches(userState, _squad!.ownerId),
-            count: _squad!.matches.length,
+            canAccess: true,
+            count: matchesState.matches.length,
           ),
         ),
         SizedBox(width: 12),
@@ -354,56 +379,36 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     );
   }
 
-  void _loadSquad() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final squadDetail = await SquadService.instance.getSquad(widget.squadId);
-      
-      setState(() {
-        _squad = squadDetail;
-        _isLoading = false;
-      });
-      
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      MessageService.showError(context, e.toString());
-    }
-  }
-
   void _editSquad(BuildContext context) {
     MessageService.showInfo(context, 'Edit squad functionality coming soon');
   }
 
   void _navigateToPlayers(BuildContext context) {
-    if (_squad == null) return;
+    final squadState = ref.read(squadProvider);
+    if (squadState.squad == null) return;
     
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PlayersPage(
-          squadId: _squad!.squadId,
-          squadName: _squad!.name,
-          ownerId: _squad!.ownerId,
+          squadId: squadState.squad!.squadId,
+          ownerId: squadState.squad!.ownerId,
         ),
       ),
     );
   }
 
   void _navigateToMatches(BuildContext context) {
-    if (_squad == null) return;
+    final squadState = ref.read(squadProvider);
+    if (squadState.squad == null) return;
     
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => MatchHistoryPage(
-          squadId: _squad!.squadId,
-          squadName: _squad!.name,
-          ownerId: _squad!.ownerId,
+          squadId: squadState.squad!.squadId,
+          squadName: squadState.squad!.name,
+          ownerId: squadState.squad!.ownerId,
         ),
       ),
     );

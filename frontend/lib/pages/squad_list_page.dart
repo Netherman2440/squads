@@ -5,7 +5,7 @@ import '../services/message_service.dart';
 import '../services/auth_service.dart';
 import '../models/squad.dart';
 import '../state/user_state.dart';
-import '../utils/permission_utils.dart';
+import '../state/squad_state.dart';
 import 'squad_page.dart';
 import 'auth_page.dart';
 
@@ -37,7 +37,7 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
   @override
   Widget build(BuildContext context) {
     final userSession = ref.watch(userSessionProvider);
-    final canCreateSquad = PermissionUtils.canCreateSquad(userSession);
+    final canCreateSquad = userSession.user != null;
     print(userSession.user);
     
     return Scaffold(
@@ -122,7 +122,8 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
   }
 
   Widget _buildSquadCard(Squad squad) {
-    final isOwner = squad.ownerId == ref.read(userSessionProvider).user?.userId;
+    final userId = ref.read(userSessionProvider).user?.userId;
+    final isOwner = squad.ownerId == userId;
     
     return Card(
       margin: EdgeInsets.only(bottom: 12),

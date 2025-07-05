@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/match_service.dart';
 import '../services/message_service.dart';
+import '../services/squad_service.dart';
 import '../models/match.dart';
 import '../state/user_state.dart';
+import '../state/players_state.dart';
+import '../state/matches_state.dart';
+import '../state/squad_state.dart';
 import '../utils/permission_utils.dart';
-import 'draft_page.dart';
 import 'match_page.dart';
 import 'squad_page.dart';
+import 'draft_page.dart';
 
 class MatchHistoryPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -26,24 +30,49 @@ class MatchHistoryPage extends ConsumerStatefulWidget {
 }
 
 class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
-  List<Match> _matches = [];
   bool _isLoading = true;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _ensureSquadLoaded();
     _loadMatches();
+  }
+
+  Future<void> _ensureSquadLoaded() async {
+    final squadState = ref.read(squadProvider);
+    if (squadState.squad == null) {
+      setState(() { _isLoading = true; });
+      try {
+        final squadDetail = await SquadService.instance.getSquad(widget.squadId);
+        ref.read(squadProvider.notifier).setSquad(squadDetail);
+        ref.read(playersProvider.notifier).setPlayers(squadDetail.players);
+        ref.read(matchesProvider.notifier).setMatches(squadDetail.matches);
+      } catch (e) {
+        // Możesz dodać obsługę błędów jeśli chcesz
+      } finally {
+        setState(() { _isLoading = false; });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userState = ref.watch(userSessionProvider);
-    final canManageMatches = PermissionUtils.canManageMatches(userState, widget.ownerId);
+    final squadState = ref.watch(squadProvider);
+    final matchesState = ref.watch(matchesProvider);
+    final userId = ref.watch(userSessionProvider).user?.userId ?? '';
+    final canManageMatches = squadState.isOwner(userId);
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Match History - ${widget.squadName}'),
+        title: Text('Match History - ${squadState.squad?.name ?? ''}'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -63,7 +92,7 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
           ),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody(matchesState),
       floatingActionButton: canManageMatches
           ? FloatingActionButton(
               onPressed: () => _navigateToDraft(context),
@@ -74,7 +103,7 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(MatchesState matchesState) {
     if (_isLoading) {
       return Center(child: CircularProgressIndicator());
     }
@@ -99,7 +128,7 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
       );
     }
 
-    if (_matches.isEmpty) {
+    if (matchesState.matches.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -118,9 +147,9 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
       onRefresh: _loadMatches,
       child: ListView.builder(
         padding: EdgeInsets.all(16),
-        itemCount: _matches.length,
+        itemCount: matchesState.matches.length,
         itemBuilder: (context, index) {
-          final match = _matches[index];
+          final match = matchesState.matches[index];
           return _buildMatchCard(match, context);
         },
       ),
@@ -260,13 +289,10 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
     });
 
     try {
-      final matches = await MatchService.instance.getSquadMatches(widget.squadId);
-      
-      // Sort matches by creation date (newest first)
-      matches.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+      final squadId = ref.read(squadProvider).squad?.squadId ?? widget.squadId;
+      final matches = await MatchService.instance.getSquadMatches(squadId);
+      ref.read(matchesProvider.notifier).setMatches(matches);
       setState(() {
-        _matches = matches;
         _isLoading = false;
       });
     } catch (e) {

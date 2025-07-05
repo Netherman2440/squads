@@ -10,16 +10,19 @@ import '../widgets/create_player_widget.dart';
 import '../state/user_state.dart';
 import '../utils/permission_utils.dart';
 import '../widgets/players_list_widget.dart';
+import '../state/players_state.dart';
+import '../state/squad_state.dart';
+import '../state/matches_state.dart';
 
 class PlayersPage extends ConsumerStatefulWidget {
   final String squadId;
-  final String squadName;
+
   final String ownerId;
 
   const PlayersPage({
     Key? key,
     required this.squadId,
-    required this.squadName,
+
     required this.ownerId,
   }) : super(key: key);
 
@@ -28,24 +31,49 @@ class PlayersPage extends ConsumerStatefulWidget {
 }
 
 class _PlayersPageState extends ConsumerState<PlayersPage> {
-  List<Player> _players = [];
   bool _isLoading = true;
   String? _error;
   
   @override
   void initState() {
     super.initState();
+    _ensureSquadLoaded();
     _loadPlayers();
+  }
+
+  Future<void> _ensureSquadLoaded() async {
+    final squadState = ref.read(squadProvider);
+    if (squadState.squad == null) {
+      setState(() { _isLoading = true; });
+      try {
+        final squadDetail = await SquadService.instance.getSquad(widget.squadId);
+        ref.read(squadProvider.notifier).setSquad(squadDetail);
+        ref.read(playersProvider.notifier).setPlayers(squadDetail.players);
+        ref.read(matchesProvider.notifier).setMatches(squadDetail.matches);
+      } catch (e) {
+        // Możesz dodać obsługę błędów jeśli chcesz
+      } finally {
+        setState(() { _isLoading = false; });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final userState = ref.watch(userSessionProvider);
-    final canManagePlayers = PermissionUtils.canManagePlayers(userState, widget.ownerId);
+    final squadState = ref.watch(squadProvider);
+    final playersState = ref.watch(playersProvider);
+    final userId = ref.watch(userSessionProvider).user?.userId ?? '';
+    final canManagePlayers = squadState.isOwner(userId);
+
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Gracze - ${widget.squadName}'),
+        title: Text('Gracze - ${squadState.squad?.name ?? ''}'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -54,7 +82,7 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
           ),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody(playersState),
       floatingActionButton: canManagePlayers
           ? FloatingActionButton(
               onPressed: () => _showAddPlayerDialog(context),
@@ -65,7 +93,7 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(PlayersState playersState) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -97,7 +125,7 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
       );
     }
 
-    if (_players.isEmpty) {
+    if (playersState.players.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -124,7 +152,7 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: PlayersListWidget(
-          players: _players,
+          players: playersState.players,
           onPlayerSelected: _onPlayerTap,
           allowAdd: false,
           allowSelect: true,
@@ -140,10 +168,10 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
     });
 
     try {
-      final players = await PlayerService.instance.getPlayers(widget.squadId);
-      
+      final squadId = ref.read(squadProvider).squad?.squadId ?? widget.squadId;
+      final players = await PlayerService.instance.getPlayers(squadId);
+      ref.read(playersProvider.notifier).setPlayers(players);
       setState(() {
-        _players = players;
         _isLoading = false;
       });
     } catch (e) {
@@ -156,7 +184,6 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
 
   void _onPlayerTap(Player player) {
     // TODO: Navigate to player details page
-    // For now, just allow tapping without showing message
   }
 
   void _showAddPlayerDialog(BuildContext context) {
@@ -167,7 +194,7 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
           child: Container(
             constraints: const BoxConstraints(maxWidth: 400),
             child: CreatePlayerWidget(
-              squadId: widget.squadId,
+              squadId: ref.read(squadProvider).squad?.squadId ?? widget.squadId,
               onPlayerCreated: () {
                 Navigator.of(context).pop();
                 _loadPlayers();

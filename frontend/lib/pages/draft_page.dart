@@ -8,12 +8,15 @@ import 'package:frontend/services/player_service.dart';
 import 'package:frontend/services/match_service.dart';
 import 'package:frontend/state/draft_state.dart';
 import 'package:frontend/state/user_state.dart';
-import 'package:frontend/utils/permission_utils.dart';
+import 'package:frontend/state/players_state.dart';
+import 'package:frontend/state/squad_state.dart';
+
 import 'package:frontend/widgets/create_player_widget.dart';
 import 'package:frontend/services/message_service.dart';
 import 'package:frontend/pages/create_match_page.dart';
 import 'package:frontend/widgets/player_widget.dart';
 import 'package:frontend/widgets/players_list_widget.dart';
+
 
 class DraftPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -45,9 +48,10 @@ class _DraftPageState extends ConsumerState<DraftPage> {
       _isLoading = true;
       _error = null;
     });
-    
     try {
-      final players = await PlayerService.instance.getPlayers(widget.squadId);
+      final squadId = ref.read(squadProvider).squad?.squadId ?? widget.squadId;
+      final players = await PlayerService.instance.getPlayers(squadId);
+      ref.read(playersProvider.notifier).setPlayers(players);
       final draftNotifier = ref.read(draftProvider.notifier);
       draftNotifier.setAllPlayers(players);
     } catch (e) {
@@ -129,8 +133,9 @@ class _DraftPageState extends ConsumerState<DraftPage> {
   @override
   Widget build(BuildContext context) {
     final draftState = ref.watch(draftProvider);
-    final userState = ref.watch(userSessionProvider);
-    final canManagePlayers = PermissionUtils.canManagePlayers(userState, widget.ownerId);
+    final squadState = ref.watch(squadProvider);
+    final userId = ref.watch(userSessionProvider).user?.userId ?? '';
+    final canManagePlayers = squadState.isOwner(userId);
 
     return Scaffold(
       appBar: AppBar(
