@@ -59,14 +59,22 @@ class MatchService {
       final body = <String, dynamic>{};
       
       if (teamAPlayers != null) {
-        body['team_a'] = teamAPlayers.map((p) => p.toJson()).toList();
+        body['team_a'] = teamAPlayers.map((p) => p.playerId).toList();
+      } else {
+        body['team_a'] = null;
       }
       if (teamBPlayers != null) {
-        body['team_b'] = teamBPlayers.map((p) => p.toJson()).toList();
+        body['team_b'] = teamBPlayers.map((p) => p.playerId).toList();
+      } else {
+        body['team_b'] = null;
       }
       if (score != null) {
         body['score'] = score;
+      } else {
+        body['score'] = null;
       }
+
+      print(json.encode(body));
 
       final response = await _client.put(
         Uri.parse('$_apiUrl/squads/$squadId/matches/$matchId'),

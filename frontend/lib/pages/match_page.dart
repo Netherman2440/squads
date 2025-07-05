@@ -93,18 +93,22 @@ class _MatchPageState extends State<MatchPage> {
     }
   }
 
-  void _onScoreChanged() {
+  void _onAnyChange() {
     setState(() {
       _isDirty = true;
     });
+  }
+
+  void _onScoreChanged() {
+    _onAnyChange();
   }
 
   void _onTeamsChanged(List<Player> teamA, List<Player> teamB) {
     setState(() {
       _teamAPlayers = List<Player>.from(teamA);
       _teamBPlayers = List<Player>.from(teamB);
-      _isDirty = true;
     });
+    _onAnyChange();
   }
 
   void _addPlayerToTeam(bool toTeamA) async {
@@ -134,8 +138,8 @@ class _MatchPageState extends State<MatchPage> {
         } else {
           _teamBPlayers.add(selected);
         }
-        _isDirty = true;
       });
+      _onAnyChange();
     }
   }
 
@@ -148,8 +152,8 @@ class _MatchPageState extends State<MatchPage> {
         _teamAPlayers.removeWhere((p) => p.playerId == player.playerId);
         _teamBPlayers.add(player);
       }
-      _isDirty = true;
     });
+    _onAnyChange();
   }
 
   void _onPlayerDragStarted(Player player) {
@@ -168,8 +172,8 @@ class _MatchPageState extends State<MatchPage> {
     setState(() {
       _teamAPlayers.removeWhere((p) => p.playerId == player.playerId);
       _teamBPlayers.removeWhere((p) => p.playerId == player.playerId);
-      _isDirty = true;
     });
+    _onAnyChange();
   }
 
   Future<bool> _onWillPop() async {
@@ -186,54 +190,77 @@ class _MatchPageState extends State<MatchPage> {
     return false;
   }
 
+  void _onDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete match'),
+        content: const Text('Are you sure you want to delete this match? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      try {
+        await MatchService.instance.deleteMatch(widget.squadId, widget.matchId);
+        if (mounted) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => MatchHistoryPage(
+                squadId: widget.squadId,
+                squadName: _squadName ?? '',
+                ownerId: _ownerId ?? '',
+              ),
+            ),
+            (route) => false,
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delete failed: $e')),
+        );
+      }
+    }
+  }
+
   void _onSave() async {
-    final scoreA = _scoreAController.text.isEmpty ? null : int.tryParse(_scoreAController.text);
-    final scoreB = _scoreBController.text.isEmpty ? null : int.tryParse(_scoreBController.text);
+    final scoreA = _scoreAController.text.trim().isEmpty ? null : int.tryParse(_scoreAController.text.trim());
+    final scoreB = _scoreBController.text.trim().isEmpty ? null : int.tryParse(_scoreBController.text.trim());
     if ((scoreA == null && scoreB != null) || (scoreA != null && scoreB == null)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Musisz podać wynik obu drużyn lub żadnej!')),
       );
       return;
     }
-    if (_hasResult && (scoreA == null || scoreB == null)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nie można usunąć istniejącego wyniku!')),
-      );
-      return;
-    }
-    if (scoreA == null || scoreB == null) return; // do not save if both are empty
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Potwierdź wynik'),
-        content: const Text('Po zapisaniu wyniku nie będzie można już zmieniać składów. Kontynuować?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Anuluj'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Zapisz'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
+    // Zablokuj tylko edycję drużyn, ale pozwól na edycję wyniku
     try {
-      await MatchService.instance.updateMatchScore(
+      await MatchService.instance.updateMatch(
         widget.squadId,
         widget.matchId,
-        scoreA,
-        scoreB,
+        // Nie wysyłaj drużyn jeśli wynik już był ustawiony
+        teamAPlayers: !_hasResult ? _teamAPlayers : null,
+        teamBPlayers: !_hasResult ? _teamBPlayers : null,
+        score: (scoreA != null && scoreB != null) ? [scoreA, scoreB] : null,
       );
       await _loadData();
+      setState(() {
+        _isDirty = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wynik meczu zapisany!')),
+        const SnackBar(content: Text('Zmiany zapisane!')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Błąd zapisu wyniku: $e')),
+        SnackBar(content: Text('Błąd zapisu: $e')),
       );
     }
   }
@@ -254,7 +281,16 @@ class _MatchPageState extends State<MatchPage> {
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Mecz')),
+        appBar: AppBar(
+          title: const Text('Mecz'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.delete),
+              tooltip: 'Delete match',
+              onPressed: _onDelete,
+            ),
+          ],
+        ),
         body: Stack(
           children: [
             Padding(
@@ -284,55 +320,50 @@ class _MatchPageState extends State<MatchPage> {
                             border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
                           ),
                           child: Center(
-                            child: _hasResult
-                                ? Text(
-                                    '${_scoreAController.text} : ${_scoreBController.text}',
-                                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Flexible(
-                                        child: SizedBox(
-                                          width: 40,
-                                          child: TextField(
-                                            enabled: !_hasResult,
-                                            controller: _scoreAController,
-                                            keyboardType: TextInputType.number,
-                                            textAlign: TextAlign.center,
-                                            style: Theme.of(context).textTheme.headlineSmall,
-                                            decoration: const InputDecoration(
-                                              border: InputBorder.none,
-                                              hintText: '-',
-                                              isDense: true,
-                                              contentPadding: EdgeInsets.zero,
-                                            ),
-                                            onChanged: (_) => _onScoreChanged(),
-                                          ),
-                                        ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: SizedBox(
+                                    width: 40,
+                                    child: TextField(
+                                      enabled: true, // score is always editable
+                                      controller: _scoreAController,
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context).textTheme.headlineSmall,
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        hintText: '-',
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.zero,
                                       ),
-                                      const Text(' : ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                                      Flexible(
-                                        child: SizedBox(
-                                          width: 40,
-                                          child: TextField(
-                                            enabled: !_hasResult,
-                                            controller: _scoreBController,
-                                            keyboardType: TextInputType.number,
-                                            textAlign: TextAlign.center,
-                                            style: Theme.of(context).textTheme.headlineSmall,
-                                            decoration: const InputDecoration(
-                                              border: InputBorder.none,
-                                              hintText: '-',
-                                              isDense: true,
-                                              contentPadding: EdgeInsets.zero,
-                                            ),
-                                            onChanged: (_) => _onScoreChanged(),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                      onChanged: (_) => _onScoreChanged(),
+                                    ),
                                   ),
+                                ),
+                                const Text(' : ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                                Flexible(
+                                  child: SizedBox(
+                                    width: 40,
+                                    child: TextField(
+                                      enabled: true, // score is always editable
+                                      controller: _scoreBController,
+                                      keyboardType: TextInputType.number,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context).textTheme.headlineSmall,
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        hintText: '-',
+                                        isDense: true,
+                                        contentPadding: EdgeInsets.zero,
+                                      ),
+                                      onChanged: (_) => _onScoreChanged(),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -351,9 +382,9 @@ class _MatchPageState extends State<MatchPage> {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildPlayerList(_teamAPlayers, true, maxListHeight),
+                        _buildPlayerList(_teamAPlayers, true, maxListHeight, enabled: !_hasResult),
                         const SizedBox(width: 12),
-                        _buildPlayerList(_teamBPlayers, false, maxListHeight),
+                        _buildPlayerList(_teamBPlayers, false, maxListHeight, enabled: !_hasResult),
                       ],
                     ),
                   ),
@@ -390,10 +421,10 @@ class _MatchPageState extends State<MatchPage> {
                 ],
               ),
             ),
-            _buildTrashTarget(),
+            if (!_hasResult) _buildTrashTarget(),
           ],
         ),
-        floatingActionButton: (!_hasResult && _isDirty)
+        floatingActionButton: _isDirty
             ? FloatingActionButton.extended(
                 onPressed: _onSave,
                 label: const Text('Save'),
@@ -404,8 +435,8 @@ class _MatchPageState extends State<MatchPage> {
     );
   }
 
-  Widget _buildPlayerList(List<Player> players, bool isTeamA, double maxHeight) {
-    final canAdd = !_hasResult;
+  Widget _buildPlayerList(List<Player> players, bool isTeamA, double maxHeight, {bool enabled = true}) {
+    final canAdd = enabled;
     return Expanded(
       child: Container(
         constraints: BoxConstraints(maxHeight: maxHeight),
@@ -420,7 +451,7 @@ class _MatchPageState extends State<MatchPage> {
                 Expanded(
                   child: DragTarget<Player>(
                     onWillAccept: (player) => canAdd && player != null && !players.any((p) => p.playerId == player.playerId),
-                    onAcceptWithDetails: (details) => _movePlayer(details.data, isTeamA),
+                    onAcceptWithDetails: (details) => enabled ? _movePlayer(details.data, isTeamA) : null,
                     builder: (context, candidateData, rejectedData) {
                       final isActive = candidateData.isNotEmpty;
                       return Container(
@@ -435,40 +466,46 @@ class _MatchPageState extends State<MatchPage> {
                           itemCount: players.length,
                           itemBuilder: (context, idx) {
                             final player = players[idx];
-                            return Draggable<Player>(
-                              data: player,
-                              feedbackOffset: const Offset(150, 0),
-                              feedback: Material(
-                                color: Colors.transparent,
-                                child: SizedBox(
-                                  width: 300,
-                                  child: Opacity(
-                                    opacity: 0.7,
+                            return enabled
+                                ? Draggable<Player>(
+                                    data: player,
+                                    feedbackOffset: const Offset(150, 0),
+                                    feedback: Material(
+                                      color: Colors.transparent,
+                                      child: SizedBox(
+                                        width: 300,
+                                        child: Opacity(
+                                          opacity: 0.7,
+                                          child: PlayerWidget(
+                                            player: player,
+                                            showScores: true,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    childWhenDragging: Opacity(
+                                      opacity: 0.3,
+                                      child: SizedBox(
+                                        width: 300,
+                                        child: PlayerWidget(
+                                          player: player,
+                                          showScores: true,
+                                        ),
+                                      ),
+                                    ),
                                     child: PlayerWidget(
                                       player: player,
+                                      onTap: null,
                                       showScores: true,
                                     ),
-                                  ),
-                                ),
-                              ),
-                              childWhenDragging: Opacity(
-                                opacity: 0.3,
-                                child: SizedBox(
-                                  width: 300,
-                                  child: PlayerWidget(
+                                    onDragStarted: () => _onPlayerDragStarted(player),
+                                    onDragEnd: (_) => _onPlayerDragEnded(),
+                                  )
+                                : PlayerWidget(
                                     player: player,
+                                    onTap: null,
                                     showScores: true,
-                                  ),
-                                ),
-                              ),
-                              child: PlayerWidget(
-                                player: player,
-                                onTap: null,
-                                showScores: true,
-                              ),
-                              onDragStarted: () => _onPlayerDragStarted(player),
-                              onDragEnd: (_) => _onPlayerDragEnded(),
-                            );
+                                  );
                           },
                         ),
                       );
@@ -484,7 +521,7 @@ class _MatchPageState extends State<MatchPage> {
                 child: FloatingActionButton(
                   mini: true,
                   heroTag: isTeamA ? 'addA' : 'addB',
-                  onPressed: () => _addPlayerToTeam(isTeamA),
+                  onPressed: enabled ? () => _addPlayerToTeam(isTeamA) : null,
                   child: const Icon(Icons.add),
                   backgroundColor: Colors.grey.shade200,
                   foregroundColor: Colors.black54,

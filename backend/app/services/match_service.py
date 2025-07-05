@@ -138,8 +138,8 @@ class MatchService:
         return draft_data
     
     def update_match(self, match_id: str, 
-                     team_a_players: Optional[list[PlayerData]], 
-                     team_b_players: Optional[list[PlayerData]], 
+                     team_a_players: Optional[list[str]], 
+                     team_b_players: Optional[list[str]], 
                      score: Optional[tuple[int, int]]) -> MatchDetailData | None:
         if team_a_players and team_b_players:
             self.update_match_players(match_id, team_a_players, team_b_players)
@@ -181,7 +181,7 @@ class MatchService:
                     
                     # Calculate new delta
                     factor = match_index * 0.2 + 1
-                    new_delta = (player_team.score - opponent_team.score) / factor
+                    new_delta = (team_a_score - team_b_score) / factor
                     
                     # Calculate new score based on previous score + new delta
                     new_score = score_history.previous_score + new_delta
@@ -193,10 +193,26 @@ class MatchService:
 
         return self.match_to_detail_data(match)
     
-    def update_match_players(self, match_id: str, team_a_players: list[PlayerData], team_b_players: list[PlayerData]) -> MatchDetailData | None:
+    def update_match_players(self, match_id: str, team_a_players: list[str], team_b_players: list[str]) -> MatchDetailData | None:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()
         if not match:
             return None
+        
+        from app.services import PlayerService
+        player_service = PlayerService(self.session)
+
+        team_a_players_data = []
+        for player_id in team_a_players:
+            player = player_service.get_player(player_id)
+            if player:
+                team_a_players_data.append(player)
+        
+        team_b_players_data = []
+        
+        for player_id in team_b_players:
+            player = player_service.get_player(player_id)
+            if player:
+                team_b_players_data.append(player)
         
         from app.services import TeamService
         team_service = TeamService(self.session)
@@ -208,10 +224,15 @@ class MatchService:
                 current_players.add(player.player_id)
         
         # Get new players
+
+        all_new_players = team_a_players_data + team_b_players_data
+
         new_players = set()
-        all_new_players = team_a_players + team_b_players
-        for player in all_new_players:
-            new_players.add(player.player_id)
+        for player_id in team_a_players:
+            new_players.add(player_id)
+        
+        for player_id in team_b_players:
+            new_players.add(player_id)
         
         # Remove score history for players who are no longer in the match
         removed_players = current_players - new_players
@@ -238,8 +259,8 @@ class MatchService:
                 self.session.add(score_history)
         
         # Update team players
-        team_a = team_service.update_team_players(match.teams[0].team_id, team_a_players)
-        team_b = team_service.update_team_players(match.teams[1].team_id, team_b_players)
+        team_a = team_service.update_team_players(match.teams[0].team_id, team_a_players_data)
+        team_b = team_service.update_team_players(match.teams[1].team_id, team_b_players_data)
 
         self.session.commit()
 
