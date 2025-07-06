@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel
 
 from app.schemas.player_schemas import PlayerResponse
@@ -45,8 +45,12 @@ class MatchDetailResponse(BaseModel):
     team_b: TeamDetailResponse
 #todo: stats
 
+class TeamUpdate(BaseModel):
+    team_id: str
+    players: Optional[List[str]] = None  # list of player IDs
+    score: Optional[int] = None
+
 class MatchUpdate(MatchBase):
-    team_a: Optional[list]
-    team_b: Optional[list]
-    score: Optional[tuple[int, int]]
+    team_a: TeamUpdate
+    team_b: TeamUpdate
 

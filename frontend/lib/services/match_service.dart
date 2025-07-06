@@ -50,38 +50,33 @@ class MatchService {
   }
 
   // Update match - returns MatchDetailResponse
-  Future<MatchDetailResponse> updateMatch(String squadId, String matchId, {
+  Future<MatchDetailResponse> updateMatch(
+    String squadId,
+    String matchId, {
+    required String teamAId,
+    required String teamBId,
     List<Player>? teamAPlayers,
     List<Player>? teamBPlayers,
-    List<int>? score,
+    int? teamAScore,
+    int? teamBScore,
   }) async {
     try {
-      final body = <String, dynamic>{};
-      
-      if (teamAPlayers != null) {
-        body['team_a'] = teamAPlayers.map((p) => p.playerId).toList();
-      } else {
-        body['team_a'] = null;
-      }
-      if (teamBPlayers != null) {
-        body['team_b'] = teamBPlayers.map((p) => p.playerId).toList();
-      } else {
-        body['team_b'] = null;
-      }
-      if (score != null) {
-        body['score'] = score;
-      } else {
-        body['score'] = null;
-      }
-
-      print(json.encode(body));
-
+      final teamAUpdate = TeamUpdate(
+        teamId: teamAId,
+        players: teamAPlayers?.map((p) => p.playerId).toList(),
+        score: teamAScore,
+      );
+      final teamBUpdate = TeamUpdate(
+        teamId: teamBId,
+        players: teamBPlayers?.map((p) => p.playerId).toList(),
+        score: teamBScore,
+      );
+      final matchUpdate = MatchUpdate(teamA: teamAUpdate, teamB: teamBUpdate);
       final response = await _client.put(
         Uri.parse('$_apiUrl/squads/$squadId/matches/$matchId'),
         headers: _headers,
-        body: json.encode(body),
+        body: json.encode(matchUpdate.toJson()),
       );
-
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         return MatchDetailResponse.fromJson(data);
@@ -135,13 +130,27 @@ class MatchService {
   }
 
   // Update match score - returns MatchDetailResponse
-  Future<MatchDetailResponse> updateMatchScore(String squadId, String matchId, int teamAScore, int teamBScore) async {
-    return updateMatch(squadId, matchId, score: [teamAScore, teamBScore]);
+  Future<MatchDetailResponse> updateMatchScore(String squadId, String matchId, MatchDetailResponse matchDetail, int teamAScore, int teamBScore) async {
+    return updateMatch(
+      squadId,
+      matchId,
+      teamAId: matchDetail.teamA.teamId,
+      teamBId: matchDetail.teamB.teamId,
+      teamAScore: teamAScore,
+      teamBScore: teamBScore,
+    );
   }
 
   // Update match players - returns MatchDetailResponse
-  Future<MatchDetailResponse> updateMatchPlayers(String squadId, String matchId, List<Player> teamAPlayers, List<Player> teamBPlayers) async {
-    return updateMatch(squadId, matchId, teamAPlayers: teamAPlayers, teamBPlayers: teamBPlayers);
+  Future<MatchDetailResponse> updateMatchPlayers(String squadId, String matchId, MatchDetailResponse matchDetail, List<Player> teamAPlayers, List<Player> teamBPlayers) async {
+    return updateMatch(
+      squadId,
+      matchId,
+      teamAId: matchDetail.teamA.teamId,
+      teamBId: matchDetail.teamB.teamId,
+      teamAPlayers: teamAPlayers,
+      teamBPlayers: teamBPlayers,
+    );
   }
 
   // Get match statistics
@@ -223,7 +232,7 @@ class MatchService {
         return MatchDetailResponse.fromJson(data);
       } else {
         print(response.body);
-        throw Exception('Failed to create match: \\${response.statusCode}');
+        throw Exception('Failed to create match: ${response.statusCode}');
 
       }
     } catch (e) {

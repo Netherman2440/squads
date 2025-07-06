@@ -3,6 +3,7 @@ from app.models import Match, ScoreHistory
 
 from app.entities import MatchData, PlayerData, MatchDetailData, DraftData
 from app.models.player import Player
+from app.schemas.match_schemas import TeamUpdate
 
 
 class MatchService:
@@ -138,58 +139,75 @@ class MatchService:
         return draft_data
     
     def update_match(self, match_id: str, 
-                     team_a_players: Optional[list[str]], 
-                     team_b_players: Optional[list[str]], 
-                     score: Optional[tuple[int, int]]) -> MatchDetailData | None:
-        if team_a_players and team_b_players:
-            self.update_match_players(match_id, team_a_players, team_b_players)
-        if score:
-            self.update_match_score(match_id, score[0], score[1])
-        return self.get_match_detail(match_id)
-    
-    def update_match_score(self, match_id: str, team_a_score: int, team_b_score: int) -> MatchDetailData | None:
+                     team_a: TeamUpdate, 
+                     team_b: TeamUpdate,
+                     ) -> MatchDetailData | None:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()
         if not match:
             return None
-        
+
         from app.services import TeamService, PlayerService
         team_service = TeamService(self.session)
         player_service = PlayerService(self.session)
-        
-        # Update team scores
-        team_a = team_service.update_team_score(match.teams[0].team_id, team_a_score)
-        team_b = team_service.update_team_score(match.teams[1].team_id, team_b_score)
 
-        # Update score history for each player
-        all_players = match.teams[0].players + match.teams[1].players
-        for player in all_players:
-            # Get existing score history to get the previous score
-            score_history = self.session.query(ScoreHistory).filter(
-                ScoreHistory.player_id == player.player_id,
-                ScoreHistory.match_id == match_id
-            ).first()
-            
-            if score_history:
-                # Calculate new delta based on updated match scores
-                player_team = next((team for team in match.teams if any(p.player_id == player.player_id for p in team.players)), None)
-                opponent_team = next((team for team in match.teams if team != player_team), None)
-                
-                if player_team and opponent_team:
-                    # Get match index for this player (count of previous matches)
-                    player_matches = sorted(player.matches, key=lambda x: x.created_at)
-                    match_index = next((i for i, m in enumerate(player_matches) if m.match_id == match_id), 0)
-                    
-                    # Calculate new delta
-                    factor = match_index * 0.2 + 1
-                    new_delta = (team_a_score - team_b_score) / factor
-                    
-                    # Calculate new score based on previous score + new delta
-                    new_score = score_history.previous_score + new_delta
-                    
-                    # Use update_player_score to handle both ScoreHistory and Player updates
-                    player_service.update_player_score(player.player_id, new_score, match_id)
-        
-        # No need for additional commit since update_player_score already commits
+        def update_team(team_data):
+            if not team_data:
+                return
+            team_id = team_data.team_id
+            if team_data.players is not None:
+                player_objs = [player_service.get_player(pid) for pid in team_data.players]
+                team_service.update_team_players(team_id, player_objs)
+            if team_data.score is not None:
+                team_service.update_team_score(team_id, team_data.score)
+
+        update_team(team_a)
+        update_team(team_b)
+
+        score = (team_a.score, team_b.score)
+
+
+        if score is not None and score[0] is not None and score[1] is not None:
+            self.update_score_history(match_id, team_a.team_id, team_b.team_id, score[0], score[1])
+
+        self.session.commit()
+        return self.get_match_detail(match_id)
+    
+    def update_score_history(self, match_id: str, team_a_id: str, team_b_id: str, team_a_score: int, team_b_score: int) -> MatchDetailData | None:
+        """
+        Update score history and player rankings for both teams in a match.
+        Assumes team scores are already set in the database.
+        """
+        match = self.session.query(Match).filter(Match.match_id == match_id).first()
+        if not match:
+            return None
+        from app.services import PlayerService
+        player_service = PlayerService(self.session)
+
+        # Get teams by id
+        team_a = next((t for t in match.teams if t.team_id == team_a_id), None)
+        team_b = next((t for t in match.teams if t.team_id == team_b_id), None)
+        if not team_a or not team_b:
+            raise ValueError("Team not found")
+
+        # For each player, update score history and player score
+        for team, score, opp_score in [
+            (team_a, team_a_score, team_b_score),
+            (team_b, team_b_score, team_a_score)
+        ]:
+            for player in team.players:
+                # Get match index for this player (count of previous matches)
+                player_matches = sorted(player.matches, key=lambda x: x.created_at)
+                match_index = next((i for i, m in enumerate(player_matches) if m.match_id == match_id), 0)
+                factor = match_index * 0.2 + 1
+                delta = (score - opp_score) / factor
+                # Get previous score from score history
+                score_history = self.session.query(ScoreHistory).filter(
+                    ScoreHistory.player_id == player.player_id,
+                    ScoreHistory.match_id == match_id
+                ).first()
+                prev_score = score_history.previous_score if score_history else player.score
+                new_score = prev_score + delta
+                player_service.update_player_score(player.player_id, new_score, match_id)
 
         return self.match_to_detail_data(match)
     

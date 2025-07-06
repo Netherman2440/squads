@@ -263,7 +263,7 @@ async def update_match(
     if not check_user_can_access_squad(user_id, squad_id, squad_service):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only squad owner can update matches")
     
-    detail_match = match_service.update_match(match_id, match_data.team_a, match_data.team_b, match_data.score)
+    detail_match = match_service.update_match(match_id, match_data.team_a, match_data.team_b)
     if detail_match is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
     return detail_match.to_response()

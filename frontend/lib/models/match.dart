@@ -56,31 +56,56 @@ class MatchCreate {
   }
 }
 
-class MatchUpdate {
-  final List<String>? teamA;
-  final List<String>? teamB;
-  final List<int>? score;
+class TeamUpdate {
+  final String teamId;
+  final List<String>? players;
+  final int? score;
 
-  MatchUpdate({
-    this.teamA,
-    this.teamB,
+  TeamUpdate({
+    required this.teamId,
+    this.players,
     this.score,
   });
 
-  factory MatchUpdate.fromJson(Map<String, dynamic> json) {
-    return MatchUpdate(
-      teamA: json['team_a'] != null ? List<String>.from(json['team_a']) : null,
-      teamB: json['team_b'] != null ? List<String>.from(json['team_b']) : null,
-      score: json['score'] != null ? List<int>.from(json['score']) : null,
+  factory TeamUpdate.fromJson(Map<String, dynamic> json) {
+    return TeamUpdate(
+      teamId: json['team_id'],
+      players: json['players'] != null ? List<String>.from(json['players']) : null,
+      score: json['score'],
     );
   }
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {};
-    if (teamA != null) data['team_a'] = teamA;
-    if (teamB != null) data['team_b'] = teamB;
+    final data = <String, dynamic>{
+      'team_id': teamId,
+    };
+    if (players != null) data['players'] = players;
     if (score != null) data['score'] = score;
     return data;
+  }
+}
+
+class MatchUpdate {
+  final TeamUpdate teamA;
+  final TeamUpdate teamB;
+
+  MatchUpdate({
+    required this.teamA,
+    required this.teamB,
+  });
+
+  factory MatchUpdate.fromJson(Map<String, dynamic> json) {
+    return MatchUpdate(
+      teamA: TeamUpdate.fromJson(json['team_a']),
+      teamB: TeamUpdate.fromJson(json['team_b']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'team_a': teamA.toJson(),
+      'team_b': teamB.toJson(),
+    };
   }
 }
 

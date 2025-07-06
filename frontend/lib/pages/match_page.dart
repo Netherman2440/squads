@@ -241,15 +241,16 @@ class _MatchPageState extends State<MatchPage> {
       );
       return;
     }
-    // Zablokuj tylko edycję drużyn, ale pozwól na edycję wyniku
     try {
       await MatchService.instance.updateMatch(
         widget.squadId,
         widget.matchId,
-        // Nie wysyłaj drużyn jeśli wynik już był ustawiony
+        teamAId: _matchDetail!.teamA.teamId,
+        teamBId: _matchDetail!.teamB.teamId,
         teamAPlayers: !_hasResult ? _teamAPlayers : null,
         teamBPlayers: !_hasResult ? _teamBPlayers : null,
-        score: (scoreA != null && scoreB != null) ? [scoreA, scoreB] : null,
+        teamAScore: (scoreA != null && scoreB != null) ? scoreA : null,
+        teamBScore: (scoreA != null && scoreB != null) ? scoreB : null,
       );
       await _loadData();
       setState(() {
