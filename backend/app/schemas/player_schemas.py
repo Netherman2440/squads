@@ -46,3 +46,6 @@ class PlayerDetailResponse(PlayerResponse):
 
 if TYPE_CHECKING:
     from app.schemas.match_schemas import MatchResponse
+
+from app.schemas.match_schemas import MatchResponse
+PlayerDetailResponse.model_rebuild()
