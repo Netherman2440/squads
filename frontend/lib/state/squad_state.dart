@@ -22,7 +22,6 @@ class SquadState {
   }
 
   bool isOwner(String userId) {
-    print("isOwner: ${squad?.ownerId} == $userId : ${squad?.ownerId == userId}");
     return squad?.ownerId == userId;
   }
 

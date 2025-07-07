@@ -7,6 +7,7 @@ import 'package:frontend/widgets/players_list_widget.dart';
 import 'package:frontend/services/match_service.dart';
 import 'package:frontend/services/player_service.dart';
 import 'package:frontend/pages/match_history_page.dart';
+import 'package:frontend/pages/player_detail_page.dart';
 
 class MatchPage extends StatefulWidget {
   final String squadId;
@@ -174,6 +175,15 @@ class _MatchPageState extends State<MatchPage> {
       _teamBPlayers.removeWhere((p) => p.playerId == player.playerId);
     });
     _onAnyChange();
+  }
+
+  void _onPlayerTap(Player player) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PlayerDetailPage(player: player),
+      ),
+    );
   }
 
   Future<bool> _onWillPop() async {
@@ -504,7 +514,7 @@ class _MatchPageState extends State<MatchPage> {
                                   )
                                 : PlayerWidget(
                                     player: player,
-                                    onTap: null,
+                                    onTap: () => _onPlayerTap(player),
                                     showScores: true,
                                   );
                           },

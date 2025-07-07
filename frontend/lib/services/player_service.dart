@@ -68,12 +68,12 @@ class PlayerService {
   }
 
   // Update player base score - returns PlayerDetailResponse
-  Future<PlayerDetailResponse> updatePlayerBaseScore(String squadId, String playerId, int baseScore) async {
+  Future<PlayerDetailResponse> updatePlayerScore(String squadId, String playerId, int baseScore) async {
     try {
       final response = await _client.put(
         Uri.parse('$_apiUrl/squads/$squadId/players/$playerId'),
         headers: _headers,
-        body: json.encode({'base_score': baseScore}),
+        body: json.encode({'score': baseScore}),
       );
 
       if (response.statusCode == 200) {
@@ -120,25 +120,6 @@ class PlayerService {
       }
     } catch (e) {
       throw Exception('Failed to delete player: $e');
-    }
-  }
-
-  // Get player score history
-  Future<List<Map<String, dynamic>>> getPlayerScoreHistory(String playerId) async {
-    try {
-      final response = await _client.get(
-        Uri.parse('$_apiUrl/players/$playerId/score-history'),
-        headers: _headers,
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return List<Map<String, dynamic>>.from(data['score_history']);
-      } else {
-        throw Exception('Failed to load player score history: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Failed to load player score history: $e');
     }
   }
 

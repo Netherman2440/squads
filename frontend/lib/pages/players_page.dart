@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/pages/player_detail_page.dart';
 import '../services/player_service.dart';
 import '../services/squad_service.dart';
 import '../services/message_service.dart';
@@ -184,6 +185,12 @@ class _PlayersPageState extends ConsumerState<PlayersPage> {
 
   void _onPlayerTap(Player player) {
     // TODO: Navigate to player details page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PlayerDetailPage(player: player),
+      ),
+    );
   }
 
   void _showAddPlayerDialog(BuildContext context) {

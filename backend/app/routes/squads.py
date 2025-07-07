@@ -188,10 +188,26 @@ async def update_player(
     """Update a player - only squad owner can update players"""
     if not check_user_can_access_squad(user_id, squad_id, squad_service):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only squad owner can update players")
-    
-    detail_player = player_service.update_player(player_id, player_data.name, player_data.base_score, player_data.position)
-    if detail_player is None:
+
+    updated_player = None
+    # Only one field is updated at a time
+    if player_data.name is not None:
+        updated_player = player_service.update_player_name(player_id, player_data.name)
+    elif player_data.base_score is not None:
+        updated_player = player_service.update_player_base_score(player_id, player_data.base_score)
+    elif player_data.score is not None:
+        updated_player = player_service.update_player_score(player_id, player_data.score)
+    elif player_data.position is not None:
+        updated_player = player_service.update_player_position(player_id, player_data.position)
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No updatable field provided")
+
+    if updated_player is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+    # Return full player detail
+    detail_player = player_service.get_player_details(player_id)
+    if detail_player is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found after update")
     return detail_player.to_response()
 
 @router.get("/{squad_id}/matches", response_model=MatchListResponse)
