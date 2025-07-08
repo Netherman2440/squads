@@ -2,6 +2,7 @@
     "squads": [
         {
             "name": "Politechnika",
+            "owner_id": "d92665df-3aa5-4f0f-9bb0-098a816c36d4",
             "players": [
                 {"name": "Ignacy", "base_score": 84},
                 {"name": "Stach R", "base_score": 80},
@@ -20,7 +21,7 @@
                 {"name": "Krzysztof Bramkarz", "base_score": 64},
                 {"name": "Franek Kubal", "base_score": 52},
                 {"name": "Andrzej Szewczak", "base_score": 57},
-                {"name": "Antek Sz", "base_score": 61},
+                {"name": "Antek Sz", "base_score": 69},
                 {"name": "Jarek brat Grześka", "base_score": 50},
                 {"name": "Michał O", "base_score": 74},
                 {"name": "Nikodem", "base_score": 59},

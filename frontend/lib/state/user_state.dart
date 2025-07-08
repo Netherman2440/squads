@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/user.dart';
-import 'package:frontend/services/auth_service.dart';
+import 'package:squads/models/user.dart';
+import 'package:squads/services/auth_service.dart';
 
 class UserSessionState {
   final User? user;

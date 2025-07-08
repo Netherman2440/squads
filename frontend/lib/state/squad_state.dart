@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/squad.dart';
+import 'package:squads/models/squad.dart';
 
 class SquadState {
   final Squad? squad;

@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/models/match.dart';
-import 'package:frontend/models/player.dart';
-import 'package:frontend/models/position.dart';
-import 'package:frontend/widgets/player_widget.dart';
-import 'package:frontend/widgets/players_list_widget.dart';
-import 'package:frontend/services/match_service.dart';
-import 'package:frontend/services/player_service.dart';
-import 'package:frontend/pages/match_history_page.dart';
-import 'package:frontend/pages/player_detail_page.dart';
+import 'package:squads/models/match.dart';
+import 'package:squads/models/player.dart';
+import 'package:squads/models/position.dart';
+import 'package:squads/widgets/player_widget.dart';
+import 'package:squads/widgets/players_list_widget.dart';
+import 'package:squads/services/match_service.dart';
+import 'package:squads/services/player_service.dart';
+import 'package:squads/pages/match_history_page.dart';
+import 'package:squads/pages/player_detail_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/state/squad_state.dart';
-import 'package:frontend/state/user_state.dart';
+import 'package:squads/state/squad_state.dart';
+import 'package:squads/state/user_state.dart';
 
 class MatchPage extends ConsumerStatefulWidget {
   final String squadId;

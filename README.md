@@ -2,10 +2,10 @@
 
 A lightweight app for creating and browsing sports team squads, built as a monorepo:
 
-- **Backend**: ✅ Python + FastAPI + PostgreSQL (completed)
-- **Frontend**: 🚧 Flutter (Android, iOS, Web) - not yet implemented
-- **Database**: PostgreSQL with Alembic migrations
-- **Testing**: pytest for backend
+- **Backend**: ✅ Python + FastAPI + PostgreSQL (production-ready, manual deployment)
+- **Frontend**: 🚧 Flutter (Android, iOS, Web) – MVP in development, not feature-complete
+- **Database**: PostgreSQL with Alembic migrations (migrations managed manually)
+- **Testing**: pytest for backend only
 - **Documentation**: .md files in `docs/`
 
 ---
@@ -17,11 +17,11 @@ squads/
 ├── README.md             ← this file
 ├── .gitignore
 ├── docs/                 ← technical documentation (.md + config)
-├── frontend/             ← Flutter app (not yet implemented)
+├── frontend/             ← Flutter app (MVP in development)
 │   ├── lib/              ← source code (screens/, widgets/, services/)
-│   ├── test/             ← unit & widget tests
+│   ├── test/             ← (no tests yet)
 │   └── pubspec.yaml      ← Dart dependencies
-├── backend/              ← FastAPI service + PostgreSQL (completed)
+├── backend/              ← FastAPI service + PostgreSQL (production-ready)
 │   ├── app/
 │   │   ├── main.py       ← creates FastAPI app, JWT, DB connection
 │   │   ├── routes/       ← endpoints (squads, players, matches…)
@@ -35,7 +35,6 @@ squads/
 │   ├── requirements.txt
 │   └── Dockerfile
 ├── docker-compose.yml    ← runs backend + PostgreSQL locally
-└── .github/              ← CI/CD (GitHub Actions)
 ```
 
 ---
@@ -57,12 +56,12 @@ cd squads
 
 ---
 
-## 🖥️ Backend (FastAPI + PostgreSQL) - ✅ Completed
+## 🖥️ Backend (FastAPI + PostgreSQL) – production-ready, manual deployment
 
 ### Features implemented:
 - ✅ FastAPI REST API with JWT authentication
 - ✅ PostgreSQL database with SQLAlchemy ORM
-- ✅ Alembic database migrations
+- ✅ Alembic database migrations (run manually)
 - ✅ Squad management (CRUD operations)
 - ✅ Player management within squads
 - ✅ Match management and team drawing
@@ -88,7 +87,7 @@ cd squads
      pip install --upgrade pip
      pip install -r requirements.txt
      ```
-   - Run database migrations:
+   - Run database migrations (manually):
      ```bash
      alembic upgrade head
      ```
@@ -101,10 +100,10 @@ cd squads
 
 The backend provides the following endpoints:
 
-- **Squads**: `/squads/` - Create, read, update, delete squads
-- **Players**: `/squads/{squad_id}/players/` - Manage players within squads
-- **Matches**: `/squads/{squad_id}/matches/` - Create and manage matches
-- **Team Drawing**: `/squads/{squad_id}/matches/draw` - Draw balanced teams
+- **Squads**: `/squads/` – Create, read, update, delete squads
+- **Players**: `/squads/{squad_id}/players/` – Manage players within squads
+- **Matches**: `/squads/{squad_id}/matches/` – Create and manage matches
+- **Team Drawing**: `/squads/{squad_id}/matches/draw` – Draw balanced teams
 
 ### 4. Authentication
 - JWT-based authentication is implemented in the backend.
@@ -113,40 +112,25 @@ The backend provides the following endpoints:
 
 ---
 
-## 📱 Frontend (Flutter) - 🚧 Not yet implemented
-
-The frontend is planned but not yet implemented. When ready, it will include:
+## 📱 Frontend (Flutter) – MVP in development
 
 - Flutter app for Android, iOS, and Web
 - Integration with the FastAPI backend
 - Squad and player management UI
 - Match creation and team drawing interface
+- **No frontend tests yet**
+- Solution will continue to be updated and improved
 
 ---
 
 ## 🧪 Tests
 
-- **Backend** (completed):
+- **Backend** (pytest):
   ```bash
   cd backend
   pytest
   ```
-- **Frontend** (not yet implemented):
-  ```bash
-  cd frontend
-  flutter test
-  ```
-
----
-
-## 📦 CI/CD
-
-- **Backend**: `.github/workflows/python.yml` (ready for implementation)
-- **Frontend**: `.github/workflows/flutter.yml` (ready for implementation)
-- On every push to `main`:
-  1. Lint & tests
-  2. Build (Docker for backend, `flutter build web` for frontend)
-  3. Automatic deploy (e.g. Google Cloud Run, Railway, Render, Firebase Hosting for frontend)
+- **Frontend**: No tests implemented yet
 
 ---
 
@@ -164,6 +148,7 @@ All architectural decisions and specifications are in the `docs/` folder:
 - The backend (FastAPI) can be deployed to any cloud that supports Docker containers (e.g. Google Cloud Run, Railway, Render, Fly.io).
 - The PostgreSQL database can be hosted as a managed service (recommended for production) or as a Docker container (for development).
 - The frontend (Flutter Web) can be hosted on Netlify, Vercel, Firebase Hosting, or any static hosting.
+- **No automated CI/CD pipeline is currently implemented. Deployment and migrations are performed manually.**
 
 ---
 
@@ -175,7 +160,7 @@ All architectural decisions and specifications are in the `docs/` folder:
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Docker Documentation](https://docs.docker.com/)
 - [pytest Documentation](https://docs.pytest.org/)
-- [Flutter Docs](https://flutter.dev/docs) (for future frontend development)
+- [Flutter Docs](https://flutter.dev/docs)
 
 ---
 

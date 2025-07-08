@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/match.dart';
+import 'package:squads/models/match.dart';
 
 class MatchesState {
   final List<Match> matches;

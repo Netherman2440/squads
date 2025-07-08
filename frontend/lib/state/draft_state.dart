@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/player.dart';
+import 'package:squads/models/player.dart';
 
 class DraftState {
   final List<Player> allPlayers;

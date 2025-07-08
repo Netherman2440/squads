@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/player.dart';
-import 'package:frontend/models/position.dart';
-import 'package:frontend/services/player_service.dart';
+import 'package:squads/models/player.dart';
+import 'package:squads/models/position.dart';
+import 'package:squads/services/player_service.dart';
 
 class CreatePlayerWidget extends ConsumerStatefulWidget {
   final VoidCallback? onPlayerCreated;

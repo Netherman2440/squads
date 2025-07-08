@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/models/player.dart';
-import 'package:frontend/models/position.dart';
-import 'package:frontend/widgets/player_widget.dart';
+import 'package:squads/models/player.dart';
+import 'package:squads/models/position.dart';
+import 'package:squads/widgets/player_widget.dart';
 
 class PlayersListWidget extends StatefulWidget {
   final List<Player> players;

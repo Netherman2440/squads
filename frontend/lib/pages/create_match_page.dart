@@ -2,12 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:frontend/models/draft.dart';
-import 'package:frontend/models/player.dart';
-import 'package:frontend/pages/match_page.dart';
-import 'package:frontend/services/match_service.dart';
-import 'package:frontend/services/message_service.dart';
-import 'package:frontend/widgets/match_widget.dart';
+import 'package:squads/models/draft.dart';
+import 'package:squads/models/player.dart';
+import 'package:squads/pages/match_page.dart';
+import 'package:squads/services/match_service.dart';
+import 'package:squads/services/message_service.dart';
+import 'package:squads/widgets/match_widget.dart';
 
 class CreateMatchPage extends ConsumerStatefulWidget {
   final String squadId;

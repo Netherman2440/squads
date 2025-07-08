@@ -44,7 +44,7 @@ def seed_database():
         # Create squads and their players
         for squad_data in seed_data['squads']:
             # Create squad
-            squad = squadService.create_squad(squad_data['name'])
+            squad = squadService.create_squad(squad_data['name'], squad_data['owner_id'])
 
             # Create players for this squad
             for player_data in squad_data['players']:
