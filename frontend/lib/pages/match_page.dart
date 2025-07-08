@@ -8,8 +8,11 @@ import 'package:frontend/services/match_service.dart';
 import 'package:frontend/services/player_service.dart';
 import 'package:frontend/pages/match_history_page.dart';
 import 'package:frontend/pages/player_detail_page.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/state/squad_state.dart';
+import 'package:frontend/state/user_state.dart';
 
-class MatchPage extends StatefulWidget {
+class MatchPage extends ConsumerStatefulWidget {
   final String squadId;
   final String matchId;
 
@@ -20,10 +23,10 @@ class MatchPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<MatchPage> createState() => _MatchPageState();
+  ConsumerState<MatchPage> createState() => _MatchPageState();
 }
 
-class _MatchPageState extends State<MatchPage> {
+class _MatchPageState extends ConsumerState<MatchPage> {
   MatchDetailResponse? _matchDetail;
   List<Player>? _allPlayers;
   bool _isLoading = true;
@@ -39,6 +42,11 @@ class _MatchPageState extends State<MatchPage> {
   String? _squadName;
   String? _ownerId;
   Player? _draggedPlayer;
+  bool get _isOwner {
+    final squadState = ref.watch(squadProvider);
+    final userId = ref.watch(userSessionProvider).user?.userId ?? '';
+    return squadState.isOwner(userId);
+  }
 
   @override
   void initState() {
@@ -95,16 +103,19 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _onAnyChange() {
+    if (!_isOwner) return;
     setState(() {
       _isDirty = true;
     });
   }
 
   void _onScoreChanged() {
+    if (!_isOwner) return;
     _onAnyChange();
   }
 
   void _onTeamsChanged(List<Player> teamA, List<Player> teamB) {
+    if (!_isOwner) return;
     setState(() {
       _teamAPlayers = List<Player>.from(teamA);
       _teamBPlayers = List<Player>.from(teamB);
@@ -113,6 +124,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _addPlayerToTeam(bool toTeamA) async {
+    if (!_isOwner) return;
     final availablePlayers = _allPlayers!.where((p) =>
       !_teamAPlayers.any((a) => a.playerId == p.playerId) &&
       !_teamBPlayers.any((b) => b.playerId == p.playerId)
@@ -145,6 +157,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _movePlayer(Player player, bool toTeamA) {
+    if (!_isOwner) return;
     setState(() {
       if (toTeamA) {
         _teamBPlayers.removeWhere((p) => p.playerId == player.playerId);
@@ -158,6 +171,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _onPlayerDragStarted(Player player) {
+    if (!_isOwner) return;
     setState(() {
       _draggedPlayer = player;
     });
@@ -170,6 +184,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _removePlayerFromTeams(Player player) {
+    if (!_isOwner) return;
     setState(() {
       _teamAPlayers.removeWhere((p) => p.playerId == player.playerId);
       _teamBPlayers.removeWhere((p) => p.playerId == player.playerId);
@@ -201,6 +216,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _onDelete() async {
+    if (!_isOwner) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -243,6 +259,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   void _onSave() async {
+    if (!_isOwner) return;
     final scoreA = _scoreAController.text.trim().isEmpty ? null : int.tryParse(_scoreAController.text.trim());
     final scoreB = _scoreBController.text.trim().isEmpty ? null : int.tryParse(_scoreBController.text.trim());
     if ((scoreA == null && scoreB != null) || (scoreA != null && scoreB == null)) {
@@ -295,11 +312,12 @@ class _MatchPageState extends State<MatchPage> {
         appBar: AppBar(
           title: const Text('Mecz'),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.delete),
-              tooltip: 'Delete match',
-              onPressed: _onDelete,
-            ),
+            if (_isOwner)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                tooltip: 'Delete match',
+                onPressed: _onDelete,
+              ),
           ],
         ),
         body: Stack(
@@ -338,7 +356,7 @@ class _MatchPageState extends State<MatchPage> {
                                   child: SizedBox(
                                     width: 40,
                                     child: TextField(
-                                      enabled: true, // score is always editable
+                                      enabled: _isOwner, // score is editable only for owner
                                       controller: _scoreAController,
                                       keyboardType: TextInputType.number,
                                       textAlign: TextAlign.center,
@@ -358,7 +376,7 @@ class _MatchPageState extends State<MatchPage> {
                                   child: SizedBox(
                                     width: 40,
                                     child: TextField(
-                                      enabled: true, // score is always editable
+                                      enabled: _isOwner, // score is editable only for owner
                                       controller: _scoreBController,
                                       keyboardType: TextInputType.number,
                                       textAlign: TextAlign.center,
@@ -435,7 +453,7 @@ class _MatchPageState extends State<MatchPage> {
             if (!_hasResult) _buildTrashTarget(),
           ],
         ),
-        floatingActionButton: _isDirty
+        floatingActionButton: _isDirty && _isOwner
             ? FloatingActionButton.extended(
                 onPressed: _onSave,
                 label: const Text('Save'),
@@ -447,7 +465,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   Widget _buildPlayerList(List<Player> players, bool isTeamA, double maxHeight, {bool enabled = true}) {
-    final canAdd = enabled;
+    final canAdd = enabled && _isOwner;
     return Expanded(
       child: Container(
         constraints: BoxConstraints(maxHeight: maxHeight),
@@ -462,7 +480,7 @@ class _MatchPageState extends State<MatchPage> {
                 Expanded(
                   child: DragTarget<Player>(
                     onWillAccept: (player) => canAdd && player != null && !players.any((p) => p.playerId == player.playerId),
-                    onAcceptWithDetails: (details) => enabled ? _movePlayer(details.data, isTeamA) : null,
+                    onAcceptWithDetails: (details) => canAdd ? _movePlayer(details.data, isTeamA) : null,
                     builder: (context, candidateData, rejectedData) {
                       final isActive = candidateData.isNotEmpty;
                       return Container(
@@ -477,7 +495,7 @@ class _MatchPageState extends State<MatchPage> {
                           itemCount: players.length,
                           itemBuilder: (context, idx) {
                             final player = players[idx];
-                            return enabled
+                            return canAdd
                                 ? Draggable<Player>(
                                     data: player,
                                     feedbackOffset: const Offset(150, 0),
@@ -532,7 +550,7 @@ class _MatchPageState extends State<MatchPage> {
                 child: FloatingActionButton(
                   mini: true,
                   heroTag: isTeamA ? 'addA' : 'addB',
-                  onPressed: enabled ? () => _addPlayerToTeam(isTeamA) : null,
+                  onPressed: canAdd ? () => _addPlayerToTeam(isTeamA) : null,
                   child: const Icon(Icons.add),
                   backgroundColor: Colors.grey.shade200,
                   foregroundColor: Colors.black54,
@@ -546,7 +564,7 @@ class _MatchPageState extends State<MatchPage> {
   }
 
   Widget _buildTrashTarget() {
-    if (_draggedPlayer == null) return const SizedBox.shrink();
+    if (_draggedPlayer == null || !_isOwner) return const SizedBox.shrink();
     return Positioned(
       left: 0,
       right: 0,
