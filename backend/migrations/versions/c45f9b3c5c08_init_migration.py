@@ -1,8 +1,8 @@
 """init migration
 
-Revision ID: 954b0d743eb8
+Revision ID: c45f9b3c5c08
 Revises: 
-Create Date: 2025-06-30 09:45:57.688072
+Create Date: 2025-07-08 22:11:28.918525
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '954b0d743eb8'
+revision: str = 'c45f9b3c5c08'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -77,15 +77,16 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('user_id', 'squad_id')
     )
     op.create_table('score_history',
+    sa.Column('score_history_id', sa.String(length=36), nullable=False),
     sa.Column('match_id', sa.String(length=36), nullable=True),
-    sa.Column('player_id', sa.String(length=36), nullable=False),
+    sa.Column('player_id', sa.String(length=36), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('previous_score', sa.Float(), nullable=False),
     sa.Column('new_score', sa.Float(), nullable=True),
     sa.Column('delta', sa.Float(), nullable=False),
     sa.ForeignKeyConstraint(['match_id'], ['matches.match_id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['player_id'], ['players.player_id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('player_id', 'match_id')
+    sa.PrimaryKeyConstraint('score_history_id')
     )
     op.create_table('teams',
     sa.Column('squad_id', sa.String(length=36), nullable=True),

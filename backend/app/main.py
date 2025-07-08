@@ -13,6 +13,7 @@ from app.routes import squads
 #alembic init migrations
 #alembic upgrade head
 #alembic revision --autogenerate -m "Add ScoreHistory table"
+#docker-compose exec backend bash
 
 app = FastAPI(
     title="Squads API",
