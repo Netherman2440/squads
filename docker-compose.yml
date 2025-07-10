@@ -6,8 +6,8 @@ services:
     ports:
       - "20757:8000"
     environment:
-      - DATABASE_URL=mysql+pymysql://f1757:3wRWWwZHj3@192.168.1.1/db_f1757
-      - ENVIRONMENT=production
+      - DATABASE_URL=${DATABASE_URL}
+      - ENVIRONMENT=${ENVIRONMENT}
     networks:
       - squads-network
     volumes:

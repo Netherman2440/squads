@@ -2,7 +2,7 @@
     "squads": [
         {
             "name": "Politechnika",
-            "owner_id": "6f86342c-4078-48fe-be40-193985742ea8",
+            "owner_id": "d230b0e5-42ce-4367-b9a9-968dbf546d2f",
             "players": [
                 {"name": "Ignacy", "base_score": 83},
                 {"name": "Stach R", "base_score": 79},

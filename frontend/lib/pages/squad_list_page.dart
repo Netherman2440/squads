@@ -49,11 +49,6 @@ class _SquadListPageState extends ConsumerState<SquadListPage> {
             icon: Icon(Icons.refresh),
             onPressed: _loadSquads,
           ),
-          if (canCreateSquad)
-            IconButton(
-              icon: Icon(Icons.add),
-              onPressed: () => _showCreateSquadDialog(context),
-            ),
           IconButton(
             icon: Icon(Icons.logout),
             onPressed: _handleLogout,

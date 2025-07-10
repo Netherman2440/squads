@@ -216,22 +216,18 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                             child: Column(
                               children: [
                                 Padding(
-                                  padding: const EdgeInsets.all(16.0),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        'Wybrani gracze (${draftState.selectedPlayers.length})',
-                                        style: Theme.of(context).textTheme.titleMedium,
-                                      ),
-                                      if (draftState.selectedPlayers.isNotEmpty && canManagePlayers)
-                                        IconButton(
-                                          icon: const Icon(Icons.clear_all),
-                                          onPressed: () {
-                                            ref.read(draftProvider.notifier).clearSelectedPlayers();
-                                          },
-                                          tooltip: 'Wyczyść wszystkich',
+                                      Expanded(
+                                        child: Text(
+                                          'Wybrani gracze (${draftState.selectedPlayers.length})',
+                                          style: Theme.of(context).textTheme.titleMedium,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -256,6 +252,7 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                                                   ? () => ref.read(draftProvider.notifier).removePlayer(player)
                                                   : null,
                                               showScores: true,
+                                              compact: true,
                                             );
                                           },
                                         ),

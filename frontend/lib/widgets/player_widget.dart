@@ -5,16 +5,62 @@ class PlayerWidget extends StatelessWidget {
   final Player player;
   final VoidCallback? onTap;
   final bool showScores;
+  final bool compact; // If true, use compact layout for narrow columns
 
   const PlayerWidget({
     Key? key,
     required this.player,
     this.onTap,
     this.showScores = true,
+    this.compact = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    if (compact) {
+      // Compact layout: no icon, name and score in one row, ellipsis for long names
+      return Card(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    player.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+                if (showScores)
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getScoreColor(player.score),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      player.score.toStringAsFixed(1),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(

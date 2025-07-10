@@ -177,6 +177,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             onTap: () => _navigateToPlayers(context),
             canAccess: true,
             count: playersState.players.length,
+            showCount: true,
           ),
         ),
         SizedBox(width: 12),
@@ -189,6 +190,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             onTap: () => _navigateToMatches(context),
             canAccess: true,
             count: matchesState.matches.length,
+            showCount: true,
           ),
         ),
         SizedBox(width: 12),
@@ -200,8 +202,9 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             color: AppColors.warning,
             onTap: () => _navigateToTournaments(context),
             canAccess: true, // Tournaments will be available to all
-            count: 0, // Coming soon
-            isComingSoon: true,
+            count: 0, // No count for tournaments
+            showCount: false,
+            isComingSoon: false,
           ),
         ),
       ],
@@ -216,6 +219,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     required VoidCallback onTap,
     required bool canAccess,
     required int count,
+    bool showCount = true,
     bool isComingSoon = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -226,59 +230,49 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         onTap: canAccess ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          height: 120,
-          padding: EdgeInsets.all(16),
+          height: 100,
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            gradient: isComingSoon 
-              ? LinearGradient(
-                  colors: isDark 
-                    ? [AppColors.borderMuted, AppColors.border]
-                    : [Colors.grey.shade300, Colors.grey.shade400],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : LinearGradient(
-                  colors: [
-                    color.withOpacity(isDark ? 0.2 : 0.1), 
-                    color.withOpacity(isDark ? 0.3 : 0.2)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(isDark ? 0.2 : 0.1), 
+                color.withOpacity(isDark ? 0.3 : 0.2)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 32,
-                color: isComingSoon 
-                  ? (isDark ? AppColors.textMuted : Colors.grey.shade600)
-                  : color,
+                size: 28,
+                color: color,
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 6),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isComingSoon 
-                    ? (isDark ? AppColors.textMuted : Colors.grey.shade600)
-                    : AppColors.text,
+                  color: AppColors.text,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
               ),
-              SizedBox(height: 4),
-              Text(
-                isComingSoon ? 'Coming Soon' : '$count',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isComingSoon 
-                    ? (isDark ? AppColors.textMuted : Colors.grey.shade500)
-                    : AppColors.textMuted,
+              if (showCount) ...[
+                SizedBox(height: 2),
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

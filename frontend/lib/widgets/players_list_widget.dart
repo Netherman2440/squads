@@ -59,6 +59,7 @@ class _PlayersListWidgetState extends State<PlayersListWidget> {
                           ? () => widget.onPlayerSelected!(player)
                           : null,
                       showScores: true,
+                      compact: true,
                     );
                   },
                 ),

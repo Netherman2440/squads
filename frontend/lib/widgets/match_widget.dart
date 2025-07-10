@@ -226,6 +226,7 @@ class _MatchWidgetState extends State<MatchWidget> {
                                             child: PlayerWidget(
                                               player: player,
                                               showScores: widget.showScores,
+                                              compact: true,
                                             ),
                                           ),
                                         ),
@@ -237,6 +238,7 @@ class _MatchWidgetState extends State<MatchWidget> {
                                           child: PlayerWidget(
                                             player: player,
                                             showScores: widget.showScores,
+                                            compact: true,
                                           ),
                                         ),
                                       ),
@@ -244,12 +246,14 @@ class _MatchWidgetState extends State<MatchWidget> {
                                         player: player,
                                         onTap: widget.onPlayerTap != null ? () => widget.onPlayerTap!(player) : null,
                                         showScores: widget.showScores,
+                                        compact: true,
                                       ),
                                     )
                                   : PlayerWidget(
                                       player: player,
                                       onTap: widget.onPlayerTap != null ? () => widget.onPlayerTap!(player) : null,
                                       showScores: widget.showScores,
+                                      compact: true,
                                     );
                             },
                           ),

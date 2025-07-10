@@ -19,7 +19,7 @@ class PlayerUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100, description="Player name")
     base_score: Optional[int] = Field(None, ge=0, le=100, description="Player base score (0-100)")
     position: Optional[Position] = Field(None, description="Player position")
-    score: Optional[float] = Field(None, ge=0, description="Current calculated score")
+    score: Optional[float] = Field(None, ge=0, le=100, description="Current calculated score (0-100)")
 
 
 

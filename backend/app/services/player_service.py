@@ -152,7 +152,7 @@ class PlayerService:
         return self.get_player(player_id)
     
     def recalculate_and_update_score(self, player_id: str) -> PlayerData | None:
-        """Recalculate player score by going through score history to check for changes"""
+        """Recalculate player score by going through score history to check for changes. Clamp score to [0, 100]."""
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
         if not player:
             return None
@@ -166,6 +166,9 @@ class PlayerService:
         # Go through each score history record and apply deltas
         for score_history in score_histories:
             current_score += score_history.delta
+
+        # Clamp score to [0, 100]
+        current_score = max(0, min(100, current_score))
 
         # Update player's score if it has changed
         if player.score != current_score:

@@ -508,6 +508,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                                           child: PlayerWidget(
                                             player: player,
                                             showScores: true,
+                                            compact: true,
                                           ),
                                         ),
                                       ),
@@ -519,6 +520,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                                         child: PlayerWidget(
                                           player: player,
                                           showScores: true,
+                                          compact: true,
                                         ),
                                       ),
                                     ),
@@ -526,6 +528,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                                       player: player,
                                       onTap: null,
                                       showScores: true,
+                                      compact: true,
                                     ),
                                     onDragStarted: () => _onPlayerDragStarted(player),
                                     onDragEnd: (_) => _onPlayerDragEnded(),
@@ -534,6 +537,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                                     player: player,
                                     onTap: () => _onPlayerTap(player),
                                     showScores: true,
+                                    compact: true,
                                   );
                           },
                         ),
@@ -541,22 +545,30 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                     },
                   ),
                 ),
+                if (canAdd)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () => _addPlayerToTeam(isTeamA),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: Center(
+                            child: Icon(Icons.add, size: 20, color: Colors.grey[700]),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            if (canAdd)
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: FloatingActionButton(
-                  mini: true,
-                  heroTag: isTeamA ? 'addA' : 'addB',
-                  onPressed: canAdd ? () => _addPlayerToTeam(isTeamA) : null,
-                  child: const Icon(Icons.add),
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.black54,
-                  elevation: 1,
-                ),
-              ),
           ],
         ),
       ),
