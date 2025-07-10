@@ -4,7 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "20123:8000"
+      - "20757:8000"
     environment:
       - DATABASE_URL=mysql+pymysql://f1757:3wRWWwZHj3@192.168.1.1/db_f1757
       - ENVIRONMENT=production
