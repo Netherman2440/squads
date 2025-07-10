@@ -4,6 +4,10 @@ import 'theme/app_theme.dart';
 import 'config/app_config.dart';
 import 'pages/auth_page.dart';
 
+//flutter build apk --release
+//flutter install 
+//flutter build apk --debug
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
