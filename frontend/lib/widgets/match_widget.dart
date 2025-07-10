@@ -45,14 +45,19 @@ class _MatchWidgetState extends State<MatchWidget> {
     super.initState();
     _teamAPlayers = List<Player>.from(widget.teamAPlayers);
     _teamBPlayers = List<Player>.from(widget.teamBPlayers);
-    _teamAController = widget.teamAController ?? TextEditingController(text: widget.teamAName ?? 'FC Biali');
-    _teamBController = widget.teamBController ?? TextEditingController(text: widget.teamBName ?? 'Czarni United');
+    _teamAController =
+        widget.teamAController ??
+        TextEditingController(text: widget.teamAName ?? 'FC Biali');
+    _teamBController =
+        widget.teamBController ??
+        TextEditingController(text: widget.teamBName ?? 'Czarni United');
   }
 
   @override
   void didUpdateWidget(covariant MatchWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.teamAPlayers != oldWidget.teamAPlayers || widget.teamBPlayers != oldWidget.teamBPlayers) {
+    if (widget.teamAPlayers != oldWidget.teamAPlayers ||
+        widget.teamBPlayers != oldWidget.teamBPlayers) {
       _teamAPlayers = List<Player>.from(widget.teamAPlayers);
       _teamBPlayers = List<Player>.from(widget.teamBPlayers);
     }
@@ -125,11 +130,13 @@ class _MatchWidgetState extends State<MatchWidget> {
                             controller: controller,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                             ),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -150,9 +157,8 @@ class _MatchWidgetState extends State<MatchWidget> {
                         Center(
                           child: Text(
                             title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -168,7 +174,10 @@ class _MatchWidgetState extends State<MatchWidget> {
                     ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).primaryColor,
                       borderRadius: BorderRadius.circular(8),
@@ -187,34 +196,41 @@ class _MatchWidgetState extends State<MatchWidget> {
             // Players list with drag & drop
             Expanded(
               child: DragTarget<Player>(
-                onWillAccept: (player) => widget.canEditTeams && player != null && !players.any((p) => p.playerId == player.playerId),
-                onAcceptWithDetails: (details) => _movePlayer(details.data, isTeamA),
+                onWillAccept:
+                    (player) =>
+                        widget.canEditTeams &&
+                        player != null &&
+                        !players.any((p) => p.playerId == player.playerId),
+                onAcceptWithDetails:
+                    (details) => _movePlayer(details.data, isTeamA),
                 builder: (context, candidateData, rejectedData) {
                   final isActive = candidateData.isNotEmpty;
                   return Container(
-                    decoration: isActive
-                        ? BoxDecoration(
-                            color: Colors.blue.withOpacity(0.08),
-                            border: Border.all(color: Colors.blue, width: 2),
-                            borderRadius: BorderRadius.circular(8),
-                          )
-                        : null,
-                    child: players.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'Brak graczy w drużynie',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontStyle: FontStyle.italic,
+                    decoration:
+                        isActive
+                            ? BoxDecoration(
+                              color: Colors.blue.withOpacity(0.08),
+                              border: Border.all(color: Colors.blue, width: 2),
+                              borderRadius: BorderRadius.circular(8),
+                            )
+                            : null,
+                    child:
+                        players.isEmpty
+                            ? const Center(
+                              child: Text(
+                                'Brak graczy w drużynie',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: players.length,
-                            itemBuilder: (context, index) {
-                              final player = players[index];
-                              return widget.canEditTeams
-                                  ? Draggable<Player>(
+                            )
+                            : ListView.builder(
+                              itemCount: players.length,
+                              itemBuilder: (context, index) {
+                                final player = players[index];
+                                return widget.canEditTeams
+                                    ? Draggable<Player>(
                                       data: player,
                                       feedbackOffset: const Offset(150, 0),
                                       feedback: Material(
@@ -244,19 +260,27 @@ class _MatchWidgetState extends State<MatchWidget> {
                                       ),
                                       child: PlayerWidget(
                                         player: player,
-                                        onTap: widget.onPlayerTap != null ? () => widget.onPlayerTap!(player) : null,
+                                        onTap:
+                                            widget.onPlayerTap != null
+                                                ? () =>
+                                                    widget.onPlayerTap!(player)
+                                                : null,
                                         showScores: widget.showScores,
                                         compact: true,
                                       ),
                                     )
-                                  : PlayerWidget(
+                                    : PlayerWidget(
                                       player: player,
-                                      onTap: widget.onPlayerTap != null ? () => widget.onPlayerTap!(player) : null,
+                                      onTap:
+                                          widget.onPlayerTap != null
+                                              ? () =>
+                                                  widget.onPlayerTap!(player)
+                                              : null,
                                       showScores: widget.showScores,
                                       compact: true,
                                     );
-                            },
-                          ),
+                              },
+                            ),
                   );
                 },
               ),
@@ -271,20 +295,6 @@ class _MatchWidgetState extends State<MatchWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (widget.canEditTeams)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: _swapTeams,
-                  icon: const Icon(Icons.swap_horiz),
-                  tooltip: 'Rotuj drużyny',
-                ),
-              ],
-            ),
-          ),
         Expanded(
           child: Row(
             children: [
@@ -317,7 +327,21 @@ class _MatchWidgetState extends State<MatchWidget> {
             ],
           ),
         ),
+        if (widget.canEditTeams)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: _swapTeams,
+                  icon: const Icon(Icons.swap_horiz),
+                  tooltip: 'Rotuj drużyny',
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
-} 
+}

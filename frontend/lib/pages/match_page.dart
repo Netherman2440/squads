@@ -42,6 +42,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
   String? _squadName;
   String? _ownerId;
   Player? _draggedPlayer;
+  bool _isEditingTeams = false; // Whether admin is editing teams
   bool get _isOwner {
     final squadState = ref.watch(squadProvider);
     final userId = ref.watch(userSessionProvider).user?.userId ?? '';
@@ -282,6 +283,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
       await _loadData();
       setState(() {
         _isDirty = false;
+        _isEditingTeams = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Zmiany zapisane!')),
@@ -305,13 +307,23 @@ class _MatchPageState extends ConsumerState<MatchPage> {
         body: Center(child: Text('Error:  $_error')),
       );
     }
-    const double maxListHeight = 520; // increased for 6 players
+    const double maxListHeight = 700; // increased for 6 players
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Mecz'),
           actions: [
+            if (_isOwner && !_hasResult)
+              IconButton(
+                icon: Icon(_isEditingTeams ? Icons.check : Icons.edit),
+                tooltip: _isEditingTeams ? 'Zakończ edycję składu' : 'Edytuj skład',
+                onPressed: () {
+                  setState(() {
+                    _isEditingTeams = !_isEditingTeams;
+                  });
+                },
+              ),
             if (_isOwner)
               IconButton(
                 icon: const Icon(Icons.delete),
@@ -465,7 +477,8 @@ class _MatchPageState extends ConsumerState<MatchPage> {
   }
 
   Widget _buildPlayerList(List<Player> players, bool isTeamA, double maxHeight, {bool enabled = true}) {
-    final canAdd = enabled && _isOwner;
+    final canEdit = _isOwner && !_hasResult && _isEditingTeams;
+    final canAdd = canEdit;
     return Expanded(
       child: Container(
         constraints: BoxConstraints(maxHeight: maxHeight),
@@ -479,8 +492,8 @@ class _MatchPageState extends ConsumerState<MatchPage> {
               children: [
                 Expanded(
                   child: DragTarget<Player>(
-                    onWillAccept: (player) => canAdd && player != null && !players.any((p) => p.playerId == player.playerId),
-                    onAcceptWithDetails: (details) => canAdd ? _movePlayer(details.data, isTeamA) : null,
+                    onWillAccept: (player) => canEdit && player != null && !players.any((p) => p.playerId == player.playerId),
+                    onAcceptWithDetails: (details) => canEdit ? _movePlayer(details.data, isTeamA) : null,
                     builder: (context, candidateData, rejectedData) {
                       final isActive = candidateData.isNotEmpty;
                       return Container(
@@ -495,50 +508,52 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                           itemCount: players.length,
                           itemBuilder: (context, idx) {
                             final player = players[idx];
-                            return canAdd
-                                ? Draggable<Player>(
-                                    data: player,
-                                    feedbackOffset: const Offset(150, 0),
-                                    feedback: Material(
-                                      color: Colors.transparent,
-                                      child: SizedBox(
-                                        width: 300,
-                                        child: Opacity(
-                                          opacity: 0.7,
-                                          child: PlayerWidget(
-                                            player: player,
-                                            showScores: true,
-                                            compact: true,
-                                          ),
-                                        ),
+                            if (canEdit) {
+                              return Draggable<Player>(
+                                data: player,
+                                feedbackOffset: const Offset(150, 0),
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: SizedBox(
+                                    width: 300,
+                                    child: Opacity(
+                                      opacity: 0.7,
+                                      child: PlayerWidget(
+                                        player: player,
+                                        showScores: true,
+                                        compact: true,
                                       ),
                                     ),
-                                    childWhenDragging: Opacity(
-                                      opacity: 0.3,
-                                      child: SizedBox(
-                                        width: 300,
-                                        child: PlayerWidget(
-                                          player: player,
-                                          showScores: true,
-                                          compact: true,
-                                        ),
-                                      ),
-                                    ),
+                                  ),
+                                ),
+                                childWhenDragging: Opacity(
+                                  opacity: 0.3,
+                                  child: SizedBox(
+                                    width: 300,
                                     child: PlayerWidget(
                                       player: player,
-                                      onTap: null,
                                       showScores: true,
                                       compact: true,
                                     ),
-                                    onDragStarted: () => _onPlayerDragStarted(player),
-                                    onDragEnd: (_) => _onPlayerDragEnded(),
-                                  )
-                                : PlayerWidget(
-                                    player: player,
-                                    onTap: () => _onPlayerTap(player),
-                                    showScores: true,
-                                    compact: true,
-                                  );
+                                  ),
+                                ),
+                                child: PlayerWidget(
+                                  player: player,
+                                  onTap: null,
+                                  showScores: true,
+                                  compact: true,
+                                ),
+                                onDragStarted: () => _onPlayerDragStarted(player),
+                                onDragEnd: (_) => _onPlayerDragEnded(),
+                              );
+                            } else {
+                              return PlayerWidget(
+                                player: player,
+                                onTap: () => _onPlayerTap(player),
+                                showScores: true,
+                                compact: true,
+                              );
+                            }
                           },
                         ),
                       );
