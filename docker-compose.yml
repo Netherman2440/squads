@@ -14,8 +14,6 @@ services:
       - ./backend:/app
     restart: unless-stopped
 
-volumes:
-  # postgres_data:  # Usunięte, bo nie używamy już Postgresa
 
 networks:
   squads-network:
