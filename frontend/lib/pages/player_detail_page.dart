@@ -5,6 +5,7 @@ import 'package:squads/models/position.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squads/state/squad_state.dart';
 import 'package:squads/state/user_state.dart';
+import 'package:squads/state/players_state.dart';
 
 class PlayerDetailPage extends ConsumerStatefulWidget {
   final Player player;
@@ -69,6 +70,7 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
     if (!_isOwner) return;
     setState(() { _isDeleting = true; });
     await PlayerService.instance.deletePlayer(widget.player.squadId, widget.player.playerId);
+    ref.read(playersProvider.notifier).removePlayer(widget.player.playerId);
     if (mounted) Navigator.of(context).pop();
   }
 
