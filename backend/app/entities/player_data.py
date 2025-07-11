@@ -69,6 +69,7 @@ class PlayerDetailData(PlayerData):
             position=self.position,
             matches_played=self.matches_played,
             matches=matches_response,
+            created_at=self.created_at,
         )
 
     @classmethod

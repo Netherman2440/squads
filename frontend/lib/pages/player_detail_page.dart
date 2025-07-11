@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squads/state/squad_state.dart';
 import 'package:squads/state/user_state.dart';
 import 'package:squads/state/players_state.dart';
+import 'package:fl_chart/fl_chart.dart';
 
 class PlayerDetailPage extends ConsumerStatefulWidget {
   final Player player;
@@ -30,6 +31,9 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
     final userId = ref.watch(userSessionProvider).user?.userId ?? '';
     return squadState.isOwner(userId);
   }
+
+  // Test data for score history
+  final List<double> _testScores = [63, 69, 70, 46, 33, 55, 80, 77, 90, 60];
 
   @override
   void initState() {
@@ -403,7 +407,7 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Placeholder for Score History graph
+                    // Score History graph
                     Container(
                       height: 160,
                       width: double.infinity,
@@ -412,7 +416,53 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       alignment: Alignment.center,
-                      child: const Text('Score History (coming soon)', style: TextStyle(color: Colors.grey)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: LineChart(
+                          LineChartData(
+                            minY: 0,
+                            maxY: 100,
+                            minX: 0,
+                            maxX: (_testScores.length - 1).toDouble(),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 20,
+                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 1,
+                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                ),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                            ),
+                            gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
+                            borderData: FlBorderData(show: true),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: [
+                                  for (int i = 0; i < _testScores.length; i++)
+                                    FlSpot(i.toDouble(), _testScores[i]),
+                                ],
+                                isCurved: false,
+                                barWidth: 3,
+                                color: Colors.blue,
+                                dotData: FlDotData(show: true),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     // Placeholder for extra stats
@@ -727,7 +777,7 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    // Placeholder for Score History graph
+                    // Score History graph (desktop)
                     Container(
                       height: 200,
                       width: double.infinity,
@@ -736,7 +786,53 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       alignment: Alignment.center,
-                      child: const Text('Score History (coming soon)', style: TextStyle(color: Colors.grey)),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: LineChart(
+                          LineChartData(
+                            minY: 0,
+                            maxY: 100,
+                            minX: 0,
+                            maxX: (_testScores.length - 1).toDouble(),
+                            titlesData: FlTitlesData(
+                              leftTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 20,
+                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                ),
+                              ),
+                              bottomTitles: AxisTitles(
+                                sideTitles: SideTitles(
+                                  showTitles: true,
+                                  interval: 1,
+                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                ),
+                              ),
+                              rightTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                              topTitles: AxisTitles(
+                                sideTitles: SideTitles(showTitles: false),
+                              ),
+                            ),
+                            gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
+                            borderData: FlBorderData(show: true),
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: [
+                                  for (int i = 0; i < _testScores.length; i++)
+                                    FlSpot(i.toDouble(), _testScores[i]),
+                                ],
+                                isCurved: false,
+                                barWidth: 3,
+                                color: Colors.blue,
+                                dotData: FlDotData(show: true),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 32),
                     // Placeholder for extra stats
