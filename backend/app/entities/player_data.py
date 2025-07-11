@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
 from app.schemas import PlayerResponse, PlayerDetailResponse
@@ -12,11 +13,11 @@ class PlayerData:
     squad_id: str
     player_id: str
     name: str
+    created_at: datetime
     base_score: int
     _score: Optional[float] = None
     position: Position = Position.NONE
     matches_played: int = 0
-
     @property
     def score(self) -> float:
         # Return _score if set, otherwise base_score
@@ -37,6 +38,7 @@ class PlayerData:
             score=self.score,
             position=self.position,
             matches_played=self.matches_played,
+            created_at=self.created_at,
         )
     
     @classmethod
@@ -49,6 +51,7 @@ class PlayerData:
             base_score=orm_player.base_score,
             _score=orm_player.score,
             matches_played=len(orm_player.matches),
+            created_at=orm_player.created_at,
         )
 
 @dataclass

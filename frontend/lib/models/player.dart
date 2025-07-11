@@ -8,6 +8,7 @@ class Player {
   final double score;
   final Position position;
   final int matchesPlayed;
+  final DateTime createdAt; // Add createdAt
 
   Player({
     required this.playerId,
@@ -17,6 +18,7 @@ class Player {
     required this.score,
     required this.position,
     required this.matchesPlayed,
+    required this.createdAt,
   });
 
   factory Player.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Player {
       score: json['score'] != null ? json['score'].toDouble() : 0.0,
       position: Position.fromString(json['position']),
       matchesPlayed: json['matches_played'],
+      createdAt: DateTime.tryParse(json['created_at']) ?? DateTime.now(),
     );
   }
 
@@ -40,6 +43,7 @@ class Player {
       'score': score,
       'position': position.toJson(),
       'matches_played': matchesPlayed,
+      'created_at': createdAt.toIso8601String(),
     };
   }
 }
@@ -143,6 +147,7 @@ class PlayerDetailResponse extends Player {
     required super.position,
     required super.matchesPlayed,
     required this.matches,
+    required super.createdAt,
   });
 
   factory PlayerDetailResponse.fromJson(Map<String, dynamic> json) {
@@ -155,6 +160,7 @@ class PlayerDetailResponse extends Player {
       position: Position.fromString(json['position']),
       matchesPlayed: json['matches_played'],
       matches: json['matches'] as List,
+      createdAt: DateTime.tryParse(json['created_at']) ?? DateTime.now(),
     );
   }
 

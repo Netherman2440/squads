@@ -16,7 +16,8 @@ class PlayerService:
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
             _score=player.score,
-            matches_played=len(player.matches)
+            matches_played=len(player.matches),
+            created_at=player.created_at
         )
     
     def player_to_detail_data(self, player: Player) -> PlayerDetailData:
@@ -30,7 +31,8 @@ class PlayerService:
             base_score=player.base_score,
             _score=player.score,
             matches_played=len(player.matches),
-            matches=[match_service.match_to_data(match) for match in player.matches]
+            matches=[match_service.match_to_data(match) for match in player.matches],
+            created_at=player.created_at
         )
 
     def get_players(self, squad_id: str) -> list[PlayerData]:

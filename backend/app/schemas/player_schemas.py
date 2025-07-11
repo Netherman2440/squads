@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Optional, TYPE_CHECKING
 from app.constants import Position
@@ -33,6 +34,7 @@ class PlayerResponse(PlayerBase):
     score: float
     position: Position
     matches_played: int
+    created_at: datetime
 
 class PlayerListResponse(BaseModel):
     """Schema for list of players"""
