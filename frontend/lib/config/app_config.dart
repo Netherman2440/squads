@@ -1,7 +1,7 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class AppConfig {
-  static const String _envFile = '.env.prod';
+  static const String _envFile = '.env.dev';
   
   // API Configuration
   static String get apiBaseUrl => dotenv.env['API_BASE_URL'] ?? 'http://localhost:8000';

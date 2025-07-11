@@ -295,6 +295,10 @@ class _MatchPageState extends ConsumerState<MatchPage> {
     }
   }
 
+  int _getTeamScore(List<Player> players) {
+    return (players.fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -345,10 +349,19 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Expanded(
-                          child: Text(
-                            _teamAName,
-                            textAlign: TextAlign.right,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                _teamAName,
+                                textAlign: TextAlign.right,
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                'Total score: ${_getTeamScore(_teamAPlayers)}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -409,10 +422,19 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            _teamBName,
-                            textAlign: TextAlign.left,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _teamBName,
+                                textAlign: TextAlign.left,
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                'Total score: ${_getTeamScore(_teamBPlayers)}',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
                           ),
                         ),
                       ],
