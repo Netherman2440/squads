@@ -114,34 +114,26 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
             ),
         ],
       ),
-      body: FutureBuilder<PlayerDetailResponse>(
-        future: _playerDetailFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData) {
-            return const Center(child: Text('No data'));
-          }
-          final player = snapshot.data!;
-          final scoreDelta = player.score - player.baseScore;
-          final isUp = scoreDelta >= 0;
-          final theme = Theme.of(context);
+      body: SingleChildScrollView(
+        child: FutureBuilder<PlayerDetailResponse>(
+          future: _playerDetailFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error:  {snapshot.error}'));
+            } else if (!snapshot.hasData) {
+              return const Center(child: Text('No data'));
+            }
+            final player = snapshot.data!;
+            final scoreDelta = player.score - player.baseScore;
+            final isUp = scoreDelta >= 0;
+            final theme = Theme.of(context);
 
-          // Responsive layout: grid for narrow screens, current layout for wide screens
-          if (isNarrow) {
-            // Mobile/narrow layout: grid style
-            return GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () {
-                setState(() {
-                  _isEditingName = false;
-                  _isEditingScore = false;
-                  _isEditingPosition = false;
-                });
-              },
-              child: SingleChildScrollView(
+            // Responsive layout: grid for narrow screens, current layout for wide screens
+            if (isNarrow) {
+              // Mobile/narrow layout: grid style
+              return Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,6 +399,9 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    // Score History section title
+                    const Text('Score History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
                     // Score History graph
                     Container(
                       height: 160,
@@ -476,22 +471,37 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       alignment: Alignment.center,
                       child: const Text('Additional stats (coming soon)', style: TextStyle(color: Colors.grey)),
                     ),
+                    // Test widgets for scroll
+                    const SizedBox(height: 40),
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      color: Colors.amber,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 18)),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      color: Colors.lightBlue,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      color: Colors.green,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
                   ],
                 ),
-              ),
-            );
-          } else {
-            // Wide/desktop layout
-            return GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: () {
-                setState(() {
-                  _isEditingName = false;
-                  _isEditingScore = false;
-                  _isEditingPosition = false;
-                });
-              },
-              child: SingleChildScrollView(
+              );
+            } else {
+              // Wide/desktop layout
+              return Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -777,6 +787,9 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 32),
+                    // Score History section title
+                    const Text('Score History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
                     // Score History graph (desktop)
                     Container(
                       height: 200,
@@ -846,12 +859,37 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       alignment: Alignment.center,
                       child: const Text('Additional stats (coming soon)', style: TextStyle(color: Colors.grey)),
                     ),
+                    // Test widgets for scroll
+                    const SizedBox(height: 60),
+                    Container(
+                      height: 100,
+                      width: double.infinity,
+                      color: Colors.amber,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 20)),
+                    ),
+                    const SizedBox(height: 32),
+                    Container(
+                      height: 100,
+                      width: double.infinity,
+                      color: Colors.lightBlue,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 20, color: Colors.white)),
+                    ),
+                    const SizedBox(height: 32),
+                    Container(
+                      height: 100,
+                      width: double.infinity,
+                      color: Colors.green,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 20, color: Colors.white)),
+                    ),
                   ],
                 ),
-              ),
-            );
-          }
-        },
+              );
+            }
+          },
+        ),
       ),
     );
   }

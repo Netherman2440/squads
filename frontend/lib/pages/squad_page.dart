@@ -83,7 +83,9 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             ),
         ],
       ),
-      body: _buildBody(context, squadState, playersState, matchesState),
+      body: SingleChildScrollView(
+        child: _buildBody(context, squadState, playersState, matchesState),
+      ),
     );
   }
 
@@ -117,18 +119,40 @@ class _SquadPageState extends ConsumerState<SquadPage> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSquadInfo(squadState, playersState, matchesState),
-          SizedBox(height: 24),
-          _buildMainSections(context, squadState, playersState, matchesState),
-          SizedBox(height: 24),
-          _buildStatisticsSection(),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSquadInfo(squadState, playersState, matchesState),
+        SizedBox(height: 24),
+        _buildMainSections(context, squadState, playersState, matchesState),
+        SizedBox(height: 24),
+        _buildStatisticsSection(),
+        // Test widgets for scroll
+        const SizedBox(height: 40),
+        Container(
+          height: 80,
+          width: double.infinity,
+          color: Colors.amber,
+          alignment: Alignment.center,
+          child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 18)),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          height: 80,
+          width: double.infinity,
+          color: Colors.lightBlue,
+          alignment: Alignment.center,
+          child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          height: 80,
+          width: double.infinity,
+          color: Colors.green,
+          alignment: Alignment.center,
+          child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
+        ),
+      ],
     );
   }
 

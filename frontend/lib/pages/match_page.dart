@@ -311,7 +311,10 @@ class _MatchPageState extends ConsumerState<MatchPage> {
         body: Center(child: Text('Error:  $_error')),
       );
     }
-    const double maxListHeight = 700; // increased for 6 players
+    const double maxListHeight = 1200; // increased for more players and scroll
+    // Calculate dynamic height for player lists section
+    int maxPlayers = _teamAPlayers.length > _teamBPlayers.length ? _teamAPlayers.length : _teamBPlayers.length;
+    double playerListHeight = (maxPlayers * 50).clamp(200, 800).toDouble();
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
@@ -340,120 +343,122 @@ class _MatchPageState extends ConsumerState<MatchPage> {
         ),
         body: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-              child: Column(
-                children: [
-                  // Team names and score row
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _teamAName,
-                                textAlign: TextAlign.right,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                'Total score: ${_getTeamScore(_teamAPlayers)}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          width: 120,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
-                          ),
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                child: Column(
+                  children: [
+                    // Team names and score row
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Flexible(
-                                  child: SizedBox(
-                                    width: 40,
-                                    child: TextField(
-                                      enabled: _isOwner, // score is editable only for owner
-                                      controller: _scoreAController,
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.headlineSmall,
-                                      decoration: const InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: '-',
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.zero,
-                                      ),
-                                      onChanged: (_) => _onScoreChanged(),
-                                    ),
-                                  ),
+                                Text(
+                                  _teamAName,
+                                  textAlign: TextAlign.right,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                                 ),
-                                const Text(' : ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                                Flexible(
-                                  child: SizedBox(
-                                    width: 40,
-                                    child: TextField(
-                                      enabled: _isOwner, // score is editable only for owner
-                                      controller: _scoreBController,
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.headlineSmall,
-                                      decoration: const InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: '-',
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.zero,
-                                      ),
-                                      onChanged: (_) => _onScoreChanged(),
-                                    ),
-                                  ),
+                                Text(
+                                  'Total score: ${_getTeamScore(_teamAPlayers)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _teamBName,
-                                textAlign: TextAlign.left,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: 120,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
+                            ),
+                            child: Center(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Flexible(
+                                    child: SizedBox(
+                                      width: 40,
+                                      child: TextField(
+                                        enabled: _isOwner, // score is editable only for owner
+                                        controller: _scoreAController,
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context).textTheme.headlineSmall,
+                                        decoration: const InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: '-',
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                        onChanged: (_) => _onScoreChanged(),
+                                      ),
+                                    ),
+                                  ),
+                                  const Text(' : ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+                                  Flexible(
+                                    child: SizedBox(
+                                      width: 40,
+                                      child: TextField(
+                                        enabled: _isOwner, // score is editable only for owner
+                                        controller: _scoreBController,
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context).textTheme.headlineSmall,
+                                        decoration: const InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: '-',
+                                          isDense: true,
+                                          contentPadding: EdgeInsets.zero,
+                                        ),
+                                        onChanged: (_) => _onScoreChanged(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text(
-                                'Total score: ${_getTeamScore(_teamBPlayers)}',
-                                style: Theme.of(context).textTheme.bodySmall,
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _teamBName,
+                                  textAlign: TextAlign.left,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  'Total score: ${_getTeamScore(_teamBPlayers)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  // Player lists row
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildPlayerList(_teamAPlayers, true, maxListHeight, enabled: !_hasResult),
-                        const SizedBox(width: 12),
-                        _buildPlayerList(_teamBPlayers, false, maxListHeight, enabled: !_hasResult),
-                      ],
+                    // Player lists row (dynamic height)
+                    SizedBox(
+                      height: playerListHeight,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildPlayerList(_teamAPlayers, true, maxListHeight, enabled: !_hasResult),
+                          const SizedBox(width: 12),
+                          _buildPlayerList(_teamBPlayers, false, maxListHeight, enabled: !_hasResult),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (!_hasResult)
+                    // Statistics section (always visible)
                     Padding(
                       padding: const EdgeInsets.only(top: 24.0),
                       child: Opacity(
@@ -483,7 +488,33 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                         ),
                       ),
                     ),
-                ],
+                    // Test widgets for scroll
+                    const SizedBox(height: 40),
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      color: Colors.amber,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 18)),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      color: Colors.lightBlue,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
+                    const SizedBox(height: 24),
+                    Container(
+                      height: 80,
+                      width: double.infinity,
+                      color: Colors.green,
+                      alignment: Alignment.center,
+                      child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
+                  ],
+                ),
               ),
             ),
             if (!_hasResult) _buildTrashTarget(),
