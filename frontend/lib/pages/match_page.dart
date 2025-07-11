@@ -316,7 +316,9 @@ class _MatchPageState extends ConsumerState<MatchPage> {
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Mecz'),
+          title: Text(
+            'Mecz ${ _matchDetail!.createdAt.day}.${ _matchDetail!.createdAt.month}.${ _matchDetail!.createdAt.year}',
+          ),
           actions: [
             if (_isOwner && !_hasResult)
               IconButton(
