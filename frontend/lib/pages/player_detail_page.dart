@@ -7,6 +7,8 @@ import 'package:squads/state/squad_state.dart';
 import 'package:squads/state/user_state.dart';
 import 'package:squads/state/players_state.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:squads/widgets/player_stat_widget.dart';
+import 'package:squads/widgets/player_stats_carousel.dart';
 
 class PlayerDetailPage extends ConsumerStatefulWidget {
   final Player player;
@@ -460,6 +462,11 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    // Player Stats Carousel Section
+                    PlayerStatsCarousel(
+                      player: player,
+                    ),
+                    const SizedBox(height: 16),
                     // Placeholder for extra stats
                     Container(
                       height: 70,
@@ -846,6 +853,11 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                           ),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Player Stats Carousel Section
+                    PlayerStatsCarousel(
+                      player: player,
                     ),
                     const SizedBox(height: 32),
                     // Placeholder for extra stats

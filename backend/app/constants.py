@@ -24,17 +24,18 @@ class StatType(Enum):
     BEST_PLAYER = "best_player"
     BEST_DELTA = "best_delta" # największa różnica pomiędzy score a base_score
 
-    BIGGEST_WIN = "biggest_win" #największa różnica bramek w meczu
     DOMINATION = "domination" # kto z kim najczęściej wygrywa
     TEAMWORK = "teamwork" # kto będąc z kim w drużynie najczęściej wygrywa
 
 
 #both    
+    BIGGEST_WIN = "biggest_win" #największa różnica bramek w meczu (a dla gracza to jego największe zwycięstwo)
     WIN_STREAK = "win_streak" # najdłuższa seria wygranych meczów
     WIN_RATIO = "win_ratio" # procent wygranych meczów
     AVG_GOALS = "avg_goals" # średnia bramek w meczu
 
 #player
+    BIGGEST_LOSS = "biggest_loss" #  największe porażka gracza
     TOP_TEAMMATE = "top_teammate"   # najczęstszy partner
     WIN_TEAMMATE = "win_teammate"   # najczęściej wygrywający partner
     WORST_TEAMMATE = "worst_teammate" # najczęściej przegrywający partner
