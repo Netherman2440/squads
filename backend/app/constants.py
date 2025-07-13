@@ -35,6 +35,8 @@ class StatType(Enum):
     AVG_GOALS = "avg_goals" # średnia bramek w meczu
 
 #player
+
+#carusel
     BIGGEST_LOSS = "biggest_loss" #  największe porażka gracza
     TOP_TEAMMATE = "top_teammate"   # najczęstszy partner
     WIN_TEAMMATE = "win_teammate"   # najczęściej wygrywający partner
@@ -45,8 +47,11 @@ class StatType(Enum):
     WORST_RIVAL = "worst_rival" # najczęściej przegrywający przeciwnik
 
     H2H = "h2h" # head to head z innym graczem
-    AVG_GOALS_AGAINST = "avg_goals_against" # średnia bramek przeciwników w meczu
 
+
+#stats
+    AVG_GOALS_AGAINST = "avg_goals_against" # średnia bramek przeciwników w meczu
+    
 
 
 

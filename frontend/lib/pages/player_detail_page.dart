@@ -467,41 +467,22 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       player: player,
                     ),
                     const SizedBox(height: 16),
-                    // Placeholder for extra stats
+                    // Detailed Stats Section (test data)
                     Container(
-                      height: 70,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text('Additional stats (coming soon)', style: TextStyle(color: Colors.grey)),
-                    ),
-                    // Test widgets for scroll
-                    const SizedBox(height: 40),
-                    Container(
-                      height: 80,
-                      width: double.infinity,
-                      color: Colors.amber,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 18)),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      height: 80,
-                      width: double.infinity,
-                      color: Colors.lightBlue,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      height: 80,
-                      width: double.infinity,
-                      color: Colors.green,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Detailed Stats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          _DetailedStatsList(),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -860,41 +841,22 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       player: player,
                     ),
                     const SizedBox(height: 32),
-                    // Placeholder for extra stats
+                    // Detailed Stats Section (test data)
                     Container(
-                      height: 100,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: theme.colorScheme.surface,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      alignment: Alignment.center,
-                      child: const Text('Additional stats (coming soon)', style: TextStyle(color: Colors.grey)),
-                    ),
-                    // Test widgets for scroll
-                    const SizedBox(height: 60),
-                    Container(
-                      height: 100,
-                      width: double.infinity,
-                      color: Colors.amber,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 20)),
-                    ),
-                    const SizedBox(height: 32),
-                    Container(
-                      height: 100,
-                      width: double.infinity,
-                      color: Colors.lightBlue,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 20, color: Colors.white)),
-                    ),
-                    const SizedBox(height: 32),
-                    Container(
-                      height: 100,
-                      width: double.infinity,
-                      color: Colors.green,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 20, color: Colors.white)),
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Detailed Stats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          SizedBox(height: 8),
+                          _DetailedStatsList(),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -902,6 +864,69 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
             }
           },
         ),
+      ),
+    );
+  }
+}
+
+class _DetailedStatsList extends StatelessWidget {
+  const _DetailedStatsList();
+
+  @override
+  Widget build(BuildContext context) {
+    // Test data
+    final stats = [
+      _StatRowData('Base Score', '50'),
+      _StatRowData('Score', '63'),
+      _StatRowData('Win Streak', '4'),
+      _StatRowData('Average Goals', '2.1'),
+      _StatRowData('Average Goals Against', '1.3'),
+      _StatRowData('Matches', '27'),
+      _StatRowData('Total Wins', '15'),
+      _StatRowData('Total Loss', '8'),
+      _StatRowData('Total Draw', '4'),
+    ];
+    return Column(
+      children: stats.map((stat) => _StatRow(stat: stat)).toList(),
+    );
+  }
+}
+
+class _StatRowData {
+  final String title;
+  final String value;
+  const _StatRowData(this.title, this.value);
+}
+
+class _StatRow extends StatelessWidget {
+  final _StatRowData stat;
+  const _StatRow({required this.stat});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(stat.title, style: theme.textTheme.bodyMedium),
+          const SizedBox(width: 8),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate number of dots based on available width
+                final dotCount = (constraints.maxWidth / 3).floor() - 1;
+                return Text(
+                  List.filled(dotCount > 0 ? dotCount : 1, '.').join(),
+                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  overflow: TextOverflow.clip,
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(stat.value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }
