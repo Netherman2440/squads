@@ -4,6 +4,9 @@ import 'package:squads/widgets/player_stat_duel_widget.dart';
 import 'package:squads/widgets/player_stat_widget.dart';
 import 'package:squads/widgets/player_match_result_widget.dart';
 import 'package:squads/widgets/player_h2h_widget.dart';
+import 'package:squads/theme/color_utils.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:squads/widgets/player_result_ratio_pie_widget.dart';
 
 // Example stat data structure
 class PlayerStatData {
@@ -54,6 +57,15 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
         'results': ['W', 'L', 'D', 'W', 'X'],
       },
     ),
+    // Test result ratio pie chart
+    PlayerStatData(
+      statType: 'result_ratio',
+      statValue: {
+        'win': 12,
+        'draw': 5,
+        'loss': 8,
+      },
+    ),
   ];
 
   @override
@@ -95,6 +107,9 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
     final stat = _stats[_currentIndex];
     final config = statTypeConfig[stat.statType] ?? {'title': stat.statType, 'description': ''};
     final String sectionTitle = config['title'] ?? '';
+    // Choose a color for each stat type from the app theme
+    final colorScheme = Theme.of(context).colorScheme;
+    final Color cardBgColor = colorScheme.outlineVariant;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -156,6 +171,12 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
                   results: List<String>.from(stat.statValue['results'] ?? []),
                   scale: h2hScale,
                 );
+              } else if (stat.statType == 'result_ratio') {
+                cardWidget = PlayerResultRatioPieWidget(
+                  win: stat.statValue['win'] ?? 0,
+                  draw: stat.statValue['draw'] ?? 0,
+                  loss: stat.statValue['loss'] ?? 0,
+                );
               } else {
                 cardWidget = PlayerStatWidget(
                   playerName: widget.player.name,
@@ -185,6 +206,7 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
                     width: cardWidth,
                     height: 270,
                     child: Card(
+                      color: cardBgColor,
                       elevation: 4,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
