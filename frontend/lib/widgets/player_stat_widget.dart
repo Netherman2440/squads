@@ -1,21 +1,5 @@
 import 'package:flutter/material.dart';
-
-// Config for mapping stat type to title and description
-const Map<String, Map<String, String>> statTypeConfig = {
-  'matches_won': {
-    'title': 'Matches Won',
-    'description': 'Number of matches won by the player',
-  },
-  'goals': {
-    'title': 'Goals',
-    'description': 'Total goals scored by the player',
-  },
-  'assists': {
-    'title': 'Assists',
-    'description': 'Total assists by the player',
-  },
-  // Add more stat types as needed
-};
+import 'package:squads/models/stat_type_config.dart' as stat_type_config;
 
 class PlayerStatWidget extends StatelessWidget {
   final String playerName;
@@ -31,7 +15,7 @@ class PlayerStatWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final config = statTypeConfig[statType] ?? {'title': statType, 'description': ''};
+    final config = stat_type_config.statTypeConfig[statType] ?? {'title': statType, 'description': ''};
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:squads/models/stat_type_config.dart' as stat_type_config;
 import 'player_stat_widget.dart';
 
 class PlayerStatDuelWidget extends StatelessWidget {
@@ -23,7 +24,7 @@ class PlayerStatDuelWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final config = statTypeConfig[statType] ?? {'title': statType, 'description': ''};
+    final config = stat_type_config.statTypeConfig[statType] ?? {'title': statType, 'description': ''};
     final double imageSize = (MediaQuery.of(context).size.width < 400 ? 56 : 80) * scale;
     final double iconSize = (MediaQuery.of(context).size.width < 400 ? 40 : 60) * scale;
     final double nameFontSize = Theme.of(context).textTheme.bodyMedium?.fontSize ?? 16 * scale;

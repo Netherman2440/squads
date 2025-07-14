@@ -7,12 +7,15 @@ import 'package:squads/widgets/player_h2h_widget.dart';
 import 'package:squads/theme/color_utils.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:squads/widgets/player_result_ratio_pie_widget.dart';
+import 'package:squads/models/stat_type_config.dart';
+import 'package:squads/models/stat_type.dart';
 
 // Example stat data structure
 class PlayerStatData {
   final String statType;
   final dynamic statValue;
-  PlayerStatData({required this.statType, required this.statValue});
+  final String? playerName; // Added for PlayerStatWidget
+  PlayerStatData({required this.statType, required this.statValue, this.playerName});
 }
 
 class PlayerStatsCarousel extends StatefulWidget {
@@ -29,41 +32,79 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
   static const Duration autoDuration = Duration(seconds: 5);
   static const Duration resumeDelay = Duration(seconds: 5);
 
-  // Test data for player stats
+  // Test data for player stats using all stat types from statTypeConfig
   late final List<PlayerStatData> _stats = [
-    PlayerStatData(statType: 'matches_won', statValue: 5),
-    PlayerStatData(statType: 'goals', statValue: 12),
-    PlayerStatData(statType: 'assists', statValue: 7),
-    // Test duel stat
-    PlayerStatData(statType: 'duel_goals', statValue: {'left': 3, 'right': 4, 'leftName': 'Alice', 'rightName': 'Bob', 'description': 'Goals scored in direct duels between Alice and Bob'}),
-    // Test match result panel
     PlayerStatData(
-      statType: 'match_result',
+      statType: StatType.BIGGEST_WIN,
       statValue: {
+        'title': 'Biggest Win',
+        'date': '2024-06-01',
         'homeName': 'Team A',
         'awayName': 'Team B',
-        'homeScore': 2,
-        'awayScore': 3,
-        'date': '2024-06-01',
-        'title': 'Match Result',
+        'homeScore': 5,
+        'awayScore': 1,
       },
     ),
-    // Test h2h panel
     PlayerStatData(
-      statType: 'h2h',
+      statType: StatType.BIGGEST_LOSS,
       statValue: {
-        'player1': 'Alice',
-        'player2': 'Bob',
-        'results': ['W', 'L', 'D', 'W', 'X'],
+        'title': 'Biggest Loss',
+        'date': '2024-06-02',
+        'homeName': 'Team C',
+        'awayName': 'Team D',
+        'homeScore': 1,
+        'awayScore': 6,
       },
     ),
-    // Test result ratio pie chart
     PlayerStatData(
-      statType: 'result_ratio',
+      statType: StatType.WIN_RATIO,
       statValue: {
         'win': 12,
-        'draw': 5,
-        'loss': 8,
+        'draw': 3,
+        'loss': 5,
+      },
+    ),
+    PlayerStatData(
+      statType: StatType.TOP_TEAMMATE,
+      statValue: 8,
+      playerName: 'John Doe',
+    ),
+    PlayerStatData(
+      statType: StatType.WIN_TEAMMATE,
+      statValue: 5,
+      playerName: 'Jane Smith',
+    ),
+    PlayerStatData(
+      statType: StatType.WORST_TEAMMATE,
+      statValue: 2,
+      playerName: 'Mike Brown',
+    ),
+    PlayerStatData(
+      statType: StatType.NEMEZIS,
+      statValue: {
+        'left': 2,
+        'right': 5,
+        'leftName': 'Player',
+        'rightName': 'Nemesis',
+        'description': 'Wins in direct duels',
+      },
+    ),
+    PlayerStatData(
+      statType: StatType.WORST_RIVAL,
+      statValue: {
+        'left': 6,
+        'right': 1,
+        'leftName': 'Player',
+        'rightName': 'Worst Rival',
+        'description': 'Wins in direct duels',
+      },
+    ),
+    PlayerStatData(
+      statType: StatType.H2H,
+      statValue: {
+        'player1': 'Player',
+        'player2': 'Opponent',
+        'results': ['W', 'L', 'W', 'D', 'L'],
       },
     ),
   ];
@@ -141,7 +182,7 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
                   cardWidth = cardWidth.clamp(220, 400);
                   final bool showArrows = constraints.maxWidth >= 550;
                   Widget cardWidget;
-                  if (stat.statType == 'duel_goals') {
+                  if (stat.statType == StatType.NEMEZIS || stat.statType == StatType.WORST_RIVAL) {
                     double duelScale = 1.0;
                     if (constraints.maxWidth < 350) {
                       duelScale = 0.6;
@@ -157,16 +198,7 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
                       description: stat.statValue['description'] ?? '',
                       date: stat.statValue['date'] ?? '',
                     );
-                  } else if (stat.statType == 'match_result') {
-                    cardWidget = PlayerMatchResultWidget(
-                      title: stat.statValue['title'] ?? '',
-                      date: stat.statValue['date'] ?? '',
-                      homeName: stat.statValue['homeName'] ?? '',
-                      awayName: stat.statValue['awayName'] ?? '',
-                      homeScore: stat.statValue['homeScore'] ?? 0,
-                      awayScore: stat.statValue['awayScore'] ?? 0,
-                    );
-                  } else if (stat.statType == 'h2h') {
+                  } else if (stat.statType == StatType.H2H) {
                     double h2hScale = 1.0;
                     if (constraints.maxWidth < 350) {
                       h2hScale = 0.6;
@@ -178,15 +210,24 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
                       results: List<String>.from(stat.statValue['results'] ?? []),
                       scale: h2hScale,
                     );
-                  } else if (stat.statType == 'result_ratio') {
+                  } else if (stat.statType == StatType.WIN_RATIO) {
                     cardWidget = PlayerResultRatioPieWidget(
                       win: stat.statValue['win'] ?? 0,
                       draw: stat.statValue['draw'] ?? 0,
                       loss: stat.statValue['loss'] ?? 0,
                     );
+                  } else if (stat.statType == StatType.BIGGEST_WIN || stat.statType == StatType.BIGGEST_LOSS) {
+                    cardWidget = PlayerMatchResultWidget(
+                      title: stat.statValue['title'] ?? '',
+                      date: stat.statValue['date'] ?? '',
+                      homeName: stat.statValue['homeName'] ?? '',
+                      awayName: stat.statValue['awayName'] ?? '',
+                      homeScore: stat.statValue['homeScore'] ?? 0,
+                      awayScore: stat.statValue['awayScore'] ?? 0,
+                    );
                   } else {
                     cardWidget = PlayerStatWidget(
-                      playerName: widget.player.name,
+                      playerName: stat.playerName ?? widget.player.name,
                       statType: stat.statType,
                       statValue: stat.statValue,
                     );
