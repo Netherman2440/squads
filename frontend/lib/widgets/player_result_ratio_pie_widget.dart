@@ -12,7 +12,7 @@ class PlayerResultRatioPieWidget extends StatelessWidget {
     final total = win + draw + loss;
     final theme = Theme.of(context);
     final width = MediaQuery.of(context).size.width;
-    final double chartSize = width < 400 ? 100 : 140;
+    final double chartSize = width < 400 ? 92 : 132;
     final double radius = width < 400 ? 28 : 40;
     final double centerSpace = width < 400 ? 20 : 32;
     String percent(int value) => total > 0 ? '${(value / total * 100).toStringAsFixed(0)}%' : '0%';

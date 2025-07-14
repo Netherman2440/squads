@@ -36,14 +36,21 @@ class PlayerStatWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Player image placeholder
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(Icons.person, size: 60, color: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.5)),
+        Builder(
+          builder: (context) {
+            final width = MediaQuery.of(context).size.width;
+            final double imageSize = width < 400 ? 56 : 80;
+            final double iconSize = width < 400 ? 40 : 60;
+            return Container(
+              width: imageSize,
+              height: imageSize,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(Icons.person, size: iconSize, color: Theme.of(context).colorScheme.onSecondaryContainer.withOpacity(0.5)),
+            );
+          },
         ),
         const SizedBox(height: 12),
         // Player name

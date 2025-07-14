@@ -27,16 +27,10 @@ class PlayerMatchResultWidget extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Date
-        Text(
-          date,
-          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-        ),
-        const SizedBox(height: 20),
         // Score row
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Home team name and score
             Column(
@@ -46,14 +40,27 @@ class PlayerMatchResultWidget extends StatelessWidget {
                   style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _buildScoreBox(score: homeScore.toString(), theme: theme, baseBg: baseBg, borderColor: borderColor, textColor: textColor),
+                Builder(
+                  builder: (context) {
+                    final width = MediaQuery.of(context).size.width;
+                    final double boxSize = width < 400 ? 56 : 80;
+                    return _buildScoreBox(score: homeScore.toString(), theme: theme, baseBg: baseBg, borderColor: borderColor, textColor: textColor, boxSize: boxSize);
+                  },
+                ),
               ],
             ),
             const SizedBox(width: 24),
             // Separator
-            Text(
-              ':',
-              style: theme.textTheme.displayMedium?.copyWith(fontWeight: FontWeight.bold),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  ':',
+                  style: theme.textTheme.displayMedium?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                
+               
+              ],
             ),
             const SizedBox(width: 24),
             // Away team name and score
@@ -64,19 +71,32 @@ class PlayerMatchResultWidget extends StatelessWidget {
                   style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _buildScoreBox(score: awayScore.toString(), theme: theme, baseBg: baseBg, borderColor: borderColor, textColor: textColor),
+                Builder(
+                  builder: (context) {
+                    final width = MediaQuery.of(context).size.width;
+                    final double boxSize = width < 400 ? 56 : 80;
+                    return _buildScoreBox(score: awayScore.toString(), theme: theme, baseBg: baseBg, borderColor: borderColor, textColor: textColor, boxSize: boxSize);
+                  },
+                ),
               ],
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        // Date under the result
+        Text(
+          date,
+          style: theme.textTheme.bodySmall,
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  Widget _buildScoreBox({required String score, required ThemeData theme, required Color baseBg, required Color borderColor, required Color textColor}) {
+  Widget _buildScoreBox({required String score, required ThemeData theme, required Color baseBg, required Color borderColor, required Color textColor, required double boxSize}) {
     return Container(
-      width: 48,
-      height: 48,
+      width: boxSize,
+      height: boxSize,
       decoration: BoxDecoration(
         color: baseBg,
         border: Border.all(

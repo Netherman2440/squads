@@ -110,170 +110,195 @@ class _PlayerStatsCarouselState extends State<PlayerStatsCarousel> {
     // Choose a color for each stat type from the app theme
     final colorScheme = Theme.of(context).colorScheme;
     final Color cardBgColor = colorScheme.outlineVariant;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Section title
-          if (sectionTitle.isNotEmpty)
-            Text(
-              sectionTitle,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-          if (sectionTitle.isNotEmpty) const SizedBox(height: 12),
-          // Carousel content with arrows and stat card
-          LayoutBuilder(
-            builder: (context, constraints) {
-              double cardWidth = constraints.maxWidth < 450 ? constraints.maxWidth - 64 : 400;
-              cardWidth = cardWidth.clamp(220, 400);
-              final bool showArrows = constraints.maxWidth >= 550;
-              Widget cardWidget;
-              if (stat.statType == 'duel_goals') {
-                double duelScale = 1.0;
-                if (constraints.maxWidth < 350) {
-                  duelScale = 0.6;
-                } else if (constraints.maxWidth < 400) {
-                  duelScale = 0.75;
-                }
-                cardWidget = PlayerStatDuelWidget(
-                  playerNameLeft: stat.statValue['leftName'],
-                  playerNameRight: stat.statValue['rightName'],
-                  statType: stat.statType,
-                  statValue: '${stat.statValue['left']} : ${stat.statValue['right']}',
-                  scale: duelScale,
-                  description: stat.statValue['description'] ?? '',
-                );
-              } else if (stat.statType == 'match_result') {
-                cardWidget = PlayerMatchResultWidget(
-                  title: stat.statValue['title'] ?? '',
-                  date: stat.statValue['date'] ?? '',
-                  homeName: stat.statValue['homeName'] ?? '',
-                  awayName: stat.statValue['awayName'] ?? '',
-                  homeScore: stat.statValue['homeScore'] ?? 0,
-                  awayScore: stat.statValue['awayScore'] ?? 0,
-                );
-              } else if (stat.statType == 'h2h') {
-                double h2hScale = 1.0;
-                if (constraints.maxWidth < 350) {
-                  h2hScale = 0.6;
-                } else if (constraints.maxWidth < 400) {
-                  h2hScale = 0.75;
-                }
-                cardWidget = PlayerH2HWidget(
-                  playerName: stat.statValue['player1'] ?? '',
-                  results: List<String>.from(stat.statValue['results'] ?? []),
-                  scale: h2hScale,
-                );
-              } else if (stat.statType == 'result_ratio') {
-                cardWidget = PlayerResultRatioPieWidget(
-                  win: stat.statValue['win'] ?? 0,
-                  draw: stat.statValue['draw'] ?? 0,
-                  loss: stat.statValue['loss'] ?? 0,
-                );
-              } else {
-                cardWidget = PlayerStatWidget(
-                  playerName: widget.player.name,
-                  statType: stat.statType,
-                  statValue: stat.statValue,
-                );
-              }
-              return Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  if (showArrows)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 24),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_left, size: 36),
-                        onPressed: _currentIndex > 0
-                            ? () {
+    final width = MediaQuery.of(context).size.width;
+    final double bgHeight = width < 500 ? 240 : 320;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: double.infinity,
+          height: bgHeight,
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              // Section title
+              if (sectionTitle.isNotEmpty)
+                Text(
+                  sectionTitle,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              if (sectionTitle.isNotEmpty) const SizedBox(height: 6),
+              // Carousel content with arrows and stat card
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  double cardWidth = constraints.maxWidth < 450 ? constraints.maxWidth - 64 : 400;
+                  cardWidth = cardWidth.clamp(220, 400);
+                  final bool showArrows = constraints.maxWidth >= 550;
+                  Widget cardWidget;
+                  if (stat.statType == 'duel_goals') {
+                    double duelScale = 1.0;
+                    if (constraints.maxWidth < 350) {
+                      duelScale = 0.6;
+                    } else if (constraints.maxWidth < 400) {
+                      duelScale = 0.75;
+                    }
+                    cardWidget = PlayerStatDuelWidget(
+                      playerNameLeft: stat.statValue['leftName'],
+                      playerNameRight: stat.statValue['rightName'],
+                      statType: stat.statType,
+                      statValue: '${stat.statValue['left']} : ${stat.statValue['right']}',
+                      scale: duelScale,
+                      description: stat.statValue['description'] ?? '',
+                      date: stat.statValue['date'] ?? '',
+                    );
+                  } else if (stat.statType == 'match_result') {
+                    cardWidget = PlayerMatchResultWidget(
+                      title: stat.statValue['title'] ?? '',
+                      date: stat.statValue['date'] ?? '',
+                      homeName: stat.statValue['homeName'] ?? '',
+                      awayName: stat.statValue['awayName'] ?? '',
+                      homeScore: stat.statValue['homeScore'] ?? 0,
+                      awayScore: stat.statValue['awayScore'] ?? 0,
+                    );
+                  } else if (stat.statType == 'h2h') {
+                    double h2hScale = 1.0;
+                    if (constraints.maxWidth < 350) {
+                      h2hScale = 0.6;
+                    } else if (constraints.maxWidth < 400) {
+                      h2hScale = 0.75;
+                    }
+                    cardWidget = PlayerH2HWidget(
+                      playerName: stat.statValue['player1'] ?? '',
+                      results: List<String>.from(stat.statValue['results'] ?? []),
+                      scale: h2hScale,
+                    );
+                  } else if (stat.statType == 'result_ratio') {
+                    cardWidget = PlayerResultRatioPieWidget(
+                      win: stat.statValue['win'] ?? 0,
+                      draw: stat.statValue['draw'] ?? 0,
+                      loss: stat.statValue['loss'] ?? 0,
+                    );
+                  } else {
+                    cardWidget = PlayerStatWidget(
+                      playerName: widget.player.name,
+                      statType: stat.statType,
+                      statValue: stat.statValue,
+                    );
+                  }
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      if (showArrows)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 24),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_left, size: 36),
+                            onPressed: _currentIndex > 0
+                                ? () {
+                                    _pauseAndResumeAutoScroll();
+                                    _goToPage(_currentIndex - 1);
+                                  }
+                                : null,
+                          ),
+                        ),
+                      // Stat card with animation and gesture
+                      SizedBox(
+                        width: cardWidth,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: GestureDetector(
+                            onPanEnd: (details) {
+                              final velocity = details.velocity.pixelsPerSecond.dx;
+                              if (velocity < -100 && _currentIndex < _stats.length - 1) {
+                                _pauseAndResumeAutoScroll();
+                                _goToPage(_currentIndex + 1);
+                              } else if (velocity > 100 && _currentIndex > 0) {
                                 _pauseAndResumeAutoScroll();
                                 _goToPage(_currentIndex - 1);
                               }
-                            : null,
-                      ),
-                    ),
-                  // Stat card with animation and gesture
-                  SizedBox(
-                    width: cardWidth,
-                    height: 270,
-                    child: Card(
-                      color: cardBgColor,
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: GestureDetector(
-                          onPanEnd: (details) {
-                            final velocity = details.velocity.pixelsPerSecond.dx;
-                            if (velocity < -100 && _currentIndex < _stats.length - 1) {
-                              _pauseAndResumeAutoScroll();
-                              _goToPage(_currentIndex + 1);
-                            } else if (velocity > 100 && _currentIndex > 0) {
-                              _pauseAndResumeAutoScroll();
-                              _goToPage(_currentIndex - 1);
-                            }
-                          },
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 350),
-                            transitionBuilder: (child, animation) => FadeTransition(
-                              opacity: animation,
-                              child: child,
-                            ),
-                            child: Container(
-                              key: ValueKey(_currentIndex),
-                              child: cardWidget,
+                            },
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 350),
+                              transitionBuilder: (child, animation) => FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              ),
+                              child: SizedBox(
+                                key: ValueKey(_currentIndex),
+                                height: width < 500 ? 170 : 180,
+                                child: Align(
+                                  alignment: Alignment.topCenter,
+                                  child: cardWidget,
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                  if (showArrows)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 24),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_right, size: 36),
-                        onPressed: _currentIndex < _stats.length - 1
-                            ? () {
-                                _pauseAndResumeAutoScroll();
-                                _goToPage(_currentIndex + 1);
-                              }
-                            : null,
+                      if (showArrows)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 24),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_right, size: 36),
+                            onPressed: _currentIndex < _stats.length - 1
+                                ? () {
+                                    _pauseAndResumeAutoScroll();
+                                    _goToPage(_currentIndex + 1);
+                                  }
+                                : null,
+                          ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              // Dots indicator (only for wide screens)
+              if (width >= 400)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(_stats.length, (index) {
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: _currentIndex == index ? Colors.blue : Colors.grey.shade400,
                       ),
-                    ),
-                ],
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          // Dots indicator
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_stats.length, (index) {
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _currentIndex == index ? Colors.blue : Colors.grey.shade400,
+                    );
+                  }),
                 ),
-              );
-            }),
+            ],
           ),
-        ],
-      ),
+        ),
+        // Dots indicator for narrow screens (below the card)
+        if (width < 400)
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(_stats.length, (index) {
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _currentIndex == index ? Colors.blue : Colors.grey.shade400,
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
     );
   }
 } 
