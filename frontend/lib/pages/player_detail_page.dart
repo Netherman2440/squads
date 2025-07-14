@@ -9,6 +9,8 @@ import 'package:squads/state/players_state.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:squads/widgets/player_stat_widget.dart';
 import 'package:squads/widgets/player_stats_carousel.dart';
+import '../models/stat_type.dart';
+import '../models/stat_type_config.dart';
 
 class PlayerDetailPage extends ConsumerStatefulWidget {
   final Player player;
@@ -36,6 +38,71 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
 
   // Test data for score history
   final List<double> _testScores = [63, 69, 70, 46, 33, 55, 80, 77, 90, 60];
+
+  // Test data for player stats
+  final List<Map<String, dynamic>> playerStats = [
+    {
+      'statType': 'biggest_win',
+      'title': 'Biggest Win',
+      'date': '2024-06-01',
+      'homeName': 'Team A',
+      'awayName': 'Team B',
+      'homeScore': 5,
+      'awayScore': 1,
+    },
+    {
+      'statType': 'biggest_loss',
+      'title': 'Biggest Loss',
+      'date': '2024-06-02',
+      'homeName': 'Team C',
+      'awayName': 'Team D',
+      'homeScore': 1,
+      'awayScore': 6,
+    },
+    {
+      'statType': 'win_ratio',
+      'win': 12,
+      'draw': 3,
+      'loss': 5,
+    },
+    {
+      'statType': 'top_teammate',
+      'playerName': 'John Doe',
+      'value': 8,
+    },
+    {
+      'statType': 'win_teammate',
+      'playerName': 'Jane Smith',
+      'value': 5,
+    },
+    {
+      'statType': 'worst_teammate',
+      'playerName': 'Mike Brown',
+      'value': 2,
+    },
+    {
+      'statType': 'nemezis',
+      'left': 2,
+      'right': 5,
+      'leftName': 'Player',
+      'rightName': 'Nemesis',
+      'description': 'Wins in direct duels',
+    },
+    {
+      'statType': 'worst_rival',
+      'left': 6,
+      'right': 1,
+      'leftName': 'Player',
+      'rightName': 'Worst Rival',
+      'description': 'Wins in direct duels',
+    },
+    {
+      'statType': 'h2h',
+      'player1': 'Player',
+      'player2': 'Opponent',
+      'results': ['W', 'L', 'W', 'D', 'L'],
+    },
+  ];
 
   @override
   void initState() {
@@ -463,8 +530,12 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                     ),
                     const SizedBox(height: 16),
                     // Player Stats Carousel Section
-                    PlayerStatsCarousel(
-                      player: player,
+                    StatsCarousel(
+                      stats: playerStats,
+                      title: 'Player Stats',
+                      getPlayerName: (stat) => stat['playerName'] ?? '',
+                      getStatType: (stat) => stat['statType'] ?? '',
+                      getStatValue: (stat) => stat['value'] ?? '',
                     ),
                     const SizedBox(height: 16),
                     // Detailed Stats Section (test data)
@@ -837,8 +908,12 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                     ),
                     const SizedBox(height: 32),
                     // Player Stats Carousel Section
-                    PlayerStatsCarousel(
-                      player: player,
+                    StatsCarousel(
+                      stats: playerStats,
+                      title: 'Player Stats',
+                      getPlayerName: (stat) => stat['playerName'] ?? '',
+                      getStatType: (stat) => stat['statType'] ?? '',
+                      getStatValue: (stat) => stat['value'] ?? '',
                     ),
                     const SizedBox(height: 32),
                     // Detailed Stats Section (test data)

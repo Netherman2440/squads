@@ -12,6 +12,9 @@ import 'squad_list_page.dart';
 import '../state/squad_state.dart';
 import '../state/players_state.dart';
 import '../state/matches_state.dart';
+import '../widgets/player_stats_carousel.dart';
+import '../models/stat_type.dart';
+import '../models/stat_type_config.dart';
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -306,7 +309,78 @@ class _SquadPageState extends ConsumerState<SquadPage> {
 
   Widget _buildStatisticsSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    // Test data for squad stats
+    final List<Map<String, dynamic>> squadStats = [
+      {
+        'statType': 'recent_match',
+        'title': 'Recent Match',
+        'date': '2024-06-10',
+        'homeName': 'Squad A',
+        'awayName': 'Squad B',
+        'homeScore': 3,
+        'awayScore': 2,
+      },
+      {
+        'statType': 'next_match',
+        'title': 'Next Match',
+        'date': '2024-06-20',
+        'homeName': 'Squad A',
+        'awayName': 'Squad C',
+        'homeScore': null,
+        'awayScore': null,
+      },
+      {
+        'statType': 'best_player',
+        'playerName': 'John Doe',
+        'value': 8,
+      },
+      {
+        'statType': 'best_delta',
+        'value': 5,
+      },
+      {
+        'statType': 'domination',
+        'playerName': 'Rival Squad',
+        'value': 7,
+      },
+      {
+        'statType': 'teamwork',
+        'playerName': 'Best Teammate',
+        'value': 10,
+      },
+      {
+        'statType': 'win_streak',
+        'value': 4,
+      },
+      {
+        'statType': 'win_ratio',
+        'win': 10,
+        'draw': 2,
+        'loss': 3,
+      },
+      {
+        'statType': 'avg_goals',
+        'value': 2.5,
+      },
+      {
+        'statType': 'biggest_win',
+        'title': 'Biggest Win',
+        'date': '2024-05-01',
+        'homeName': 'Squad A',
+        'awayName': 'Squad D',
+        'homeScore': 6,
+        'awayScore': 1,
+      },
+      {
+        'statType': 'biggest_loss',
+        'title': 'Biggest Loss',
+        'date': '2024-04-15',
+        'homeName': 'Squad E',
+        'awayName': 'Squad A',
+        'homeScore': 5,
+        'awayScore': 0,
+      },
+    ];
     return Card(
       child: Container(
         decoration: BoxDecoration(
@@ -340,6 +414,14 @@ class _SquadPageState extends ConsumerState<SquadPage> {
                 ],
               ),
               SizedBox(height: 16),
+              StatsCarousel(
+                stats: squadStats,
+                title: 'Squad Stats',
+                getPlayerName: (stat) => stat['playerName'] ?? '',
+                getStatType: (stat) => stat['statType'] ?? '',
+                getStatValue: (stat) => stat['value'] ?? '',
+              ),
+              SizedBox(height: 24),
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
