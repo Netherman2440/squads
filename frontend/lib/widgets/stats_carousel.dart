@@ -81,7 +81,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
     final double bgHeight = width < 500 ? 240 : 320;
     Widget cardWidget;
     // Use the same widget selection logic as before, but with generic stat access
-    if (statType == StatType.NEMEZIS || statType == StatType.WORST_RIVAL) {
+    if (statType == StatType.NEMEZIS || statType == StatType.WORST_RIVAL || statType == StatType.DOMINATION || statType == StatType.TEAMWORK) {
       double duelScale = 1.0;
       if (width < 350) {
         duelScale = 0.6;
@@ -92,7 +92,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
         playerNameLeft: stat['leftName'],
         playerNameRight: stat['rightName'],
         statType: statType,
-        statValue: '${stat['left']} : ${stat['right']}',
+        statValue: stat['statValue'] ?? '',
         scale: duelScale,
         description: stat['description'] ?? '',
         date: stat['date'] ?? '',
@@ -115,7 +115,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
         draw: stat['draw'] ?? 0,
         loss: stat['loss'] ?? 0,
       );
-    } else if (statType == StatType.BIGGEST_WIN || statType == StatType.BIGGEST_LOSS) {
+    } else if (statType == StatType.BIGGEST_WIN || statType == StatType.BIGGEST_LOSS || statType == StatType.RECENT_MATCH || statType == StatType.NEXT_MATCH) {
       cardWidget = PlayerMatchResultWidget(
         title: stat['title'] ?? '',
         date: stat['date'] ?? '',

@@ -17,30 +17,19 @@ const Map<String, Map<String, String>> squadStatTypeConfig = {
   },
   'domination': {
     'title': 'Domination',
-    'description': 'The opponent squad most frequently defeated.',
+    'description': 'The opponent most frequently defeated.',
   },
   'teamwork': {
     'title': 'Teamwork',
-    'description': 'The teammate with whom the squad wins most often.',
+    'description': 'The players with strongest win ratio.',
   },
   'win_streak': {
     'title': 'Win Streak',
     'description': 'The longest series of consecutive wins by the squad.',
   },
-  'win_ratio': {
-    'title': 'Win Ratio',
-    'description': 'Percentage of matches won by the squad.',
-  },
-  'avg_goals': {
-    'title': 'Average Goals',
-    'description': 'Average number of goals scored per match by the squad.',
-  },
   'biggest_win': {
     'title': 'Biggest Win',
-    'description': 'The match with the largest goal difference won by the squad.',
+    'description': 'The match with the largest goal difference.',
   },
-  'biggest_loss': {
-    'title': 'Biggest Loss',
-    'description': 'The match with the largest goal difference lost by the squad.',
-  },
+
 }; 

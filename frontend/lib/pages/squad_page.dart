@@ -12,7 +12,7 @@ import 'squad_list_page.dart';
 import '../state/squad_state.dart';
 import '../state/players_state.dart';
 import '../state/matches_state.dart';
-import '../widgets/player_stats_carousel.dart';
+import '../widgets/stats_carousel.dart';
 import '../models/stat_type.dart';
 import '../models/stat_type_config.dart';
 
@@ -130,31 +130,6 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         _buildMainSections(context, squadState, playersState, matchesState),
         SizedBox(height: 24),
         _buildStatisticsSection(),
-        // Test widgets for scroll
-        const SizedBox(height: 40),
-        Container(
-          height: 80,
-          width: double.infinity,
-          color: Colors.amber,
-          alignment: Alignment.center,
-          child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 18)),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          height: 80,
-          width: double.infinity,
-          color: Colors.lightBlue,
-          alignment: Alignment.center,
-          child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
-        ),
-        const SizedBox(height: 24),
-        Container(
-          height: 80,
-          width: double.infinity,
-          color: Colors.green,
-          alignment: Alignment.center,
-          child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
-        ),
       ],
     );
   }
@@ -309,6 +284,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
 
   Widget _buildStatisticsSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final playersState = ref.watch(playersProvider);
+    final matchesState = ref.watch(matchesProvider);
     // Test data for squad stats
     final List<Map<String, dynamic>> squadStats = [
       {
@@ -340,27 +317,29 @@ class _SquadPageState extends ConsumerState<SquadPage> {
       },
       {
         'statType': 'domination',
-        'playerName': 'Rival Squad',
-        'value': 7,
+        'leftName': 'Squad A',
+        'rightName': 'Rival Squad',
+        'statValue': '6:2',
+        'description': 'Head-to-head record',
       },
       {
         'statType': 'teamwork',
-        'playerName': 'Best Teammate',
-        'value': 10,
+        'leftName': 'Player X',
+        'rightName': 'Player Y',
+        'statValue': '57%',
+        'description': 'Win ratio together',
       },
       {
         'statType': 'win_streak',
-        'value': 4,
+        'playerName': 'John Doe',
+        'value': 8,
+
       },
       {
         'statType': 'win_ratio',
         'win': 10,
         'draw': 2,
         'loss': 3,
-      },
-      {
-        'statType': 'avg_goals',
-        'value': 2.5,
       },
       {
         'statType': 'biggest_win',
@@ -370,15 +349,6 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         'awayName': 'Squad D',
         'homeScore': 6,
         'awayScore': 1,
-      },
-      {
-        'statType': 'biggest_loss',
-        'title': 'Biggest Loss',
-        'date': '2024-04-15',
-        'homeName': 'Squad E',
-        'awayName': 'Squad A',
-        'homeScore': 5,
-        'awayScore': 0,
       },
     ];
     return Card(
@@ -422,24 +392,31 @@ class _SquadPageState extends ConsumerState<SquadPage> {
                 getStatValue: (stat) => stat['value'] ?? '',
               ),
               SizedBox(height: 24),
+              // Detailed Statistics Section
               Container(
-                padding: EdgeInsets.all(16),
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: isDark 
                     ? AppColors.bgLight.withOpacity(0.7)
                     : Colors.white.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.hourglass_empty, color: AppColors.textMuted),
-                    SizedBox(width: 8),
                     Text(
-                      'Statistics will be available soon',
+                      'Detailed Statistics',
                       style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontStyle: FontStyle.italic,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.text,
                       ),
+                    ),
+                    SizedBox(height: 8),
+                    _SquadDetailedStatsList(
+                      playersState: playersState,
+                      matchesState: matchesState,
                     ),
                   ],
                 ),
@@ -516,5 +493,83 @@ class _SquadPageState extends ConsumerState<SquadPage> {
 
   void _navigateToTournaments(BuildContext context) {
     //MessageService.showInfo(context, 'Tournaments page coming soon');
+  }
+}
+
+class _SquadDetailedStatsList extends StatelessWidget {
+  final PlayersState playersState;
+  final MatchesState matchesState;
+
+  const _SquadDetailedStatsList({
+    required this.playersState,
+    required this.matchesState,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Calculate statistics from real data
+    final playersCount = playersState.players.length;
+    final matchesCount = matchesState.matches.length;
+    
+    // Calculate total goals and average goals (test data for now)
+    final totalGoals = 45; // TODO: Calculate from real match data
+    final avgGoals = matchesCount > 0 ? (totalGoals / matchesCount).toStringAsFixed(1) : '0.0';
+    
+    // Calculate average player score
+    final avgPlayerScore = playersCount > 0 
+        ? (playersState.players.map((p) => p.score).reduce((a, b) => a + b) / playersCount).toStringAsFixed(1)
+        : '0.0';
+
+    final stats = [
+      _StatRowData('Players Count', playersCount.toString()),
+      _StatRowData('Matches Count', matchesCount.toString()),
+      _StatRowData('Average Goals', avgGoals),
+      _StatRowData('Total Goals', totalGoals.toString()),
+      _StatRowData('Average Player Score', avgPlayerScore),
+    ];
+
+    return Column(
+      children: stats.map((stat) => _StatRow(stat: stat)).toList(),
+    );
+  }
+}
+
+class _StatRowData {
+  final String title;
+  final String value;
+  const _StatRowData(this.title, this.value);
+}
+
+class _StatRow extends StatelessWidget {
+  final _StatRowData stat;
+  const _StatRow({required this.stat});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Text(stat.title, style: theme.textTheme.bodyMedium),
+          const SizedBox(width: 8),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate number of dots based on available width
+                final dotCount = (constraints.maxWidth / 3).floor() - 1;
+                return Text(
+                  List.filled(dotCount > 0 ? dotCount : 1, '.').join(),
+                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+                  overflow: TextOverflow.clip,
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(stat.value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
   }
 } 

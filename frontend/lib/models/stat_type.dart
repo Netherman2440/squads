@@ -8,5 +8,14 @@ class StatType {
   static const String NEMEZIS = 'nemezis';
   static const String WORST_RIVAL = 'worst_rival';
   static const String H2H = 'h2h';
-  // Add more types as needed
+ 
+ 
+  static const String RECENT_MATCH = "recent_match";
+  static const String NEXT_MATCH = "next_match";
+  static const String BEST_PLAYER = "best_player";
+  static const String BEST_DELTA = "best_delta";
+
+  static const String DOMINATION = "domination";
+  static const String TEAMWORK = "teamwork";
+  
 } 

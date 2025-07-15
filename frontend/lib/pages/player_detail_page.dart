@@ -8,7 +8,7 @@ import 'package:squads/state/user_state.dart';
 import 'package:squads/state/players_state.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:squads/widgets/player_stat_widget.dart';
-import 'package:squads/widgets/player_stats_carousel.dart';
+import 'package:squads/widgets/stats_carousel.dart';
 import '../models/stat_type.dart';
 import '../models/stat_type_config.dart';
 
@@ -82,18 +82,16 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
     },
     {
       'statType': 'nemezis',
-      'left': 2,
-      'right': 5,
       'leftName': 'Player',
       'rightName': 'Nemesis',
+      'statValue': '2:5',
       'description': 'Wins in direct duels',
     },
     {
       'statType': 'worst_rival',
-      'left': 6,
-      'right': 1,
       'leftName': 'Player',
       'rightName': 'Worst Rival',
+      'statValue': '6:1',
       'description': 'Wins in direct duels',
     },
     {
