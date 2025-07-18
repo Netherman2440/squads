@@ -4,8 +4,10 @@ from typing import Optional
 
 from app.schemas import PlayerResponse, PlayerDetailResponse, PlayerRef
 from app.models import Player
-from app.entities import MatchData
+# Changed: Direct import instead of importing through app.entities
+from app.entities.match_data import MatchData
 from app.constants import Position
+from app.entities.stats_data import PlayerStatsData
 
 
 @dataclass
@@ -63,6 +65,7 @@ class PlayerData:
 @dataclass
 class PlayerDetailData(PlayerData):
     matches: list = field(default_factory=list)
+    stats: PlayerStatsData = field(default_factory=PlayerStatsData)
     
     def to_response(self) -> PlayerDetailResponse:
         matches_response = [match.to_response() for match in self.matches]
@@ -74,8 +77,8 @@ class PlayerDetailData(PlayerData):
             score=self.score,
             position=self.position,
             matches_played=self.matches_played,
-            matches=matches_response,
             created_at=self.created_at,
+            stats=self.stats.to_schema(),
         )
 
     @classmethod

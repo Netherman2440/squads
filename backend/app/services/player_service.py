@@ -3,6 +3,7 @@ from app.entities import PlayerData, PlayerDetailData, MatchData
 from app.constants import Position
 from app.schemas.player_schemas import PlayerResponse, PlayerListResponse
 from app.services.match_service import MatchService
+from app.services.stat_service import StatService
 
 class PlayerService:
     def __init__(self, session):
@@ -23,6 +24,9 @@ class PlayerService:
     def player_to_detail_data(self, player: Player) -> PlayerDetailData:
         match_service = MatchService(self.session)
 
+        stats_service = StatService(self.session)
+        stats = stats_service.get_player_stats(player.player_id)
+
         return PlayerDetailData(
             squad_id=player.squad_id,
             player_id=player.player_id,
@@ -32,7 +36,8 @@ class PlayerService:
             _score=player.score,
             matches_played=len(player.matches),
             created_at=player.created_at,
-            matches=[match_service.match_to_data(match) for match in player.matches],
+            #matches=[match_service.match_to_data(match) for match in player.matches],
+            stats=stats,
         )
 
     def get_players(self, squad_id: str) -> list[PlayerData]:

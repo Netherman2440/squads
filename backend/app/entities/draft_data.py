@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
-from app.entities import PlayerData, TeamData
+# Changed: Direct imports instead of importing through app.entities
+from app.entities.player_data import PlayerData
+from app.entities.team_data import TeamData
 from app.schemas.draft_schemas import DraftResponse
 
 @dataclass

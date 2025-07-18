@@ -1,13 +1,19 @@
 
 from datetime import datetime
-from typing import Optional
+import json
+from typing import Optional, TYPE_CHECKING
 from app.constants import CarouselType
-from app.entities import PlayerData, MatchData
-from app.schemas import CarouselStat
+# Changed: Direct imports instead of importing through app.entities
+from app.entities.match_data import MatchData
+from app.schemas import CarouselStat, MatchRef
 from app.schemas.stats_schemas import PlayerStats, ScoreHistorySchema, SquadStats
 
+# Import only for type checking to avoid circular import
+if TYPE_CHECKING:
+    from app.entities.player_data import PlayerData
+
 class ScoreHistoryData:
-    def __init__(self, score: int, created_at: datetime, match_ref: Optional[MatchData] = None):
+    def __init__(self, score: int, created_at: datetime, match_ref: Optional[MatchRef] = None):
         self.score = score
         self.created_at = created_at
         self.match_ref = match_ref
@@ -16,21 +22,23 @@ class ScoreHistoryData:
         return ScoreHistorySchema(
             score=self.score,
             created_at=self.created_at,
-            match_ref=self.match_ref.to_ref() if self.match_ref else None
+            match_ref=self.match_ref
         )
 
 class CarouselData:
-    def __init__(self, carousel_type: CarouselType,  value: str | list[str] | dict, ref: Optional[PlayerData | MatchData] = None):
+    def __init__(self, carousel_type: CarouselType,  value: str | list[str] | dict, ref: Optional["PlayerData | MatchData"] = None):
         self.carousel_type = carousel_type
         self.value = value
         self.ref = ref
 
     def to_schema(self):
+
         return CarouselStat(
             type=self.carousel_type,
             ref=self.ref.to_ref() if self.ref else None,
             value=self.value
         )
+
     
 class Teammate_Ref:
     def __init__(self, player_id: str):
@@ -44,7 +52,7 @@ class Teammate_Ref:
 
 
     @classmethod
-    def from_player_Data(cls, player_data: PlayerData):
+    def from_player_Data(cls, player_data: "PlayerData"):
         return cls(player_id=player_data.player_id)
 
 class PlayerStatsData:

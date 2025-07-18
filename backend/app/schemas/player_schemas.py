@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Optional, TYPE_CHECKING
 from app.constants import Position
+from app.schemas.stats_schemas import PlayerStats
 
 class PlayerBase(BaseModel):
     """Base player schema with common fields"""
@@ -43,7 +44,7 @@ class PlayerListResponse(BaseModel):
 
 class PlayerDetailResponse(PlayerResponse):
     """Schema for detailed player response with matches"""
-    score_history: list
+    stats: PlayerStats
 
 if TYPE_CHECKING:
     from app.schemas.match_schemas import MatchResponse

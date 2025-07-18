@@ -28,7 +28,7 @@ class CarouselStat(BaseModel):
   ref: Optional[PlayerRef | MatchRef] = None
 
 class PlayerStats(BaseModel):
-  playerId: str
+  player_id: str
   base_score: int
   score: int
   win_streak: int
@@ -47,7 +47,7 @@ class PlayerStats(BaseModel):
   carousel_stats: list[CarouselStat]
 
 class SquadStats(BaseModel):
-  squadId: str
+  squad_id: str
   created_at: datetime
   total_players: int
   total_matches: int
