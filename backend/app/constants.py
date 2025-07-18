@@ -17,40 +17,29 @@ class UserRole(Enum):
     MODERATOR = "moderator"
     MEMBER = "member"
 
-class StatType(Enum):
-#squad
-    RECENT_MATCH = "recent_match"
-    NEXT_MATCH = "next_match"
-    BEST_PLAYER = "best_player"
-    BEST_DELTA = "best_delta" # największa różnica pomiędzy score a base_score
+class CarouselType(Enum):
+  BIGGEST_WIN = 'biggest_win'
+  BIGGEST_LOSS = 'biggest_loss'
+  WIN_RATIO = 'win_ratio'
+  TOP_TEAMMATE = 'top_teammate'
+  WIN_TEAMMATE = 'win_teammate' 
+  WORST_TEAMMATE = 'worst_teammate'  #?
+  NEMEZIS = 'nemezis'
+  WORST_RIVAL = 'worst_rival'
+  H2H = 'h2h'
+ 
+ 
+  RECENT_MATCH = "recent_match"
+  NEXT_MATCH = "next_match"
+  #biggest win for squad
 
-    DOMINATION = "domination" # kto z kim najczęściej wygrywa
-    TEAMWORK = "teamwork" # kto będąc z kim w drużynie najczęściej wygrywa
-
-
-#both    
-    BIGGEST_WIN = "biggest_win" #największa różnica bramek w meczu (a dla gracza to jego największe zwycięstwo)
-    WIN_STREAK = "win_streak" # najdłuższa seria wygranych meczów
-    WIN_RATIO = "win_ratio" # procent wygranych meczów
-    AVG_GOALS = "avg_goals" # średnia bramek w meczu
-
-#player
-
-#carusel
-    BIGGEST_LOSS = "biggest_loss" #  największe porażka gracza
-    TOP_TEAMMATE = "top_teammate"   # najczęstszy partner
-    WIN_TEAMMATE = "win_teammate"   # najczęściej wygrywający partner
-    WORST_TEAMMATE = "worst_teammate" # najczęściej przegrywający partner
-
-    TOP_RIVAL = "top_rival" # najczęstszy przeciwnik
-    NEMEZIS = "nemezis" # najczęściej wygrywający przeciwnik
-    WORST_RIVAL = "worst_rival" # najczęściej przegrywający przeciwnik
-
-    H2H = "h2h" # head to head z innym graczem
-
-
-#stats
-    AVG_GOALS_AGAINST = "avg_goals_against" # średnia bramek przeciwników w meczu
+  BEST_PLAYER = "best_player"
+  BEST_DELTA = "best_delta"
+  WIN_STREAK = "win_streak"
+  
+  DOMINATION = "domination"
+  GAMES_PLAYED_TOGETHER = "games_played_together"
+  WIN_RATE_TOGETHER = "win_rate_together"
     
 
 

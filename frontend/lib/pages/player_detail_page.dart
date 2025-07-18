@@ -9,7 +9,7 @@ import 'package:squads/state/players_state.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:squads/widgets/player_stat_widget.dart';
 import 'package:squads/widgets/stats_carousel.dart';
-import '../models/stat_type.dart';
+import '../models/carousel_type.dart';
 import '../models/stat_type_config.dart';
 
 class PlayerDetailPage extends ConsumerStatefulWidget {

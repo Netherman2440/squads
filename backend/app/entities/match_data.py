@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
+
 from .team_data import TeamDetailData
-from app.schemas.match_schemas import MatchResponse, MatchDetailResponse, TeamDetailResponse
-from app.schemas.player_schemas import PlayerResponse
+from app.schemas import MatchResponse, MatchDetailResponse, MatchRef
 
 @dataclass
 class MatchData:
@@ -18,6 +18,13 @@ class MatchData:
             match_id=self.match_id,
             score=self.score,
             created_at=self.created_at,
+        )
+    
+    def to_ref(self) -> MatchRef:
+        return MatchRef(
+            matchId=self.match_id,
+            matchDate=self.created_at,
+            score=self.score,
         )
 
 @dataclass
@@ -37,4 +44,10 @@ class MatchDetailData:
             team_a=self.team_a.to_response(),
             team_b=self.team_b.to_response(),
         )   
+    
+    def to_match_ref(self) -> MatchRef:
+        return MatchRef(
+            matchId=self.match_id,
+            matchName=f"{self.team_a.name} vs {self.team_b.name}",
+        )
 

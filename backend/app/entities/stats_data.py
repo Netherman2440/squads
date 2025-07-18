@@ -1,65 +1,137 @@
 
+from datetime import datetime
+from typing import Optional
+from app.constants import CarouselType
+from app.entities import PlayerData, MatchData
+from app.schemas import CarouselStat
+from app.schemas.stats_schemas import PlayerStats, ScoreHistorySchema, SquadStats
 
-from app.constants import StatType
-from app.models import Player, Match
-
-
-class Squad_Stat: #base class for all squad stats
-    stat_type: StatType
-    value: int | float
-
-    def __init__(self, stat_type: StatType, value: int | float):
-        self.stat_type = stat_type
-        self.value = value
-
-class Player_Ref_Stat:
-
-    def __init__(self, stat_type: StatType, value: int | float, player_ref: Player):
-        self.stat_type = stat_type
-        self.value = value
-        self.player_ref = player_ref
-
-class Head_to_Head_Stat:
-    def __init__(self, stat_type: StatType, value: list[str], player_ref: Player):
-        self.stat_type = stat_type
-        self.value = value
-        self.player_ref = player_ref
-
-class Player_To_Player_Stat:
-    def __init__(self, stat_type: StatType, value: int | float, player_a_ref: Player, player_b_ref: Player):
-        self.stat_type = stat_type
-        self.value = value
-        self.player_a_ref = player_a_ref
-        self.player_b_ref = player_b_ref
-
-class Match_Ref_Stat:
-    def __init__(self, stat_type: StatType, value: int | float, match_ref: Match):
-        self.stat_type = stat_type
-        self.value = value
+class ScoreHistoryData:
+    def __init__(self, score: int, created_at: datetime, match_ref: Optional[MatchData] = None):
+        self.score = score
+        self.created_at = created_at
         self.match_ref = match_ref
+    
+    def to_schema(self):
+        return ScoreHistorySchema(
+            score=self.score,
+            created_at=self.created_at,
+            match_ref=self.match_ref.to_ref() if self.match_ref else None
+        )
 
-class Win_Ratio_Stat:
+class CarouselData:
+    def __init__(self, carousel_type: CarouselType,  value: str | list[str] | dict, ref: Optional[PlayerData | MatchData] = None):
+        self.carousel_type = carousel_type
+        self.value = value
+        self.ref = ref
 
-    def __init__(self,  win: float, lose: float, draw: float, player_ref: Player):
-        self.stat_type = StatType.WIN_RATIO
-        self.win = win
-        self.lose = lose
-        self.draw = draw
-        self.player_ref = player_ref
+    def to_schema(self):
+        return CarouselStat(
+            type=self.carousel_type,
+            ref=self.ref.to_ref() if self.ref else None,
+            value=self.value
+        )
+    
+class Teammate_Ref:
+    def __init__(self, player_id: str):
+        self.player_id = player_id
+        self.games_together = 0
+        self.wins_together = 0
+        self.losses_together = 0
+        self.games_against = 0
+        self.wins_against_him = 0
+        self.losses_against_him = 0
 
 
+    @classmethod
+    def from_player_Data(cls, player_data: PlayerData):
+        return cls(player_id=player_data.player_id)
 
+class PlayerStatsData:
+    def __init__(self,
+                 player_id: str,
+                 base_score: int,
+                 score: int,
+                 win_streak: int,
+                 loss_streak: int,
+                 biggest_win_streak: int,
+                 biggest_loss_streak: int,
+                 goals_scored: int,
+                 goals_conceded: int,
+                 avg_goals_per_match: float,
+                 avg_score: tuple[float, float],
+                 total_matches: int,
+                 total_wins: int,
+                 total_losses: int,
+                 total_draws: int,
+                 score_history: list[ScoreHistoryData],
+                 carousel_stats: list[CarouselData]):
+        self.player_id = player_id
+        self.base_score = base_score
+        self.score = score
+        self.win_streak = win_streak
+        self.loss_streak = loss_streak
+        self.biggest_win_streak = biggest_win_streak
+        self.biggest_loss_streak = biggest_loss_streak
+        self.goals_scored = goals_scored
+        self.goals_conceded = goals_conceded
+        self.avg_goals_per_match = avg_goals_per_match
+        self.avg_score = avg_score
+        self.total_matches = total_matches
+        self.total_wins = total_wins    
+        self.total_losses = total_losses
+        self.total_draws = total_draws
+        self.score_history = score_history
+        self.carousel_stats = carousel_stats
+    
+    def to_schema(self):
+        return PlayerStats(
+            player_id=self.player_id,
+            base_score=self.base_score,
+            score=self.score,
+            win_streak=self.win_streak,
+            loss_streak=self.loss_streak,
+            biggest_win_streak=self.biggest_win_streak,
+            biggest_loss_streak=self.biggest_loss_streak,
+            goals_scored=self.goals_scored, 
+            goals_conceded=self.goals_conceded,
+            avg_goals_per_match=self.avg_goals_per_match,
+            avg_score=self.avg_score,
+            total_matches=self.total_matches,
+            total_wins=self.total_wins,
+            total_losses=self.total_losses,
+            total_draws=self.total_draws,
+            score_history=[score_history.to_schema() for score_history in self.score_history],
+            carousel_stats=[carousel_stat.to_schema() for carousel_stat in self.carousel_stats],
+        )
 
-class PlayerStats:
-    player_ref_stats: list[Player_Ref_Stat] #worst_rival, , nemezis, top_rival, worst_teammate, win_teammate, top_teammate, 
-    win_ratio: Win_Ratio_Stat #win_ratio
-    head_to_head_stats: list[Head_to_Head_Stat] #h2h
-    squad_stats: list[Squad_Stat] #Avg goals, avg_goals_against, avg_goals, win_streak,
-
-
-class SquadStats:
-    player_ref_stats: list[Player_Ref_Stat] #best_player, best_delta, win_streak, win_ratio, avg_goals
-    player_to_player_stats: list[Player_To_Player_Stat] #teamwork, domination
-    match_ref_stats: list[Match_Ref_Stat] #recent_match, next_match, biggest_win
-        
-
+class SquadStatsData:
+    def __init__(self,  
+                 squad_id: str,
+                 created_at: datetime,
+                 total_players: int,
+                 total_matches: int,
+                 total_goals: int,
+                 avg_goals_per_match: float,
+                 avg_score: tuple[float, float],
+                 carousel_stats: list[CarouselData]):
+        self.squad_id = squad_id
+        self.created_at = created_at
+        self.total_players = total_players
+        self.total_matches = total_matches
+        self.total_goals = total_goals
+        self.avg_goals_per_match = avg_goals_per_match
+        self.avg_score = avg_score
+        self.carousel_stats = carousel_stats
+    
+    def to_schema(self):
+        return SquadStats(
+            squad_id=self.squad_id,
+            created_at=self.created_at,
+            total_players=self.total_players,
+            total_matches=self.total_matches,
+            total_goals=self.total_goals,
+            avg_goals_per_match=self.avg_goals_per_match,
+            avg_score=self.avg_score,
+            carousel_stats=[carousel_stat.to_schema() for carousel_stat in self.carousel_stats],
+        )

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional
 
-from app.schemas import PlayerResponse, PlayerDetailResponse
+from app.schemas import PlayerResponse, PlayerDetailResponse, PlayerRef
 from app.models import Player
 from app.entities import MatchData
 from app.constants import Position
@@ -39,6 +39,12 @@ class PlayerData:
             position=self.position,
             matches_played=self.matches_played,
             created_at=self.created_at,
+        )
+    
+    def to_ref(self) -> PlayerRef:
+        return PlayerRef(
+            playerId=self.player_id,
+            playerName=self.name,
         )
     
     @classmethod

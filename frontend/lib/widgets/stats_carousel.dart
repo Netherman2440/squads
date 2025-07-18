@@ -8,7 +8,7 @@ import 'package:squads/theme/color_utils.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:squads/widgets/player_result_ratio_pie_widget.dart';
 import 'package:squads/models/stat_type_config.dart';
-import 'package:squads/models/stat_type.dart';
+import 'package:squads/models/carousel_type.dart';
 
 // Example stat data structure
 class PlayerStatData {
@@ -81,7 +81,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
     final double bgHeight = width < 500 ? 240 : 320;
     Widget cardWidget;
     // Use the same widget selection logic as before, but with generic stat access
-    if (statType == StatType.NEMEZIS || statType == StatType.WORST_RIVAL || statType == StatType.DOMINATION || statType == StatType.TEAMWORK) {
+    if (statType == Carousel_Type.NEMEZIS || statType == Carousel_Type.WORST_RIVAL || statType == Carousel_Type.DOMINATION || statType == Carousel_Type.GAMES_PLAYED_TOGETHER) {
       double duelScale = 1.0;
       if (width < 350) {
         duelScale = 0.6;
@@ -97,7 +97,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
         description: stat['description'] ?? '',
         date: stat['date'] ?? '',
       );
-    } else if (statType == StatType.H2H) {
+    } else if (statType == Carousel_Type.H2H) {
       double h2hScale = 1.0;
       if (width < 350) {
         h2hScale = 0.6;
@@ -109,13 +109,13 @@ class _StatsCarouselState extends State<StatsCarousel> {
         results: List<String>.from(stat['results'] ?? []),
         scale: h2hScale,
       );
-    } else if (statType == StatType.WIN_RATIO) {
+    } else if (statType == Carousel_Type.WIN_RATIO) {
       cardWidget = PlayerResultRatioPieWidget(
         win: stat['win'] ?? 0,
         draw: stat['draw'] ?? 0,
         loss: stat['loss'] ?? 0,
       );
-    } else if (statType == StatType.BIGGEST_WIN || statType == StatType.BIGGEST_LOSS || statType == StatType.RECENT_MATCH || statType == StatType.NEXT_MATCH) {
+    } else if (statType == Carousel_Type.BIGGEST_WIN || statType == Carousel_Type.BIGGEST_LOSS || statType == Carousel_Type.RECENT_MATCH || statType == Carousel_Type.NEXT_MATCH) {
       cardWidget = PlayerMatchResultWidget(
         title: stat['title'] ?? '',
         date: stat['date'] ?? '',

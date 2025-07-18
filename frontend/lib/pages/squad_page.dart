@@ -13,7 +13,7 @@ import '../state/squad_state.dart';
 import '../state/players_state.dart';
 import '../state/matches_state.dart';
 import '../widgets/stats_carousel.dart';
-import '../models/stat_type.dart';
+import '../models/carousel_type.dart';
 import '../models/stat_type_config.dart';
 
 class SquadPage extends ConsumerStatefulWidget {

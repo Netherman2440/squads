@@ -31,8 +31,8 @@ class PlayerService:
             base_score=player.base_score,
             _score=player.score,
             matches_played=len(player.matches),
+            created_at=player.created_at,
             matches=[match_service.match_to_data(match) for match in player.matches],
-            created_at=player.created_at
         )
 
     def get_players(self, squad_id: str) -> list[PlayerData]:

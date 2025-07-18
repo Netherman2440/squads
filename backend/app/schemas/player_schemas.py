@@ -43,7 +43,7 @@ class PlayerListResponse(BaseModel):
 
 class PlayerDetailResponse(PlayerResponse):
     """Schema for detailed player response with matches"""
-    matches: list["MatchResponse"]
+    score_history: list
 
 if TYPE_CHECKING:
     from app.schemas.match_schemas import MatchResponse
