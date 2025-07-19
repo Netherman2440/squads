@@ -16,7 +16,7 @@ class PlayerService:
             name=player.name,
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
-            _score=player.score,
+            _score=round(player.score, 2),
             matches_played=len(player.matches),
             created_at=player.created_at
         )
@@ -33,7 +33,7 @@ class PlayerService:
             name=player.name,
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
-            _score=player.score,
+            _score=round(player.score, 2),
             matches_played=len(player.matches),
             created_at=player.created_at,
             #matches=[match_service.match_to_data(match) for match in player.matches],
@@ -133,9 +133,9 @@ class PlayerService:
             score_history = ScoreHistory(
                 player_id=player_id,
                 match_id=match_id,
-                previous_score=player.score,
-                new_score=score,
-                delta=score - player.score
+                previous_score=round(player.score, 2),
+                new_score=round(score, 2),
+                delta=round(score - player.score, 2)
             )
             self.session.add(score_history)
         else:
@@ -181,6 +181,9 @@ class PlayerService:
         if player.score != current_score:
             print(f"Updating player {player.name} score from {player.score} to {current_score}")
             player.score = current_score
+
+            #format score to 2 decimal places
+            player.score = round(player.score, 2)
             self.session.commit()
 
         # Return updated PlayerData

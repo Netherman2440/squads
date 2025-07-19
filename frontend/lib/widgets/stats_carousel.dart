@@ -88,6 +88,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
       } else if (width < 400) {
         duelScale = 0.75;
       }
+
       cardWidget = PlayerStatDuelWidget(
         playerNameLeft: stat['leftName'],
         playerNameRight: stat['rightName'],
@@ -123,6 +124,12 @@ class _StatsCarouselState extends State<StatsCarousel> {
         awayName: stat['awayName'] ?? '',
         homeScore: stat['homeScore'] ?? 0,
         awayScore: stat['awayScore'] ?? 0,
+      );
+    } else if (statType == Carousel_Type.WIN_TEAMMATE || statType == Carousel_Type.WORST_TEAMMATE) {
+      cardWidget = PlayerStatWidget(
+        playerName: widget.getPlayerName?.call(stat) ?? '',
+        statType: statType,
+        statValue: widget.getStatValue?.call(stat) ?? '',
       );
     } else {
       cardWidget = PlayerStatWidget(

@@ -12,24 +12,24 @@ const Map<String, Map<String, String>> statTypeConfig = {
     'description': 'Percentage of matches won by the player.',
   },
   'top_teammate': {
-    'title': 'Top Teammate',
-    'description': 'The teammate with whom the player played most often.',
+    'title': 'Most matches together',
+    'description': 'Which teammate has the most matches together with the player.',
   },
   'win_teammate': {
-    'title': 'Winning Teammate',
-    'description': 'The teammate with whom the player won most often.',
+    'title': 'Best teammate',
+    'description': 'Which teammate has the most wins together with the player.',
   },
   'worst_teammate': {
-    'title': 'Losing Teammate',
-    'description': 'The teammate with whom the player lost most often.',
+    'title': 'Worst teammate',
+    'description': 'Which teammate has the most losses together with the player.',
   },
   'nemezis': {
-    'title': 'Nemesis',
-    'description': 'The opponent who won most often against the player in direct duels.',
+    'title': 'Rival hardest to beat',
+    'description': 'Percentage of matches lost against this player.',
   },
   'worst_rival': {
-    'title': 'Worst Rival',
-    'description': 'The opponent who lost most often to the player in direct duels.',
+    'title': 'Most dominated player',
+    'description': 'Percentage of matches won against this player.',
   },
   'h2h': {
     'title': 'Head to Head',

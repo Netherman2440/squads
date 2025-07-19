@@ -76,7 +76,7 @@ class PlayerStatsData:
                  carousel_stats: list[CarouselData]):
         self.player_id = player_id
         self.base_score = base_score
-        self.score = score
+        self.score = round(score, 2)
         self.win_streak = win_streak
         self.loss_streak = loss_streak
         self.biggest_win_streak = biggest_win_streak

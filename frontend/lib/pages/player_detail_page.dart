@@ -90,21 +90,50 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
           break;
 
         case Carousel_Type.TOP_TEAMMATE:
-        case Carousel_Type.WIN_TEAMMATE:
-        case Carousel_Type.WORST_TEAMMATE:
           if (stat.ref is PlayerRef) {
             final playerRef = stat.ref as PlayerRef;
             convertedStat['playerName'] = playerRef.playerName;
           }
           break;
-          
+                case Carousel_Type.WIN_TEAMMATE:
+          if (stat.ref is PlayerRef) {
+            final playerRef = stat.ref as PlayerRef;
+            convertedStat['playerName'] = playerRef.playerName;
+            convertedStat['value'] = stat.value.toString() + '% wins';
+          }
+          break;
+        case Carousel_Type.WORST_TEAMMATE:
+          if (stat.ref is PlayerRef) {
+            final playerRef = stat.ref as PlayerRef;
+            convertedStat['playerName'] = playerRef.playerName;
+            convertedStat['value'] = stat.value.toString() + '% losses';
+          }
+          break;
         case Carousel_Type.NEMEZIS:
+          if (stat.ref is PlayerRef) {
+            final playerRef = stat.ref as PlayerRef;
+            convertedStat['leftName'] = widget.player.name;
+            convertedStat['rightName'] = playerRef.playerName;
+            // stat.value is [wins, losses]
+            if (stat.value is List && stat.value.length >= 2) {
+              convertedStat['statValue'] = '${stat.value[0]}:${stat.value[1]}';
+            } else {
+              convertedStat['statValue'] = stat.value.toString();
+            }
+            convertedStat['description'] = _getStatDescription(stat.type);
+          }
+          break;
         case Carousel_Type.WORST_RIVAL:
           if (stat.ref is PlayerRef) {
             final playerRef = stat.ref as PlayerRef;
             convertedStat['leftName'] = widget.player.name;
             convertedStat['rightName'] = playerRef.playerName;
-            convertedStat['statValue'] = stat.value.toString() + '%';
+            // stat.value is [wins, losses]  
+            if (stat.value is List && stat.value.length >= 2) {
+              convertedStat['statValue'] = '${stat.value[0]}:${stat.value[1]}';
+            } else {
+              convertedStat['statValue'] = stat.value.toString();
+            }
             convertedStat['description'] = _getStatDescription(stat.type);
           }
           break;

@@ -83,8 +83,8 @@ class MatchService:
             score_history = ScoreHistory(
                 match_id=match.match_id,
                 player_id=player.player_id,
-                previous_score=player.score,
-                new_score=player.score,
+                previous_score=round(player.score, 2),
+                new_score=round(player.score, 2),
                 delta=0.0
             )
             self.session.add(score_history)

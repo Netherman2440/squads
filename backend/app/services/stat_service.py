@@ -150,48 +150,93 @@ class StatService:
 
         #top teammate
         if self.teammates and any(x.games_together > 0 for x in self.teammates):
-            top_teammate = max(self.teammates, key=lambda x: x.games_together if x.games_together > 0 else 0)
-            games_together = top_teammate.games_together
+            top_teammate = None
+            top_teammate_value = 0
+            for teammate in self.teammates:
+                if teammate.games_together > 0:
+                    if teammate.games_together > top_teammate_value:
+                        top_teammate = teammate
+                        top_teammate_value = teammate.games_together
 
             top_teammate_player_data = self._get_player_service().get_player(top_teammate.player_id)
-            top_teammate_statdata = CarouselData(CarouselType.TOP_TEAMMATE, value=games_together, ref=top_teammate_player_data.to_ref())
+            top_teammate_statdata = CarouselData(CarouselType.TOP_TEAMMATE, value=top_teammate_value, ref=top_teammate_player_data.to_ref())
             carousel_stats.append(top_teammate_statdata)
 
         #win teammate
         if self.teammates and any(x.games_together > 0 for x in self.teammates):
-            win_teammate = max(self.teammates, key=lambda x: x.wins_together / x.games_together if x.games_together > 0 else 0)
-            wins_together = int(win_teammate.wins_together / win_teammate.games_together * 100)
-            win_teammate_player_data = self._get_player_service().get_player(win_teammate.player_id)
-            win_teammate_statdata = CarouselData(CarouselType.WIN_TEAMMATE, value=wins_together, ref=win_teammate_player_data.to_ref())
-            carousel_stats.append(win_teammate_statdata)
+            win_teammate = None
+            win_teammate_value = 0
+            for teammate in self.teammates:
+                if teammate.games_together > 0 and teammate.wins_together > 0:
+                    if teammate.wins_together / teammate.games_together > win_teammate_value:
+                        win_teammate = teammate
+                        win_teammate_value = teammate.wins_together / teammate.games_together
+            if win_teammate:
+                win_teammate_player_data = self._get_player_service().get_player(win_teammate.player_id)
+                win_teammate_statdata = CarouselData(CarouselType.WIN_TEAMMATE, value= int(win_teammate_value * 100), ref=win_teammate_player_data.to_ref())
+                carousel_stats.append(win_teammate_statdata)
 
         #worst teammate 
         if self.teammates and any(x.games_together > 0 for x in self.teammates):
-            worst_teammate = max(self.teammates, key=lambda x: x.losses_together / x.games_together if x.games_together > 0 else 0)
-            losses_together = int(worst_teammate.losses_together / worst_teammate.games_together * 100)
-            worst_teammate_player_data = self._get_player_service().get_player(worst_teammate.player_id)
-            worst_teammate_statdata = CarouselData(CarouselType.WORST_TEAMMATE, value=losses_together, ref=worst_teammate_player_data.to_ref())
-            carousel_stats.append(worst_teammate_statdata)
+            worst_teammate = None
+            worst_teammate_value = 0
+            for teammate in self.teammates:
+                if teammate.games_together > 0 and teammate.losses_together > 0:
+                    if teammate.losses_together / teammate.games_together > worst_teammate_value:
+                        worst_teammate = teammate
+                        worst_teammate_value = teammate.losses_together / teammate.games_together
+
+            if worst_teammate:
+                worst_teammate_player_data = self._get_player_service().get_player(worst_teammate.player_id)
+                worst_teammate_statdata = CarouselData(CarouselType.WORST_TEAMMATE, value= int(worst_teammate_value * 100), ref=worst_teammate_player_data.to_ref())
+                carousel_stats.append(worst_teammate_statdata)
 
         #nemezis
         if self.teammates and any(x.games_against > 0 for x in self.teammates):
-            nemezis = max(self.teammates, key=lambda x: x.losses_against_him / x.games_against if x.games_against > 0 else 0)
-            losses_against_him = int(nemezis.losses_against_him / nemezis.games_against * 100)
-            nemezis_player_data = self._get_player_service().get_player(nemezis.player_id)
-            nemezis_statdata = CarouselData(CarouselType.NEMEZIS, value=losses_against_him, ref=nemezis_player_data.to_ref())
-            carousel_stats.append(nemezis_statdata)
+            nemezis = None
+            nemezis_value = 0
+            for teammate in self.teammates:
+                if teammate.games_against > 0 and teammate.losses_against_him > 0:
+                    if teammate.losses_against_him / teammate.games_against > nemezis_value:
+                        nemezis = teammate
+                        nemezis_value = teammate.losses_against_him / teammate.games_against
+
+            #nemezis = max(self.teammates, key=lambda x: (x.losses_against_him / x.games_against ) if x.games_against > 0 else 0)
+            #losses_against_him = int(nemezis.losses_against_him / nemezis.games_against * 100)
+            if nemezis:
+
+                nemezis_value = [nemezis.wins_against_him, nemezis.losses_against_him]
+                nemezis_player_data = self._get_player_service().get_player(nemezis.player_id)
+                nemezis_statdata = CarouselData(CarouselType.NEMEZIS, value= nemezis_value, ref=nemezis_player_data.to_ref())
+                carousel_stats.append(nemezis_statdata)
 
         #worst rival
         if self.teammates and any(x.games_against > 0 for x in self.teammates):
-            worst_rival = max(self.teammates, key=lambda x: x.wins_against_him / x.games_against if x.games_against > 0 else 0)
-            wins_against_him = int(worst_rival.wins_against_him / worst_rival.games_against * 100)
-            worst_rival_player_data = self._get_player_service().get_player(worst_rival.player_id)
-            worst_rival_statdata = CarouselData(CarouselType.WORST_RIVAL, value=wins_against_him, ref=worst_rival_player_data.to_ref())
-            carousel_stats.append(worst_rival_statdata)
+            worst_rival = None
+            worst_rival_value = 0
+            for teammate in self.teammates:
+                if teammate.games_against > 0 and teammate.wins_against_him > 0:
+                    if teammate.wins_against_him / teammate.games_against > worst_rival_value:
+                        worst_rival = teammate
+                        worst_rival_value = teammate.wins_against_him / teammate.games_against
+
+            #worst_rival = max(self.teammates, key=lambda x: x.wins_against_him / x.games_against if x.games_against > 0 else 0)
+            #wins_against_him = int(worst_rival.wins_against_him / worst_rival.games_against * 100)
+            if worst_rival:
+                worst_rival_value = [worst_rival.wins_against_him, worst_rival.losses_against_him]
+                worst_rival_player_data = self._get_player_service().get_player(worst_rival.player_id)
+                worst_rival_statdata = CarouselData(CarouselType.WORST_RIVAL, value= worst_rival_value, ref=worst_rival_player_data.to_ref())
+                carousel_stats.append(worst_rival_statdata)
 
         #h2h
         if self.teammates and any(x.games_against > 0 for x in self.teammates):
-            h2h = max(self.teammates, key=lambda x: x.games_against)
+            h2h = None
+            h2h_value = 0
+            for teammate in self.teammates:
+                if teammate.games_against > 0:
+                    if teammate.games_against > h2h_value:
+                        h2h = teammate
+                        h2h_value = teammate.games_against
             h2h_value = self.get_h2h_value(player, h2h.player_id)
             h2h_player_data = self._get_player_service().get_player(h2h.player_id)
             h2h_statdata = CarouselData(CarouselType.H2H, value=h2h_value, ref=h2h_player_data.to_ref())
