@@ -26,7 +26,7 @@ class ScoreHistoryData:
         )
 
 class CarouselData:
-    def __init__(self, carousel_type: CarouselType,  value: str | list[str] | dict, ref: Optional["PlayerData | MatchData"] = None):
+    def __init__(self, carousel_type: CarouselType,  value, ref: Optional["PlayerData | MatchData"] = None):
         self.carousel_type = carousel_type
         self.value = value
         self.ref = ref
@@ -35,7 +35,7 @@ class CarouselData:
 
         return CarouselStat(
             type=self.carousel_type,
-            ref=self.ref.to_ref() if self.ref else None,
+            ref=self.ref if self.ref else None,
             value=self.value
         )
 

@@ -25,7 +25,7 @@ class ScoreHistorySchema(BaseModel):
 
 class CarouselStat(BaseModel):
   type: CarouselType
-  value: str | list[str] | dict 
+  value: int | list[int] | float | list[float] | str | list[str]
   ref: Optional[PlayerRef | MatchRef] = None
 
 class PlayerStats(BaseModel):

@@ -36,6 +36,10 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
     return squadState.isOwner(userId);
   }
 
+  String _getStatDescription(String statType) {
+    return statTypeConfig[statType]?['description'] ?? '';
+  }
+
   // Convert CarouselStat to the format expected by StatsCarousel
   List<Map<String, dynamic>> _convertCarouselStats(List<CarouselStat> carouselStats) {
     return carouselStats.map((stat) {
@@ -76,9 +80,11 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
           if (stat.ref is PlayerRef) {
             final playerRef = stat.ref as PlayerRef;
             convertedStat.addAll({
-              'player1': 'You',
+              'player1': widget.player.name,
               'player2': playerRef.playerName,
-              'results': stat.value is List ? stat.value as List<String> : [],
+              'results': stat.value is List 
+                  ? (stat.value as List).map((e) => e.toString()).toList()
+                  : <String>[],
             });
           }
           break;
@@ -86,11 +92,20 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
         case Carousel_Type.TOP_TEAMMATE:
         case Carousel_Type.WIN_TEAMMATE:
         case Carousel_Type.WORST_TEAMMATE:
+          if (stat.ref is PlayerRef) {
+            final playerRef = stat.ref as PlayerRef;
+            convertedStat['playerName'] = playerRef.playerName;
+          }
+          break;
+          
         case Carousel_Type.NEMEZIS:
         case Carousel_Type.WORST_RIVAL:
           if (stat.ref is PlayerRef) {
             final playerRef = stat.ref as PlayerRef;
-            convertedStat['playerName'] = playerRef.playerName;
+            convertedStat['leftName'] = widget.player.name;
+            convertedStat['rightName'] = playerRef.playerName;
+            convertedStat['statValue'] = stat.value.toString() + '%';
+            convertedStat['description'] = _getStatDescription(stat.type);
           }
           break;
       }
@@ -102,6 +117,25 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
   // Convert score history to chart data
   List<double> _getScoreHistoryData(List<ScoreHistory> scoreHistory) {
     return scoreHistory.map((history) => history.score.toDouble()).toList();
+  }
+
+  // Calculate dynamic Y axis bounds for better visibility of score changes
+  Map<String, double> _getYAxisBounds(List<double> scoreData) {
+    if (scoreData.isEmpty) {
+      return {'minY': 0, 'maxY': 100, 'interval': 5};
+    }
+    
+    final minScore = scoreData.reduce((a, b) => a < b ? a : b);
+    final maxScore = scoreData.reduce((a, b) => a > b ? a : b);
+    
+    // Round down to nearest multiple of 5 for minY, round up for maxY
+    final minY = (minScore / 5).floor() * 5.0;
+    final maxY = (maxScore / 5).ceil() * 5.0;
+    
+    // Ensure there's at least 10 point range for visibility
+    final adjustedMaxY = maxY - minY < 10 ? minY + 10 : maxY;
+    
+    return {'minY': minY, 'maxY': adjustedMaxY, 'interval': 5};
   }
 
   @override
@@ -472,10 +506,10 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 24),
-                    // Score History section title
+                    // Score History section title (mobile)
                     const Text('Score History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    // Score History graph
+                                        // Score History graph (mobile)
                     Container(
                       height: 160,
                       width: double.infinity,
@@ -487,17 +521,20 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       child: scoreHistoryData.isNotEmpty
                           ? Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: LineChart(
-                                LineChartData(
-                                  minY: 0,
-                                  maxY: 100,
-                                  minX: 0,
-                                  maxX: (scoreHistoryData.length - 1).toDouble(),
+                              child: Builder(
+                                builder: (context) {
+                                  final yBounds = _getYAxisBounds(scoreHistoryData);
+                                  return LineChart(
+                                    LineChartData(
+                                      minY: yBounds['minY']!,
+                                      maxY: yBounds['maxY']!,
+                                      minX: 0,
+                                      maxX: (scoreHistoryData.length - 1).toDouble(),
                                   titlesData: FlTitlesData(
                                     leftTitles: AxisTitles(
                                       sideTitles: SideTitles(
                                         showTitles: true,
-                                        interval: 20,
+                                        interval: yBounds['interval']!,
                                         getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
                                       ),
                                     ),
@@ -515,7 +552,7 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                                       sideTitles: SideTitles(showTitles: false),
                                     ),
                                   ),
-                                  gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
+                                  gridData: FlGridData(show: true, horizontalInterval: yBounds['interval']!, verticalInterval: 1),
                                   borderData: FlBorderData(show: true),
                                   lineBarsData: [
                                     LineChartBarData(
@@ -530,6 +567,8 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                                     ),
                                   ],
                                 ),
+                                  );
+                                },
                               ),
                             )
                           : Center(
@@ -861,11 +900,11 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       ],
                     ),
                     const SizedBox(height: 32),
-                    // Score History section title
+                    // Score History section title (desktop)
                     const Text('Score History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     // Score History graph (desktop)
-                    Container(
+                                        Container(
                       height: 200,
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -876,17 +915,20 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       child: scoreHistoryData.isNotEmpty
                           ? Padding(
                               padding: const EdgeInsets.all(8.0),
-                              child: LineChart(
-                                LineChartData(
-                                  minY: 0,
-                                  maxY: 100,
-                                  minX: 0,
-                                  maxX: (scoreHistoryData.length - 1).toDouble(),
+                              child: Builder(
+                                builder: (context) {
+                                  final yBounds = _getYAxisBounds(scoreHistoryData);
+                                  return LineChart(
+                                    LineChartData(
+                                      minY: yBounds['minY']!,
+                                      maxY: yBounds['maxY']!,
+                                      minX: 0,
+                                      maxX: (scoreHistoryData.length - 1).toDouble(),
                                   titlesData: FlTitlesData(
                                     leftTitles: AxisTitles(
                                       sideTitles: SideTitles(
                                         showTitles: true,
-                                        interval: 20,
+                                        interval: yBounds['interval']!,
                                         getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
                                       ),
                                     ),
@@ -904,7 +946,7 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                                       sideTitles: SideTitles(showTitles: false),
                                     ),
                                   ),
-                                  gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
+                                  gridData: FlGridData(show: true, horizontalInterval: yBounds['interval']!, verticalInterval: 1),
                                   borderData: FlBorderData(show: true),
                                   lineBarsData: [
                                     LineChartBarData(
@@ -919,6 +961,8 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                                     ),
                                   ],
                                 ),
+                                  );
+                                },
                               ),
                             )
                           : Center(

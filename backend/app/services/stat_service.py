@@ -27,16 +27,17 @@ class StatService:
 
     def get_player_stats(self, player_id: str) -> PlayerStatsData:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
-        matches = player.matches.sort(key=lambda x: x.created_at, reverse=True)
+        matches = sorted(player.matches, key=lambda x: x.created_at, reverse=True)
         carousel_stats: list[CarouselData] = []
         self.teammates = self.get_teammates(player)
+        print(self.teammates)
         player_service = self._get_player_service()
         match_service = MatchService(self.session)
 
         matches_data : list[MatchData] = []
         if matches:
             for match in matches:
-                match_data = self.match_service.get_match(match.match_id)
+                match_data = self.match_service.get_match_detail(match.match_id)
                 matches_data.append(match_data)
 
         biggest_win_match_id = None
@@ -61,11 +62,15 @@ class StatService:
         is_win_streak = True
         is_loss_streak = True
 
-        
+        #print(matches_data)
         for match in matches_data:
-            
+
             player_team = match.team_a if any(player.player_id == player_id for player in match.team_a.players) else match.team_b
-            opponent_team = match.team_b if any(player.player_id == player_id for player in match.team_b.players) else match.team_a
+            opponent_team = match.team_b if player_team == match.team_a else match.team_a
+            #print(player_team.score, opponent_team.score)
+
+            if player_team.score is None or opponent_team.score is None:
+                continue
 
             goals_scored += player_team.score
             goals_conceded += opponent_team.score
@@ -102,7 +107,7 @@ class StatService:
             if temp_loss_streak > biggest_loss_streak:
                 biggest_loss_streak = temp_loss_streak
 
-        avg_goals_per_match = goals_scored / total_matches if total_matches > 0 else 0
+        avg_goals_per_match = (goals_scored + goals_conceded) / total_matches if total_matches > 0 else 0
         avg_score = (goals_scored / total_matches, goals_conceded / total_matches) if total_matches > 0 else (0, 0)
 
         #score history
@@ -144,8 +149,8 @@ class StatService:
             carousel_stats.append(win_ratio_statdata)
 
         #top teammate
-        if self.teammates:
-            top_teammate = max(self.teammates, key=lambda x: x.games_together)
+        if self.teammates and any(x.games_together > 0 for x in self.teammates):
+            top_teammate = max(self.teammates, key=lambda x: x.games_together if x.games_together > 0 else 0)
             games_together = top_teammate.games_together
 
             top_teammate_player_data = self._get_player_service().get_player(top_teammate.player_id)
@@ -153,41 +158,41 @@ class StatService:
             carousel_stats.append(top_teammate_statdata)
 
         #win teammate
-        if self.teammates:
-            win_teammate = max(self.teammates, key=lambda x: x.wins_together / x.games_together)
+        if self.teammates and any(x.games_together > 0 for x in self.teammates):
+            win_teammate = max(self.teammates, key=lambda x: x.wins_together / x.games_together if x.games_together > 0 else 0)
             wins_together = int(win_teammate.wins_together / win_teammate.games_together * 100)
             win_teammate_player_data = self._get_player_service().get_player(win_teammate.player_id)
             win_teammate_statdata = CarouselData(CarouselType.WIN_TEAMMATE, value=wins_together, ref=win_teammate_player_data.to_ref())
             carousel_stats.append(win_teammate_statdata)
 
         #worst teammate 
-        if self.teammates:
-            worst_teammate = max(self.teammates, key=lambda x: x.losses_together / x.games_together)
+        if self.teammates and any(x.games_together > 0 for x in self.teammates):
+            worst_teammate = max(self.teammates, key=lambda x: x.losses_together / x.games_together if x.games_together > 0 else 0)
             losses_together = int(worst_teammate.losses_together / worst_teammate.games_together * 100)
             worst_teammate_player_data = self._get_player_service().get_player(worst_teammate.player_id)
             worst_teammate_statdata = CarouselData(CarouselType.WORST_TEAMMATE, value=losses_together, ref=worst_teammate_player_data.to_ref())
             carousel_stats.append(worst_teammate_statdata)
 
         #nemezis
-        if self.teammates:
-            nemezis = max(self.teammates, key=lambda x: x.losses_against_him / x.games_against)
+        if self.teammates and any(x.games_against > 0 for x in self.teammates):
+            nemezis = max(self.teammates, key=lambda x: x.losses_against_him / x.games_against if x.games_against > 0 else 0)
             losses_against_him = int(nemezis.losses_against_him / nemezis.games_against * 100)
             nemezis_player_data = self._get_player_service().get_player(nemezis.player_id)
             nemezis_statdata = CarouselData(CarouselType.NEMEZIS, value=losses_against_him, ref=nemezis_player_data.to_ref())
             carousel_stats.append(nemezis_statdata)
 
         #worst rival
-        if self.teammates:
-            worst_rival = max(self.teammates, key=lambda x: x.wins_against_him / x.games_against)
+        if self.teammates and any(x.games_against > 0 for x in self.teammates):
+            worst_rival = max(self.teammates, key=lambda x: x.wins_against_him / x.games_against if x.games_against > 0 else 0)
             wins_against_him = int(worst_rival.wins_against_him / worst_rival.games_against * 100)
             worst_rival_player_data = self._get_player_service().get_player(worst_rival.player_id)
             worst_rival_statdata = CarouselData(CarouselType.WORST_RIVAL, value=wins_against_him, ref=worst_rival_player_data.to_ref())
             carousel_stats.append(worst_rival_statdata)
 
         #h2h
-        if self.teammates:
+        if self.teammates and any(x.games_against > 0 for x in self.teammates):
             h2h = max(self.teammates, key=lambda x: x.games_against)
-            h2h_value = self.get_h2h_value(player_id, h2h.player_id)
+            h2h_value = self.get_h2h_value(player, h2h.player_id)
             h2h_player_data = self._get_player_service().get_player(h2h.player_id)
             h2h_statdata = CarouselData(CarouselType.H2H, value=h2h_value, ref=h2h_player_data.to_ref())
             carousel_stats.append(h2h_statdata)
@@ -215,18 +220,22 @@ class StatService:
         )
     
     
-    def get_h2h_value(self, player: Player, opponent_id: str) -> list[str]:
+    def get_h2h_value(self, player_model: Player, opponent_id: str) -> list[str]:
         results: list[str] = []
-        matches = player.matches.filter(Match.opponent_id == opponent_id).all()
+        matches = player_model.matches
         matches_data: list[MatchData] = []
         for match in matches:
-            match_data = self.match_service.get_match(match.match_id)
+            match_data = self.match_service.get_match_detail(match.match_id)
             matches_data.append(match_data)
         
         matches_data.sort(key=lambda x: x.created_at, reverse=True)
         for match in matches_data:
-            player_team = match.team_a if any(player.player_id == player_id for player in match.team_a.players) else match.team_b
-            opponent_team = match.team_b if any(player.player_id == player_id for player in match.team_b.players) else match.team_a
+            player_team = match.team_a if any(player.player_id == player_model.player_id for player in match.team_a.players) else match.team_b
+            opponent_team = match.team_b if player_team == match.team_a else match.team_a
+
+            if(opponent_id not in [player.player_id for player in opponent_team.players]):
+                continue
+
             if player_team.score > opponent_team.score:
                 results.append("W")
             elif player_team.score < opponent_team.score:
@@ -246,23 +255,26 @@ class StatService:
                 self.teammates.append(teammate_ref)
             return teammate_ref
 
-    def get_teammates(self, player: Player) -> list[Teammate_Ref]:
+    def get_teammates(self, player_model: Player) -> list[Teammate_Ref]:
         self.teammates = []
 
         match_details = []
-        for match in player.matches:
+        for match in player_model.matches:
             match_data = MatchService(self.session).get_match_detail(match.match_id)
             match_details.append(match_data)
 
+        print(player_model.player_id)
         for match_data in match_details:
-            player_team = match_data.team_a if any(player.player_id == player.player_id for player in match_data.team_a.players) else match_data.team_b
-            opponent_team = match_data.team_b if any(player.player_id == player.player_id for player in match_data.team_b.players) else match_data.team_a
-
-            if not player_team.score or not opponent_team.score:
+            #print(match_data)
+            player_team = match_data.team_a if any(player.player_id == player_model.player_id for player in match_data.team_a.players) else match_data.team_b
+            opponent_team = match_data.team_b if player_team == match_data.team_a else match_data.team_a
+            print('player_team', player_team.score)
+            print('opponent_team', opponent_team.score)
+            if player_team.score is None or opponent_team.score is None:
                 continue
-
+            print('hello')
             for teammate in player_team.players:
-                if teammate.player_id != player.player_id:
+                if teammate.player_id != player_model.player_id:
                     teammate_ref = self.get_teammate_ref(teammate.player_id)
                     teammate_ref.games_together += 1
                     if player_team.score > opponent_team.score:
@@ -271,10 +283,13 @@ class StatService:
                         teammate_ref.losses_together += 1
 
             for teammate in opponent_team.players:
-                if teammate.player_id != player.player_id:
+                if teammate.player_id != player_model.player_id:
                     teammate_ref = self.get_teammate_ref(teammate.player_id)
                     teammate_ref.games_against += 1
                     if player_team.score > opponent_team.score:
                         teammate_ref.wins_against_him += 1
                     elif player_team.score < opponent_team.score:
                         teammate_ref.losses_against_him += 1
+
+
+        return self.teammates

@@ -105,7 +105,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
         h2hScale = 0.75;
       }
       cardWidget = PlayerH2HWidget(
-        playerName: stat['player1'] ?? '',
+        playerName: stat['player2'] ?? '',
         results: List<String>.from(stat['results'] ?? []),
         scale: h2hScale,
       );
