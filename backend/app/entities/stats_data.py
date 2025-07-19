@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from app.entities.player_data import PlayerData
 
 class ScoreHistoryData:
-    def __init__(self, score: int, created_at: datetime, match_ref: Optional[MatchRef] = None):
+    def __init__(self, score: float, created_at: datetime, match_ref: Optional[MatchRef] = None):
         self.score = score
         self.created_at = created_at
         self.match_ref = match_ref
@@ -59,7 +59,7 @@ class PlayerStatsData:
     def __init__(self,
                  player_id: str,
                  base_score: int,
-                 score: int,
+                 score: float,
                  win_streak: int,
                  loss_streak: int,
                  biggest_win_streak: int,

@@ -38,6 +38,7 @@ class PlayerService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        print(data);
         return PlayerDetailResponse.fromJson(data);
       } else {
         throw Exception('Failed to load player: ${response.statusCode}');

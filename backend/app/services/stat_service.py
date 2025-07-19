@@ -107,7 +107,7 @@ class StatService:
 
         #score history
         score_history = player.score_history
-        score_history = sorted(score_history, key=lambda x: x.created_at, reverse=True)
+        score_history = sorted(score_history, key=lambda x: x.created_at)
 
         score_history_data = []
         score_history_data.append(ScoreHistoryData(score=player.base_score, created_at=player.created_at, match_ref=None))
@@ -275,6 +275,6 @@ class StatService:
                     teammate_ref = self.get_teammate_ref(teammate.player_id)
                     teammate_ref.games_against += 1
                     if player_team.score > opponent_team.score:
-                        teammate_ref.wins_against += 1
+                        teammate_ref.wins_against_him += 1
                     elif player_team.score < opponent_team.score:
-                        teammate_ref.losses_against += 1
+                        teammate_ref.losses_against_him += 1

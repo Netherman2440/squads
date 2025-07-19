@@ -314,9 +314,13 @@ async def delete_match(
     if not check_user_can_access_squad(user_id, squad_id, squad_service):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only squad owner can delete matches")
     
-    success = match_service.delete_match(match_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+    try:
+        success = match_service.delete_match(match_id)
+        if not success:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+    except Exception as e:
+        # Handle any errors during match deletion or score recalculation
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to delete match: {str(e)}")
 
 @router.post("/{squad_id}/matches/draw", response_model=DraftListResponse)
 async def draw_match(

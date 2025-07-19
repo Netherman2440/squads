@@ -36,71 +36,73 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
     return squadState.isOwner(userId);
   }
 
-  // Test data for score history
-  final List<double> _testScores = [63, 69, 70, 46, 33, 55, 80, 77, 90, 60];
+  // Convert CarouselStat to the format expected by StatsCarousel
+  List<Map<String, dynamic>> _convertCarouselStats(List<CarouselStat> carouselStats) {
+    return carouselStats.map((stat) {
+      final Map<String, dynamic> convertedStat = {
+        'statType': stat.type,
+        'value': stat.value,
+      };
 
-  // Test data for player stats
-  final List<Map<String, dynamic>> playerStats = [
-    {
-      'statType': 'biggest_win',
-      'title': 'Biggest Win',
-      'date': '2024-06-01',
-      'homeName': 'Team A',
-      'awayName': 'Team B',
-      'homeScore': 5,
-      'awayScore': 1,
-    },
-    {
-      'statType': 'biggest_loss',
-      'title': 'Biggest Loss',
-      'date': '2024-06-02',
-      'homeName': 'Team C',
-      'awayName': 'Team D',
-      'homeScore': 1,
-      'awayScore': 6,
-    },
-    {
-      'statType': 'win_ratio',
-      'win': 12,
-      'draw': 3,
-      'loss': 5,
-    },
-    {
-      'statType': 'top_teammate',
-      'playerName': 'John Doe',
-      'value': 8,
-    },
-    {
-      'statType': 'win_teammate',
-      'playerName': 'Jane Smith',
-      'value': 5,
-    },
-    {
-      'statType': 'worst_teammate',
-      'playerName': 'Mike Brown',
-      'value': 2,
-    },
-    {
-      'statType': 'nemezis',
-      'leftName': 'Player',
-      'rightName': 'Nemesis',
-      'statValue': '2:5',
-      'description': 'Wins in direct duels',
-    },
-    {
-      'statType': 'worst_rival',
-      'leftName': 'Player',
-      'rightName': 'Worst Rival',
-      'statValue': '6:1',
-      'description': 'Wins in direct duels',
-    },
-    {
-      'statType': 'h2h',
-      'player1': 'Player',
-      'player2': 'Opponent',
-      'results': ['W', 'L', 'W', 'D', 'L'],
-    },
-  ];
+      // Handle different types of carousel stats
+      switch (stat.type) {
+        case Carousel_Type.BIGGEST_WIN:
+        case Carousel_Type.BIGGEST_LOSS:
+          if (stat.ref is MatchRef) {
+            final matchRef = stat.ref as MatchRef;
+            convertedStat.addAll({
+              'title': stat.type == Carousel_Type.BIGGEST_WIN ? 'Biggest Win' : 'Biggest Loss',
+              'date': matchRef.matchDate.toString().split(' ')[0],
+              'homeName': 'Team A', // These would need to come from match data
+              'awayName': 'Team B',
+              'homeScore': matchRef.score?[0] ?? 0,
+              'awayScore': matchRef.score?[1] ?? 0,
+            });
+          }
+          break;
+
+        case Carousel_Type.WIN_RATIO:
+          if (stat.value is List) {
+            final values = stat.value as List;
+            convertedStat.addAll({
+              'win': int.tryParse(values[0].toString()) ?? 0,
+              'draw': int.tryParse(values[1].toString()) ?? 0,
+              'loss': int.tryParse(values[2].toString()) ?? 0,
+            });
+          }
+          break;
+
+        case Carousel_Type.H2H:
+          if (stat.ref is PlayerRef) {
+            final playerRef = stat.ref as PlayerRef;
+            convertedStat.addAll({
+              'player1': 'You',
+              'player2': playerRef.playerName,
+              'results': stat.value is List ? stat.value as List<String> : [],
+            });
+          }
+          break;
+
+        case Carousel_Type.TOP_TEAMMATE:
+        case Carousel_Type.WIN_TEAMMATE:
+        case Carousel_Type.WORST_TEAMMATE:
+        case Carousel_Type.NEMEZIS:
+        case Carousel_Type.WORST_RIVAL:
+          if (stat.ref is PlayerRef) {
+            final playerRef = stat.ref as PlayerRef;
+            convertedStat['playerName'] = playerRef.playerName;
+          }
+          break;
+      }
+
+      return convertedStat;
+    }).toList();
+  }
+
+  // Convert score history to chart data
+  List<double> _getScoreHistoryData(List<ScoreHistory> scoreHistory) {
+    return scoreHistory.map((history) => history.score.toDouble()).toList();
+  }
 
   @override
   void initState() {
@@ -188,7 +190,7 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             } else if (snapshot.hasError) {
-              return Center(child: Text('Error:  {snapshot.error}'));
+              return Center(child: Text('Error: ${snapshot.error}'));
             } else if (!snapshot.hasData) {
               return const Center(child: Text('No data'));
             }
@@ -196,6 +198,10 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
             final scoreDelta = player.score - player.baseScore;
             final isUp = scoreDelta >= 0;
             final theme = Theme.of(context);
+
+            // Get real data from player stats
+            final scoreHistoryData = _getScoreHistoryData(player.stats.scoreHistory);
+            final carouselStats = _convertCarouselStats(player.stats.carouselStats);
 
             // Responsive layout: grid for narrow screens, current layout for wide screens
             if (isNarrow) {
@@ -478,65 +484,76 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       alignment: Alignment.center,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: LineChart(
-                          LineChartData(
-                            minY: 0,
-                            maxY: 100,
-                            minX: 0,
-                            maxX: (_testScores.length - 1).toDouble(),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 20,
-                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                      child: scoreHistoryData.isNotEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: LineChart(
+                                LineChartData(
+                                  minY: 0,
+                                  maxY: 100,
+                                  minX: 0,
+                                  maxX: (scoreHistoryData.length - 1).toDouble(),
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        interval: 20,
+                                        getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                      ),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        interval: 1,
+                                        getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                      ),
+                                    ),
+                                    rightTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    topTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                  ),
+                                  gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
+                                  borderData: FlBorderData(show: true),
+                                  lineBarsData: [
+                                    LineChartBarData(
+                                      spots: [
+                                        for (int i = 0; i < scoreHistoryData.length; i++)
+                                          FlSpot(i.toDouble(), scoreHistoryData[i]),
+                                      ],
+                                      isCurved: false,
+                                      barWidth: 3,
+                                      color: Colors.blue,
+                                      dotData: FlDotData(show: true),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1,
-                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                            )
+                          : Center(
+                              child: Text(
+                                'No score history available',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
                                 ),
-                              ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
                               ),
                             ),
-                            gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
-                            borderData: FlBorderData(show: true),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: [
-                                  for (int i = 0; i < _testScores.length; i++)
-                                    FlSpot(i.toDouble(), _testScores[i]),
-                                ],
-                                isCurved: false,
-                                barWidth: 3,
-                                color: Colors.blue,
-                                dotData: FlDotData(show: true),
-                              ),
-                            ],
-                          ),
-                        ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Player Stats Carousel Section - only show if carouselStats exist
+                    if (carouselStats.isNotEmpty) ...[
+                      StatsCarousel(
+                        stats: carouselStats,
+                        title: 'Player Stats',
+                        getPlayerName: (stat) => stat['playerName'] ?? '',
+                        getStatType: (stat) => stat['statType'] ?? '',
+                        getStatValue: (stat) => stat['value'] ?? '',
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    // Player Stats Carousel Section
-                    StatsCarousel(
-                      stats: playerStats,
-                      title: 'Player Stats',
-                      getPlayerName: (stat) => stat['playerName'] ?? '',
-                      getStatType: (stat) => stat['statType'] ?? '',
-                      getStatValue: (stat) => stat['value'] ?? '',
-                    ),
-                    const SizedBox(height: 16),
-                    // Detailed Stats Section (test data)
+                      const SizedBox(height: 16),
+                    ],
+                    // Detailed Stats Section using real data
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -546,10 +563,10 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Detailed Stats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 8),
-                          _DetailedStatsList(),
+                        children: [
+                          const Text('Detailed Stats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          _DetailedStatsList(stats: player.stats),
                         ],
                       ),
                     ),
@@ -856,65 +873,76 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       alignment: Alignment.center,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: LineChart(
-                          LineChartData(
-                            minY: 0,
-                            maxY: 100,
-                            minX: 0,
-                            maxX: (_testScores.length - 1).toDouble(),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 20,
-                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                      child: scoreHistoryData.isNotEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: LineChart(
+                                LineChartData(
+                                  minY: 0,
+                                  maxY: 100,
+                                  minX: 0,
+                                  maxX: (scoreHistoryData.length - 1).toDouble(),
+                                  titlesData: FlTitlesData(
+                                    leftTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        interval: 20,
+                                        getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                      ),
+                                    ),
+                                    bottomTitles: AxisTitles(
+                                      sideTitles: SideTitles(
+                                        showTitles: true,
+                                        interval: 1,
+                                        getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                                      ),
+                                    ),
+                                    rightTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                    topTitles: AxisTitles(
+                                      sideTitles: SideTitles(showTitles: false),
+                                    ),
+                                  ),
+                                  gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
+                                  borderData: FlBorderData(show: true),
+                                  lineBarsData: [
+                                    LineChartBarData(
+                                      spots: [
+                                        for (int i = 0; i < scoreHistoryData.length; i++)
+                                          FlSpot(i.toDouble(), scoreHistoryData[i]),
+                                      ],
+                                      isCurved: false,
+                                      barWidth: 3,
+                                      color: Colors.blue,
+                                      dotData: FlDotData(show: true),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              bottomTitles: AxisTitles(
-                                sideTitles: SideTitles(
-                                  showTitles: true,
-                                  interval: 1,
-                                  getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: const TextStyle(fontSize: 10)),
+                            )
+                          : Center(
+                              child: Text(
+                                'No score history available',
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant.withOpacity(0.7),
                                 ),
-                              ),
-                              rightTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
-                              ),
-                              topTitles: AxisTitles(
-                                sideTitles: SideTitles(showTitles: false),
                               ),
                             ),
-                            gridData: FlGridData(show: true, horizontalInterval: 20, verticalInterval: 1),
-                            borderData: FlBorderData(show: true),
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: [
-                                  for (int i = 0; i < _testScores.length; i++)
-                                    FlSpot(i.toDouble(), _testScores[i]),
-                                ],
-                                isCurved: false,
-                                barWidth: 3,
-                                color: Colors.blue,
-                                dotData: FlDotData(show: true),
-                              ),
-                            ],
-                          ),
-                        ),
+                    ),
+                    const SizedBox(height: 32),
+                    // Player Stats Carousel Section - only show if carouselStats exist
+                    if (carouselStats.isNotEmpty) ...[
+                      StatsCarousel(
+                        stats: carouselStats,
+                        title: 'Player Stats',
+                        getPlayerName: (stat) => stat['playerName'] ?? '',
+                        getStatType: (stat) => stat['statType'] ?? '',
+                        getStatValue: (stat) => stat['value'] ?? '',
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Player Stats Carousel Section
-                    StatsCarousel(
-                      stats: playerStats,
-                      title: 'Player Stats',
-                      getPlayerName: (stat) => stat['playerName'] ?? '',
-                      getStatType: (stat) => stat['statType'] ?? '',
-                      getStatValue: (stat) => stat['value'] ?? '',
-                    ),
-                    const SizedBox(height: 32),
-                    // Detailed Stats Section (test data)
+                      const SizedBox(height: 32),
+                    ],
+                    // Detailed Stats Section using real data
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -924,10 +952,10 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Detailed Stats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 8),
-                          _DetailedStatsList(),
+                        children: [
+                          const Text('Detailed Stats', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          _DetailedStatsList(stats: player.stats),
                         ],
                       ),
                     ),
@@ -943,24 +971,31 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
 }
 
 class _DetailedStatsList extends StatelessWidget {
-  const _DetailedStatsList();
+  final PlayerStats stats;
+  
+  const _DetailedStatsList({required this.stats});
 
   @override
   Widget build(BuildContext context) {
-    // Test data
-    final stats = [
-      _StatRowData('Base Score', '50'),
-      _StatRowData('Score', '63'),
-      _StatRowData('Win Streak', '4'),
-      _StatRowData('Average Goals', '2.1'),
-      _StatRowData('Average Goals Against', '1.3'),
-      _StatRowData('Matches', '27'),
-      _StatRowData('Total Wins', '15'),
-      _StatRowData('Total Loss', '8'),
-      _StatRowData('Total Draw', '4'),
+    final statRows = [
+      _StatRowData('Base Score', stats.baseScore.toString()),
+      _StatRowData('Current Score', stats.score.toString()),
+      _StatRowData('Win Streak', stats.winStreak.toString()),
+      _StatRowData('Loss Streak', stats.lossStreak.toString()),
+      _StatRowData('Biggest Win Streak', stats.biggestWinStreak.toString()),
+      _StatRowData('Biggest Loss Streak', stats.biggestLossStreak.toString()),
+      _StatRowData('Goals Scored', stats.goalsScored.toString()),
+      _StatRowData('Goals Conceded', stats.goalsConceded.toString()),
+      _StatRowData('Average Goals per Match', stats.avgGoalsPerMatch.toStringAsFixed(1)),
+              _StatRowData('Average Score', '${stats.avgScore[0].round()} - ${stats.avgScore[1].round()}'),
+      _StatRowData('Total Matches', stats.totalMatches.toString()),
+      _StatRowData('Total Wins', stats.totalWins.toString()),
+      _StatRowData('Total Losses', stats.totalLosses.toString()),
+      _StatRowData('Total Draws', stats.totalDraws.toString()),
     ];
+    
     return Column(
-      children: stats.map((stat) => _StatRow(stat: stat)).toList(),
+      children: statRows.map((stat) => _StatRow(stat: stat)).toList(),
     );
   }
 }

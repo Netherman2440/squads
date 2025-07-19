@@ -1,3 +1,4 @@
+from dataclasses import Field
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
@@ -17,7 +18,7 @@ class MatchRef(BaseModel):
 
 
 class ScoreHistorySchema(BaseModel):
-  score: int
+  score: float
   created_at: datetime
   match_ref: Optional[MatchRef] = None
 
@@ -30,7 +31,7 @@ class CarouselStat(BaseModel):
 class PlayerStats(BaseModel):
   player_id: str
   base_score: int
-  score: int
+  score: float
   win_streak: int
   loss_streak: int
   biggest_win_streak: int
