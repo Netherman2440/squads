@@ -53,9 +53,9 @@ class SquadStats(BaseModel):
   total_players: int
   total_matches: int
   total_goals: int
+  avg_player_score: float
   avg_goals_per_match: float
   avg_score: tuple[float, float]
-  carousel_stats: list[CarouselStat]
 
 
 

@@ -12,9 +12,7 @@ import 'squad_list_page.dart';
 import '../state/squad_state.dart';
 import '../state/players_state.dart';
 import '../state/matches_state.dart';
-import '../widgets/stats_carousel.dart';
-import '../models/carousel_type.dart';
-import '../models/stat_type_config.dart';
+
 
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -159,8 +157,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             SizedBox(height: 16),
             _buildInfoRow('Name', squad.name),
             _buildInfoRow('Created', squad.createdAt.toString().split(' ')[0]),
-            _buildInfoRow('Players', playersState.players.length.toString()),
-            _buildInfoRow('Matches', matchesState.matches.length.toString()),
+            //_buildInfoRow('Owner', squad.ownerId),
           ],
         ),
       ),
@@ -284,73 +281,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
 
   Widget _buildStatisticsSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final playersState = ref.watch(playersProvider);
-    final matchesState = ref.watch(matchesProvider);
-    // Test data for squad stats
-    final List<Map<String, dynamic>> squadStats = [
-      {
-        'statType': 'recent_match',
-        'title': 'Recent Match',
-        'date': '2024-06-10',
-        'homeName': 'Squad A',
-        'awayName': 'Squad B',
-        'homeScore': 3,
-        'awayScore': 2,
-      },
-      {
-        'statType': 'next_match',
-        'title': 'Next Match',
-        'date': '2024-06-20',
-        'homeName': 'Squad A',
-        'awayName': 'Squad C',
-        'homeScore': null,
-        'awayScore': null,
-      },
-      {
-        'statType': 'best_player',
-        'playerName': 'John Doe',
-        'value': 8,
-      },
-      {
-        'statType': 'best_delta',
-        'value': 5,
-      },
-      {
-        'statType': 'domination',
-        'leftName': 'Squad A',
-        'rightName': 'Rival Squad',
-        'statValue': '6:2',
-        'description': 'Head-to-head record',
-      },
-      {
-        'statType': 'teamwork',
-        'leftName': 'Player X',
-        'rightName': 'Player Y',
-        'statValue': '57%',
-        'description': 'Win ratio together',
-      },
-      {
-        'statType': 'win_streak',
-        'playerName': 'John Doe',
-        'value': 8,
-
-      },
-      {
-        'statType': 'win_ratio',
-        'win': 10,
-        'draw': 2,
-        'loss': 3,
-      },
-      {
-        'statType': 'biggest_win',
-        'title': 'Biggest Win',
-        'date': '2024-05-01',
-        'homeName': 'Squad A',
-        'awayName': 'Squad D',
-        'homeScore': 6,
-        'awayScore': 1,
-      },
-    ];
+    final squadState = ref.watch(squadProvider);
+    
     return Card(
       child: Container(
         decoration: BoxDecoration(
@@ -384,42 +316,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
                 ],
               ),
               SizedBox(height: 16),
-              StatsCarousel(
-                stats: squadStats,
-                title: 'Squad Stats',
-                getPlayerName: (stat) => stat['playerName'] ?? '',
-                getStatType: (stat) => stat['statType'] ?? '',
-                getStatValue: (stat) => stat['value'] ?? '',
-              ),
-              SizedBox(height: 24),
-              // Detailed Statistics Section
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: isDark 
-                    ? AppColors.bgLight.withOpacity(0.7)
-                    : Colors.white.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Detailed Statistics',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.text,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    _SquadDetailedStatsList(
-                      playersState: playersState,
-                      matchesState: matchesState,
-                    ),
-                  ],
-                ),
+              _SquadDetailedStatsList(
+                squadStats: squadState.squad?.stats,
               ),
             ],
           ),
@@ -497,35 +395,33 @@ class _SquadPageState extends ConsumerState<SquadPage> {
 }
 
 class _SquadDetailedStatsList extends StatelessWidget {
-  final PlayersState playersState;
-  final MatchesState matchesState;
+  final SquadStats? squadStats;
 
   const _SquadDetailedStatsList({
-    required this.playersState,
-    required this.matchesState,
+    required this.squadStats,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Calculate statistics from real data
-    final playersCount = playersState.players.length;
-    final matchesCount = matchesState.matches.length;
-    
-    // Calculate total goals and average goals (test data for now)
-    final totalGoals = 45; // TODO: Calculate from real match data
-    final avgGoals = matchesCount > 0 ? (totalGoals / matchesCount).toStringAsFixed(1) : '0.0';
-    
-    // Calculate average player score
-    final avgPlayerScore = playersCount > 0 
-        ? (playersState.players.map((p) => p.score).reduce((a, b) => a + b) / playersCount).toStringAsFixed(1)
-        : '0.0';
+    if (squadStats == null) {
+      return Column(
+        children: [
+          Text(
+            'No statistics available',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
+        ],
+      );
+    }
 
     final stats = [
-      _StatRowData('Players Count', playersCount.toString()),
-      _StatRowData('Matches Count', matchesCount.toString()),
-      _StatRowData('Average Goals', avgGoals),
-      _StatRowData('Total Goals', totalGoals.toString()),
-      _StatRowData('Average Player Score', avgPlayerScore),
+      _StatRowData('Players Count', squadStats!.totalPlayers.toString()),
+      _StatRowData('Matches Count', squadStats!.totalMatches.toString()),
+      _StatRowData('Total Goals', squadStats!.totalGoals.toString()),
+      _StatRowData('Average Goals per Match', squadStats!.avgGoalsPerMatch.toStringAsFixed(1)),
+      _StatRowData('Average Player Score', squadStats!.avgPlayerScore.toStringAsFixed(1)),
+      _StatRowData('Average Home Score', squadStats!.avgScore.isNotEmpty ? squadStats!.avgScore[0].toStringAsFixed(1) : '0.0'),
+      _StatRowData('Average Away Score', squadStats!.avgScore.length > 1 ? squadStats!.avgScore[1].toStringAsFixed(1) : '0.0'),
     ];
 
     return Column(

@@ -23,7 +23,45 @@ class StatService:
 
     def get_squad_stats(self, squad_id: str) -> SquadStatsData:
         squad = self.session.query(Squad).filter(Squad.squad_id == squad_id).first()
+        total_goals = 0
+        avg_player_score = 0
+        match_datas = []
+        player_datas = []
+        for match in squad.matches:
+            match_data = self.match_service.get_match_detail(match.match_id)
+            match_datas.append(match_data)
+        for player in squad.players:
+            player_data = self._get_player_service().get_player(player.player_id)
+            player_datas.append(player_data)
 
+        total_matches = len(match_datas)
+
+        white_goals = 0
+        black_goals = 0
+        for match_data in match_datas:
+            if match_data.team_a.score is None or match_data.team_b.score is None:
+                continue
+            total_goals += match_data.team_a.score + match_data.team_b.score
+            white_goals += match_data.team_a.score if match_data.team_a.score is not None else 0
+            black_goals += match_data.team_b.score if match_data.team_b.score is not None else 0
+
+        total_players = len(player_datas)
+        for player_data in player_datas:
+            avg_player_score += player_data.score
+
+        avg_player_score /= total_players
+        avg_goals_per_match = total_goals / total_matches
+
+        return SquadStatsData(
+            squad_id=squad.squad_id,
+            created_at=squad.created_at,
+            total_players=total_players,
+            total_matches=total_matches,
+            total_goals=total_goals,
+            avg_player_score=avg_player_score,
+            avg_goals_per_match=avg_goals_per_match,
+            avg_score=(round(white_goals / total_matches, 2), round(black_goals / total_matches, 2))
+        )
 
     def get_player_stats(self, player_id: str) -> PlayerStatsData:
         player = self.session.query(Player).filter(Player.player_id == player_id).first()

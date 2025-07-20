@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squads/models/squad.dart';
 
 class SquadState {
-  final Squad? squad;
+  final SquadDetailResponse? squad;
 
 
 
@@ -12,7 +12,7 @@ class SquadState {
   });
 
   SquadState copyWith({
-    Squad? squad,
+    SquadDetailResponse? squad,
 
   }) {
     return SquadState(
@@ -33,11 +33,11 @@ class SquadNotifier extends Notifier<SquadState> {
     return const SquadState();
   }
 
-  void setSquad(Squad squad) {
+  void setSquad(SquadDetailResponse squad) {
     state = state.copyWith(squad: squad);
   }
 
-  void updateSquad(Squad squad) {
+  void updateSquad(SquadDetailResponse squad) {
     state = state.copyWith(squad: squad);
   }
 

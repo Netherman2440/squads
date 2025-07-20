@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from app.schemas import SquadResponse, SquadDetailResponse
+from app.entities.stats_data import SquadStatsData
 
 from .player_data import PlayerData
 from .match_data import MatchData
@@ -33,6 +34,7 @@ class SquadData:
 class SquadDetailData(SquadData):
     players: list[PlayerData]
     matches: list[MatchData]
+    stats: SquadStatsData
     #stats
 
     def to_response(self) -> SquadDetailResponse:
@@ -47,6 +49,7 @@ class SquadDetailData(SquadData):
             players=players_response,
             matches=matches_response,
             owner_id=self.owner_id,
+            stats=self.stats.to_schema(),
         )
 
     

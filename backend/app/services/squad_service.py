@@ -6,6 +6,7 @@ from app.constants import UserRole
 
 
 from app.services import PlayerService, MatchService
+from app.services.stat_service import StatService
 
 
 class SquadService:
@@ -24,6 +25,7 @@ class SquadService:
     def squad_to_detail_data(self, squad: Squad) -> SquadDetailData:
         player_service = PlayerService(self.session)
         match_service = MatchService(self.session)
+        stat_service = StatService(self.session)
 
         return SquadDetailData(
             squad_id=squad.squad_id,
@@ -33,6 +35,7 @@ class SquadService:
             owner_id=squad.owner_id,
             players=[player_service.player_to_data(player) for player in squad.players],
             matches=[match_service.match_to_data(match) for match in squad.matches],
+            stats=stat_service.get_squad_stats(squad.squad_id)
         )
 
     def list_squads(self) -> list[SquadData]:

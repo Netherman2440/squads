@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.schemas import MatchResponse, PlayerResponse
+from app.schemas.stats_schemas import SquadStats
 
 class SquadBase(BaseModel):
     name: str
@@ -23,6 +24,7 @@ class SquadListResponse(BaseModel):
 class SquadDetailResponse(SquadResponse):
     players: list[PlayerResponse]
     matches: list[MatchResponse]
+    stats: SquadStats
 
 class SquadUpdate(SquadBase):
     #update admin

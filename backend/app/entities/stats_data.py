@@ -120,17 +120,18 @@ class SquadStatsData:
                  total_players: int,
                  total_matches: int,
                  total_goals: int,
+                 avg_player_score: float,
                  avg_goals_per_match: float,
-                 avg_score: tuple[float, float],
-                 carousel_stats: list[CarouselData]):
+                 avg_score: tuple[float, float]
+                 ):
         self.squad_id = squad_id
         self.created_at = created_at
         self.total_players = total_players
         self.total_matches = total_matches
         self.total_goals = total_goals
+        self.avg_player_score = avg_player_score
         self.avg_goals_per_match = avg_goals_per_match
         self.avg_score = avg_score
-        self.carousel_stats = carousel_stats
     
     def to_schema(self):
         return SquadStats(
@@ -139,7 +140,7 @@ class SquadStatsData:
             total_players=self.total_players,
             total_matches=self.total_matches,
             total_goals=self.total_goals,
+            avg_player_score=self.avg_player_score,
             avg_goals_per_match=self.avg_goals_per_match,
             avg_score=self.avg_score,
-            carousel_stats=[carousel_stat.to_schema() for carousel_stat in self.carousel_stats],
         )
