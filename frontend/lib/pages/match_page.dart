@@ -295,8 +295,23 @@ class _MatchPageState extends ConsumerState<MatchPage> {
     }
   }
 
-  int _getTeamScore(List<Player> players) {
-    return (players.fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+  int _getTeamScore(List<Player> teamPlayers, List<Player> opposingTeamPlayers, {bool allowSubstitutions = true}) {
+    if (!allowSubstitutions || teamPlayers.length == opposingTeamPlayers.length) {
+      // No substitutions or equal team sizes - count all players
+      return (teamPlayers.fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+    }
+    
+    if (teamPlayers.length > opposingTeamPlayers.length) {
+      // This team is larger - exclude the weakest player
+      final sortedPlayers = List<Player>.from(teamPlayers)
+        ..sort((a, b) => (b.score ?? 0).compareTo(a.score ?? 0)); // Sort descending
+      // Take all but the last (weakest) player
+      return (sortedPlayers.take(sortedPlayers.length - 1)
+        .fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+    } else {
+      // This team is smaller - count all players
+      return (teamPlayers.fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+    }
   }
 
   @override
@@ -364,7 +379,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  'Total score: ${_getTeamScore(_teamAPlayers)}',
+                                  'Total score: ${_getTeamScore(_teamAPlayers, _teamBPlayers)}',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -437,7 +452,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                                   style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  'Total score: ${_getTeamScore(_teamBPlayers)}',
+                                  'Total score: ${_getTeamScore(_teamBPlayers, _teamAPlayers)}',
                                   style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
@@ -487,31 +502,6 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                           ),
                         ),
                       ),
-                    ),
-                    // Test widgets for scroll
-                    const SizedBox(height: 40),
-                    Container(
-                      height: 80,
-                      width: double.infinity,
-                      color: Colors.amber,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 1 (scrollable)', style: TextStyle(fontSize: 18)),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      height: 80,
-                      width: double.infinity,
-                      color: Colors.lightBlue,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 2 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      height: 80,
-                      width: double.infinity,
-                      color: Colors.green,
-                      alignment: Alignment.center,
-                      child: const Text('Test widget 3 (scrollable)', style: TextStyle(fontSize: 18, color: Colors.white)),
                     ),
                   ],
                 ),

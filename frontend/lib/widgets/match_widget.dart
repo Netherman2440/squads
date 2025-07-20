@@ -96,8 +96,23 @@ class _MatchWidgetState extends State<MatchWidget> {
     widget.onTeamsChanged?.call(_teamAPlayers, _teamBPlayers);
   }
 
-  double _calculateTeamScore(List<Player> players) {
-    return players.fold(0.0, (sum, player) => sum + player.score);
+  double _calculateTeamScore(List<Player> teamPlayers, List<Player> opposingTeamPlayers, {bool allowSubstitutions = true}) {
+    if (!allowSubstitutions || teamPlayers.length == opposingTeamPlayers.length) {
+      // No substitutions or equal team sizes - count all players
+      return teamPlayers.fold(0.0, (sum, player) => sum + player.score);
+    }
+    
+    if (teamPlayers.length > opposingTeamPlayers.length) {
+      // This team is larger - exclude the weakest player
+      final sortedPlayers = List<Player>.from(teamPlayers)
+        ..sort((a, b) => b.score.compareTo(a.score)); // Sort descending by score
+      // Take all but the last (weakest) player
+      return sortedPlayers.take(sortedPlayers.length - 1)
+        .fold(0.0, (sum, player) => sum + player.score);
+    } else {
+      // This team is smaller - count all players
+      return teamPlayers.fold(0.0, (sum, player) => sum + player.score);
+    }
   }
 
   Widget _buildTeamColumn({
@@ -110,7 +125,7 @@ class _MatchWidgetState extends State<MatchWidget> {
     required VoidCallback onCancelTap,
     required bool isTeamA,
   }) {
-    final teamScore = _calculateTeamScore(players);
+    final teamScore = _calculateTeamScore(players, isTeamA ? _teamBPlayers : _teamAPlayers);
 
     return Expanded(
       child: Card(
