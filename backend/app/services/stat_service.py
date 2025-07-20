@@ -160,9 +160,9 @@ class StatService:
         for change in score_history:
             if change.match_id:
                 match_data = self.match_service.get_match(change.match_id)
-                score_history_data.append(ScoreHistoryData(score=change.new_score, created_at=change.created_at, match_ref=match_data.to_ref()))
+                score_history_data.append(ScoreHistoryData(score=round(change.new_score, 2), created_at=change.created_at, match_ref=match_data.to_ref()))
             else:
-                score_history_data.append(ScoreHistoryData(score=change.new_score, created_at=change.created_at, match_ref=None))
+                score_history_data.append(ScoreHistoryData(score=round(change.new_score, 2), created_at=change.created_at, match_ref=None))
 
         #carousel stats
 

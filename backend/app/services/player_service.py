@@ -139,8 +139,8 @@ class PlayerService:
             )
             self.session.add(score_history)
         else:
-            score_history.new_score = score
-            score_history.delta = score - score_history.previous_score
+            score_history.new_score = round(score, 2)
+            score_history.delta = round(score - score_history.previous_score, 2)
 
         # Don't directly set player.score - instead recalculate from all matches
         # This handles the case where we're updating an old match and need to 
