@@ -7,6 +7,7 @@ import 'pages/auth_page.dart';
 //flutter build apk --release
 //flutter install 
 //flutter build apk --debug
+//flutter build windows
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

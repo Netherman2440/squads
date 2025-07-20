@@ -105,7 +105,10 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
+  windows:
+    generate: true
+    icon_size: 48
   image_path: "assets/icon/app_icon.png"
