@@ -112,7 +112,7 @@ class StatService:
 
             goals_scored += player_team.score
             goals_conceded += opponent_team.score
-            total_draws += 1 if player_team.score == opponent_team.score else 0
+            
 
             diff = player_team.score - opponent_team.score
             if diff > biggest_win:
@@ -131,13 +131,15 @@ class StatService:
                 if is_win_streak:
                     win_streak += 1
 
-            else:
+            elif diff < 0:
                 is_win_streak = False
                 total_losses += 1
                 temp_loss_streak += 1
                 temp_win_streak = 0
                 if is_loss_streak:
                     loss_streak += 1
+            else:
+                total_draws += 1
 
             if temp_win_streak > biggest_win_streak:
                 biggest_win_streak = temp_win_streak

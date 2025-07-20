@@ -420,8 +420,6 @@ class _SquadDetailedStatsList extends StatelessWidget {
       _StatRowData('Total Goals', squadStats!.totalGoals.toString()),
       _StatRowData('Average Goals per Match', squadStats!.avgGoalsPerMatch.toStringAsFixed(1)),
       _StatRowData('Average Player Score', squadStats!.avgPlayerScore.toStringAsFixed(1)),
-      _StatRowData('Average Home Score', squadStats!.avgScore.isNotEmpty ? squadStats!.avgScore[0].toStringAsFixed(1) : '0.0'),
-      _StatRowData('Average Away Score', squadStats!.avgScore.length > 1 ? squadStats!.avgScore[1].toStringAsFixed(1) : '0.0'),
     ];
 
     return Column(
