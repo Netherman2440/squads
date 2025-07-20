@@ -81,7 +81,7 @@ class _StatsCarouselState extends State<StatsCarousel> {
     final double bgHeight = width < 500 ? 240 : 320;
     Widget cardWidget;
     // Use the same widget selection logic as before, but with generic stat access
-    if (statType == Carousel_Type.NEMEZIS || statType == Carousel_Type.WORST_RIVAL || statType == Carousel_Type.DOMINATION || statType == Carousel_Type.GAMES_PLAYED_TOGETHER) {
+    if (statType == Carousel_Type.DOMINATION || statType == Carousel_Type.GAMES_PLAYED_TOGETHER) {
       double duelScale = 1.0;
       if (width < 350) {
         duelScale = 0.6;
@@ -141,61 +141,70 @@ class _StatsCarouselState extends State<StatsCarousel> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: double.infinity,
-          height: bgHeight,
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.max,
-            children: [
-              if (sectionTitle.isNotEmpty)
-                Text(
-                  sectionTitle,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              if (sectionTitle.isNotEmpty) const SizedBox(height: 6),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  double cardWidth = constraints.maxWidth < 450 ? constraints.maxWidth - 64 : 400;
-                  cardWidth = cardWidth.clamp(220, 400);
-                  final bool showArrows = constraints.maxWidth >= 550;
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (showArrows)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 24),
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_left, size: 36),
-                            onPressed: _currentIndex > 0
-                                ? () {
-                                    _pauseAndResumeAutoScroll();
-                                    _goToPage(_currentIndex - 1);
-                                  }
-                                : null,
+        GestureDetector(
+          onPanEnd: (details) {
+            final velocity = details.velocity.pixelsPerSecond.dx;
+            if (velocity < -100) {
+              // Swipe left - go to next item (or wrap to first if at end)
+              _pauseAndResumeAutoScroll();
+              final nextIndex = _currentIndex < widget.stats.length - 1 
+                  ? _currentIndex + 1 
+                  : 0; // Wrap to beginning
+              _goToPage(nextIndex);
+            } else if (velocity > 100) {
+              // Swipe right - go to previous item (or wrap to last if at beginning)
+              _pauseAndResumeAutoScroll();
+              final prevIndex = _currentIndex > 0 
+                  ? _currentIndex - 1 
+                  : widget.stats.length - 1; // Wrap to end
+              _goToPage(prevIndex);
+            }
+          },
+          child: Container(
+            width: double.infinity,
+            height: bgHeight,
+            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                if (sectionTitle.isNotEmpty)
+                  Text(
+                    sectionTitle,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                if (sectionTitle.isNotEmpty) const SizedBox(height: 6),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    double cardWidth = constraints.maxWidth < 450 ? constraints.maxWidth - 64 : 400;
+                    cardWidth = cardWidth.clamp(220, 400);
+                    final bool showArrows = constraints.maxWidth >= 550;
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        if (showArrows)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 24),
+                            child: IconButton(
+                              icon: const Icon(Icons.arrow_left, size: 36),
+                              onPressed: () {
+                                _pauseAndResumeAutoScroll();
+                                final prevIndex = _currentIndex > 0 
+                                    ? _currentIndex - 1 
+                                    : widget.stats.length - 1; // Wrap to end
+                                _goToPage(prevIndex);
+                              },
+                            ),
                           ),
-                        ),
-                      SizedBox(
-                        width: cardWidth,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: GestureDetector(
-                            onPanEnd: (details) {
-                              final velocity = details.velocity.pixelsPerSecond.dx;
-                              if (velocity < -100 && _currentIndex < widget.stats.length - 1) {
-                                _pauseAndResumeAutoScroll();
-                                _goToPage(_currentIndex + 1);
-                              } else if (velocity > 100 && _currentIndex > 0) {
-                                _pauseAndResumeAutoScroll();
-                                _goToPage(_currentIndex - 1);
-                              }
-                            },
+                        SizedBox(
+                          width: cardWidth,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
                             child: AnimatedSwitcher(
                               duration: const Duration(milliseconds: 350),
                               transitionBuilder: (child, animation) => FadeTransition(
@@ -213,41 +222,42 @@ class _StatsCarouselState extends State<StatsCarousel> {
                             ),
                           ),
                         ),
-                      ),
-                      if (showArrows)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 24),
-                          child: IconButton(
-                            icon: const Icon(Icons.arrow_right, size: 36),
-                            onPressed: _currentIndex < widget.stats.length - 1
-                                ? () {
-                                    _pauseAndResumeAutoScroll();
-                                    _goToPage(_currentIndex + 1);
-                                  }
-                                : null,
+                        if (showArrows)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 24),
+                            child: IconButton(
+                              icon: const Icon(Icons.arrow_right, size: 36),
+                              onPressed: () {
+                                _pauseAndResumeAutoScroll();
+                                final nextIndex = _currentIndex < widget.stats.length - 1 
+                                    ? _currentIndex + 1 
+                                    : 0; // Wrap to beginning
+                                _goToPage(nextIndex);
+                              },
+                            ),
                           ),
-                        ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-              if (width >= 400)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(widget.stats.length, (index) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _currentIndex == index ? Colors.blue : Colors.grey.shade400,
-                      ),
+                      ],
                     );
-                  }),
+                  },
                 ),
-            ],
+                const SizedBox(height: 12),
+                if (width >= 400)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(widget.stats.length, (index) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _currentIndex == index ? Colors.blue : Colors.grey.shade400,
+                        ),
+                      );
+                    }),
+                  ),
+              ],
+            ),
           ),
         ),
         if (width < 400)

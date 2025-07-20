@@ -112,29 +112,41 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
         case Carousel_Type.NEMEZIS:
           if (stat.ref is PlayerRef) {
             final playerRef = stat.ref as PlayerRef;
-            convertedStat['leftName'] = widget.player.name;
-            convertedStat['rightName'] = playerRef.playerName;
-            // stat.value is [wins, losses]
+            convertedStat['playerName'] = playerRef.playerName;
+            // stat.value is [wins, losses] - for nemezis we want loss percentage
             if (stat.value is List && stat.value.length >= 2) {
-              convertedStat['statValue'] = '${stat.value[0]}:${stat.value[1]}';
+              final wins = stat.value[0];
+              final losses = stat.value[1];
+              final totalMatches = wins + losses;
+              if (totalMatches > 0) {
+                final lossPercentage = ((losses / totalMatches) * 100).round();
+                convertedStat['value'] = '${lossPercentage}% losses';
+              } else {
+                convertedStat['value'] = '0% losses';
+              }
             } else {
-              convertedStat['statValue'] = stat.value.toString();
+              convertedStat['value'] = stat.value.toString() + '% losses';
             }
-            convertedStat['description'] = _getStatDescription(stat.type);
           }
           break;
         case Carousel_Type.WORST_RIVAL:
           if (stat.ref is PlayerRef) {
             final playerRef = stat.ref as PlayerRef;
-            convertedStat['leftName'] = widget.player.name;
-            convertedStat['rightName'] = playerRef.playerName;
-            // stat.value is [wins, losses]  
+            convertedStat['playerName'] = playerRef.playerName;
+            // stat.value is [wins, losses] - for worst_rival we want win percentage
             if (stat.value is List && stat.value.length >= 2) {
-              convertedStat['statValue'] = '${stat.value[0]}:${stat.value[1]}';
+              final wins = stat.value[0];
+              final losses = stat.value[1];
+              final totalMatches = wins + losses;
+              if (totalMatches > 0) {
+                final winPercentage = ((wins / totalMatches) * 100).round();
+                convertedStat['value'] = '${winPercentage}% wins';
+              } else {
+                convertedStat['value'] = '0% wins';
+              }
             } else {
-              convertedStat['statValue'] = stat.value.toString();
+              convertedStat['value'] = stat.value.toString() + '% wins';
             }
-            convertedStat['description'] = _getStatDescription(stat.type);
           }
           break;
       }
@@ -274,28 +286,25 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Name row with small photo
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Player image on the left
+                        // Small player image
                         Container(
-                          width: 100,
-                          height: 100,
+                          width: 40,
+                          height: 40,
                           decoration: BoxDecoration(
                             color: theme.colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(Icons.person, size: 80, color: theme.colorScheme.onSecondaryContainer.withOpacity(0.5)),
+                          child: Icon(Icons.person, size: 32, color: theme.colorScheme.onSecondaryContainer.withOpacity(0.5)),
                         ),
-                        const SizedBox(width: 16),
-                        // Name and score on the right, flexible for editing
+                        const SizedBox(width: 12),
+                        // Name (editable)
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Name row, editable
-                              if (_isOwner)
-                                GestureDetector(
+                          child: _isOwner
+                              ? GestureDetector(
                                   onTap: () {
                                     setState(() {
                                       _isEditingName = true;
@@ -314,7 +323,6 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                                     child: _isEditingName
                                         ? Row(
                                             children: [
-                                              // Flexible text field for name
                                               Flexible(
                                                 child: TextField(
                                                   controller: _nameController..text = player.name,
@@ -346,194 +354,107 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                                             child: Text(player.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                                           ),
                                   ),
-                                ),
-                              if (!_isOwner)
-                                Padding(
+                                )
+                              : Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 8),
                                   child: Text(player.name, style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                                 ),
-                              const SizedBox(height: 8),
-                              // Score row, editable
-                              if (_isOwner)
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _isEditingScore = true;
-                                      _isEditingName = false;
-                                      _isEditingPosition = false;
-                                    });
-                                  },
-                                  child: _isEditingScore
-                                      ? Row(
-                                          children: [
-                                            Flexible(
-                                              child: TextField(
-                                                controller: _scoreController..text = player.score.toString(),
-                                                keyboardType: TextInputType.number,
-                                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                                                decoration: const InputDecoration(border: InputBorder.none, isDense: true),
-                                                autofocus: true,
-                                                onSubmitted: (val) async {
-                                                  final newScore = int.tryParse(val);
-                                                  if (newScore != null) {
-                                                    await _updateScore(newScore);
-                                                  }
-                                                  setState(() { _isEditingScore = false; });
-                                                },
-                                                enabled: _isOwner,
-                                              ),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.check, color: Colors.green),
-                                              onPressed: () async {
-                                                final newScore = int.tryParse(_scoreController.text);
-                                                if (newScore != null) {
-                                                  await _updateScore(newScore);
-                                                }
-                                                setState(() { _isEditingScore = false; });
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.close, color: Colors.red),
-                                              onPressed: () => setState(() { _isEditingScore = false; }),
-                                            ),
-                                          ],
-                                        )
-                                      : Row(
-                                          children: [
-                                            Text(
-                                              player.score.toStringAsFixed(1),
-                                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Icon(
-                                              isUp ? Icons.arrow_upward : Icons.arrow_downward,
-                                              color: isUp ? Colors.green : Colors.red,
-                                              size: 20,
-                                            ),
-                                            Text(
-                                              (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
-                                              style: TextStyle(
-                                                color: isUp ? Colors.green : Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                              if (!_isOwner)
-                                Row(
-                                  children: [
-                                    Text(
-                                      player.score.toStringAsFixed(1),
-                                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      isUp ? Icons.arrow_upward : Icons.arrow_downward,
-                                      color: isUp ? Colors.green : Colors.red,
-                                      size: 20,
-                                    ),
-                                    Text(
-                                      (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
-                                      style: TextStyle(
-                                        color: isUp ? Colors.green : Colors.red,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    // Row with position and matches played
-                    Row(
-                      children: [
-                        // Position (editable)
-                        if (_isOwner)
-                          GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _isEditingPosition = true;
-                                _isEditingName = false;
-                                _isEditingScore = false;
-                              });
-                            },
-                            child: Row(
-                              children: [
-                                Text('Position: ', style: theme.textTheme.bodyMedium),
-                                _isEditingPosition
-                                    ? Row(
-                                        children: [
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: theme.colorScheme.primary, width: 2),
-                                              borderRadius: BorderRadius.circular(8),
-                                              color: theme.colorScheme.surface,
-                                            ),
-                                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                            child: DropdownButton<Position>(
-                                              value: _selectedPosition ?? player.position,
-                                              items: Position.values.map((pos) => DropdownMenuItem(
-                                                value: pos,
-                                                child: Text(pos.name),
-                                              )).toList(),
-                                              onChanged: (pos) => setState(() { _selectedPosition = pos; }),
-                                              underline: const SizedBox(),
-                                            ),
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.check, color: Colors.green),
-                                            onPressed: () async {
-                                              if (_selectedPosition != null) {
-                                                await _updatePosition(_selectedPosition!);
-                                              }
-                                              setState(() { _isEditingPosition = false; _selectedPosition = null; });
-                                            },
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.close, color: Colors.red),
-                                            onPressed: () => setState(() { _isEditingPosition = false; _selectedPosition = null; }),
-                                          ),
-                                        ],
-                                      )
-                                    : Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: Colors.transparent, width: 2),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                        child: Text(player.position.name, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                      ),
-                              ],
+                    // Score row (editable)
+                    if (_isOwner)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isEditingScore = true;
+                            _isEditingName = false;
+                            _isEditingPosition = false;
+                          });
+                        },
+                        child: _isEditingScore
+                            ? Row(
+                                children: [
+                                  Flexible(
+                                    child: TextField(
+                                      controller: _scoreController..text = player.score.toString(),
+                                      keyboardType: TextInputType.number,
+                                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                      decoration: const InputDecoration(border: InputBorder.none, isDense: true),
+                                      autofocus: true,
+                                      onSubmitted: (val) async {
+                                        final newScore = int.tryParse(val);
+                                        if (newScore != null) {
+                                          await _updateScore(newScore);
+                                        }
+                                        setState(() { _isEditingScore = false; });
+                                      },
+                                      enabled: _isOwner,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.check, color: Colors.green),
+                                    onPressed: () async {
+                                      final newScore = int.tryParse(_scoreController.text);
+                                      if (newScore != null) {
+                                        await _updateScore(newScore);
+                                      }
+                                      setState(() { _isEditingScore = false; });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.red),
+                                    onPressed: () => setState(() { _isEditingScore = false; }),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Text(
+                                    player.score.toStringAsFixed(1),
+                                    style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Icon(
+                                    isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                                    color: isUp ? Colors.green : Colors.red,
+                                    size: 20,
+                                  ),
+                                  Text(
+                                    (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
+                                    style: TextStyle(
+                                      color: isUp ? Colors.green : Colors.red,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    if (!_isOwner)
+                      Row(
+                        children: [
+                          Text(
+                            player.score.toStringAsFixed(1),
+                            style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                            color: isUp ? Colors.green : Colors.red,
+                            size: 20,
+                          ),
+                          Text(
+                            (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
+                            style: TextStyle(
+                              color: isUp ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
                             ),
                           ),
-                        if (!_isOwner)
-                          Row(
-                            children: [
-                              Text('Position: ', style: theme.textTheme.bodyMedium),
-                              Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.transparent, width: 2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                child: Text(player.position.name, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                        const SizedBox(width: 16),
-                        // Matches played
-                        Icon(Icons.people, size: 18, color: theme.colorScheme.onBackground.withOpacity(0.7)),
-                        const SizedBox(width: 4),
-                        Text('Matches played: ${player.matchesPlayed}', style: theme.textTheme.bodyMedium),
-                      ],
-                    ),
+                        ],
+                      ),
                     const SizedBox(height: 24),
                     // Score History section title (mobile)
                     const Text('Score History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -648,28 +569,25 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Name row with small photo
                     Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // Player image placeholder, large square, full height of data section
+                        // Small player image
                         Container(
-                          width: 200,
-                          height: 200,
+                          width: 50,
+                          height: 50,
                           decoration: BoxDecoration(
                             color: theme.colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Icon(Icons.person, size: 200, color: theme.colorScheme.onSecondaryContainer.withOpacity(0.5)),
+                          child: Icon(Icons.person, size: 40, color: theme.colorScheme.onSecondaryContainer.withOpacity(0.5)),
                         ),
-                        const SizedBox(width: 32),
-                        // Main info, left-aligned
+                        const SizedBox(width: 16),
+                        // Name (editable)
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Name row, click to edit, always in border if editing
-                              if (_isOwner)
-                                GestureDetector(
+                          child: _isOwner
+                              ? GestureDetector(
                                   onTap: () {
                                     setState(() {
                                       _isEditingName = true;
@@ -720,214 +638,128 @@ class _PlayerDetailPageState extends ConsumerState<PlayerDetailPage> {
                                             padding: const EdgeInsets.symmetric(vertical: 8),
                                             child: Text(player.name, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                                           ),
-                                ),
-                              ),
-                              if (!_isOwner)
-                                Padding(
+                                  ),
+                                )
+                              : Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 8),
                                   child: Text(player.name, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                                 ),
-                              const SizedBox(height: 24),
-                              // Score row, click to edit, left-aligned, no container
-                              if (_isOwner)
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _isEditingScore = true;
-                                      _isEditingName = false;
-                                      _isEditingPosition = false;
-                                    });
-                                  },
-                                  child: _isEditingScore
-                                      ? Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          crossAxisAlignment: CrossAxisAlignment.center,
-                                          children: [
-                                            Container(
-                                              decoration: BoxDecoration(
-                                                color: theme.colorScheme.surface,
-                                                borderRadius: BorderRadius.circular(20),
-                                              ),
-                                              child: SizedBox(
-                                                width: 100,
-                                                child: TextField(
-                                                  controller: _scoreController..text = player.score.toString(),
-                                                  keyboardType: TextInputType.number,
-                                                  style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                                                  decoration: const InputDecoration(border: InputBorder.none, isDense: true),
-                                                  autofocus: true,
-                                                  onSubmitted: (val) async {
-                                                    final newScore = int.tryParse(val);
-                                                    if (newScore != null) {
-                                                      await _updateScore(newScore);
-                                                    }
-                                                    setState(() { _isEditingScore = false; });
-                                                  },
-                                                  enabled: _isOwner,
-                                                ),
-                                              ),
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.check, color: Colors.green),
-                                              onPressed: () async {
-                                                final newScore = int.tryParse(_scoreController.text);
-                                                if (newScore != null) {
-                                                  await _updateScore(newScore);
-                                                }
-                                                setState(() { _isEditingScore = false; });
-                                              },
-                                            ),
-                                            IconButton(
-                                              icon: const Icon(Icons.close, color: Colors.red),
-                                              onPressed: () => setState(() { _isEditingScore = false; }),
-                                            ),
-                                          ],
-                                        )
-                                      : Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              player.score.toStringAsFixed(1),
-                                              style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            // Score delta as styled text
-                                            Row(
-                                              children: [
-                                                Icon(
-                                                  isUp ? Icons.arrow_upward : Icons.arrow_downward,
-                                                  color: isUp ? Colors.green : Colors.red,
-                                                  size: 24,
-                                                ),
-                                                Text(
-                                                  (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
-                                                  style: TextStyle(
-                                                    color: isUp ? Colors.green : Colors.red,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 20,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                ),
-                              if (!_isOwner)
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      player.score.toStringAsFixed(1),
-                                      style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                                    ),
-                                    const SizedBox(width: 16),
-                                    Row(
-                                      children: [
-                                        Icon(
-                                          isUp ? Icons.arrow_upward : Icons.arrow_downward,
-                                          color: isUp ? Colors.green : Colors.red,
-                                          size: 24,
-                                        ),
-                                        Text(
-                                          (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
-                                          style: TextStyle(
-                                            color: isUp ? Colors.green : Colors.red,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 20,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              const SizedBox(height: 24),
-                              // Position and matches played
-                              if (_isOwner)
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _isEditingPosition = true;
-                                      _isEditingName = false;
-                                      _isEditingScore = false;
-                                    });
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Text('Position: ', style: theme.textTheme.bodyMedium),
-                                      _isEditingPosition
-                                          ? Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Container(
-                                                  decoration: BoxDecoration(
-                                                    border: Border.all(color: theme.colorScheme.primary, width: 3),
-                                                    borderRadius: BorderRadius.circular(10),
-                                                    color: theme.colorScheme.surface,
-                                                  ),
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                  child: DropdownButton<Position>(
-                                                    value: _selectedPosition ?? player.position,
-                                                    items: Position.values.map((pos) => DropdownMenuItem(
-                                                      value: pos,
-                                                      child: Text(pos.name),
-                                                    )).toList(),
-                                                    onChanged: (pos) => setState(() { _selectedPosition = pos; }),
-                                                    underline: const SizedBox(),
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  icon: const Icon(Icons.check, color: Colors.green),
-                                                  onPressed: () async {
-                                                    if (_selectedPosition != null) {
-                                                      await _updatePosition(_selectedPosition!);
-                                                    }
-                                                    setState(() { _isEditingPosition = false; _selectedPosition = null; });
-                                                  },
-                                                ),
-                                                IconButton(
-                                                  icon: const Icon(Icons.close, color: Colors.red),
-                                                  onPressed: () => setState(() { _isEditingPosition = false; _selectedPosition = null; }),
-                                                ),
-                                              ],
-                                            )
-                                          : Container(
-                                              decoration: BoxDecoration(
-                                                border: Border.all(color: Colors.transparent, width: 3),
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                              child: Text(player.position.name, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                            ),
-                                    ],
-                                  ),
-                                ),
-                              if (!_isOwner)
-                                Row(
-                                  children: [
-                                    Text('Position: ', style: theme.textTheme.bodyMedium),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: Colors.transparent, width: 3),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      child: Text(player.position.name, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
-                                    ),
-                                  ],
-                                ),
-                              const SizedBox(height: 12),
-                              Row(
-                                children: [
-                                  Icon(Icons.people, size: 20, color: theme.colorScheme.onBackground.withOpacity(0.7)),
-                                  const SizedBox(width: 8),
-                                  Text('Matches played: ${player.matchesPlayed}', style: theme.textTheme.bodyMedium),
-                                ],
-                              ),
-                            ],
-                          ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 24),
+                    // Score row (editable)
+                    if (_isOwner)
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isEditingScore = true;
+                            _isEditingName = false;
+                            _isEditingPosition = false;
+                          });
+                        },
+                        child: _isEditingScore
+                            ? Row(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: SizedBox(
+                                      width: 100,
+                                      child: TextField(
+                                        controller: _scoreController..text = player.score.toString(),
+                                        keyboardType: TextInputType.number,
+                                        style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                                        decoration: const InputDecoration(border: InputBorder.none, isDense: true),
+                                        autofocus: true,
+                                        onSubmitted: (val) async {
+                                          final newScore = int.tryParse(val);
+                                          if (newScore != null) {
+                                            await _updateScore(newScore);
+                                          }
+                                          setState(() { _isEditingScore = false; });
+                                        },
+                                        enabled: _isOwner,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.check, color: Colors.green),
+                                    onPressed: () async {
+                                      final newScore = int.tryParse(_scoreController.text);
+                                      if (newScore != null) {
+                                        await _updateScore(newScore);
+                                      }
+                                      setState(() { _isEditingScore = false; });
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.red),
+                                    onPressed: () => setState(() { _isEditingScore = false; }),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    player.score.toStringAsFixed(1),
+                                    style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Score delta as styled text
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                                        color: isUp ? Colors.green : Colors.red,
+                                        size: 24,
+                                      ),
+                                      Text(
+                                        (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
+                                        style: TextStyle(
+                                          color: isUp ? Colors.green : Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 20,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                      ),
+                    if (!_isOwner)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            player.score.toStringAsFixed(1),
+                            style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 16),
+                          Row(
+                            children: [
+                              Icon(
+                                isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                                color: isUp ? Colors.green : Colors.red,
+                                size: 24,
+                              ),
+                              Text(
+                                (isUp ? '+' : '') + scoreDelta.toStringAsFixed(1),
+                                style: TextStyle(
+                                  color: isUp ? Colors.green : Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 32),
                     // Score History section title (desktop)
                     const Text('Score History', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
