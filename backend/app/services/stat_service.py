@@ -157,12 +157,15 @@ class StatService:
         score_history_data = []
         score_history_data.append(ScoreHistoryData(score=player.base_score, created_at=player.created_at, match_ref=None))
 
+        score = player.base_score
+
         for change in score_history:
+            score += change.delta
             if change.match_id:
                 match_data = self.match_service.get_match(change.match_id)
-                score_history_data.append(ScoreHistoryData(score=round(change.new_score, 2), created_at=change.created_at, match_ref=match_data.to_ref()))
+                score_history_data.append(ScoreHistoryData(score=round(score, 2), created_at=change.created_at, match_ref=match_data.to_ref()))
             else:
-                score_history_data.append(ScoreHistoryData(score=round(change.new_score, 2), created_at=change.created_at, match_ref=None))
+                score_history_data.append(ScoreHistoryData(score=round(score, 2), created_at=change.created_at, match_ref=None))
 
         #carousel stats
 
@@ -319,6 +322,9 @@ class StatService:
             opponent_team = match.team_b if player_team == match.team_a else match.team_a
 
             if(opponent_id not in [player.player_id for player in opponent_team.players]):
+                continue
+
+            if player_team.score is None or opponent_team.score is None:
                 continue
 
             if player_team.score > opponent_team.score:

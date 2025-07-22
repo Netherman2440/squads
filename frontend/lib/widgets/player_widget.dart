@@ -29,14 +29,23 @@ class PlayerWidget extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    player.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
+                  child: Builder(
+                    builder: (context) {
+                      final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+                      final displayName = isNarrowScreen && player.name.length > 8
+                          ? '${player.name.substring(0, 8)}...'
+                          : player.name;
+                      
+                      return Text(
+                        displayName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      );
+                    },
                   ),
                 ),
                 if (showScores)

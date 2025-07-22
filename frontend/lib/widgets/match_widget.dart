@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/player.dart';
+import '../theme/app_theme.dart';
 import 'player_widget.dart';
 
 class MatchWidget extends StatefulWidget {
@@ -50,7 +51,7 @@ class _MatchWidgetState extends State<MatchWidget> {
         TextEditingController(text: widget.teamAName ?? 'FC Biali');
     _teamBController =
         widget.teamBController ??
-        TextEditingController(text: widget.teamBName ?? 'Czarni United');
+        TextEditingController(text: widget.teamBName ?? 'Czarni Untd');
   }
 
   @override
@@ -170,14 +171,25 @@ class _MatchWidgetState extends State<MatchWidget> {
                       alignment: Alignment.center,
                       children: [
                         Center(
-                          child: Text(
-                            title,
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                            textAlign: TextAlign.center,
+                          child: Builder(
+                            builder: (context) {
+                              final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+                              final displayTitle = isNarrowScreen && title.length > 8
+                                  ? '${title.substring(0, 8)}...'
+                                  : title;
+                              
+                              return Text(
+                                displayTitle,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            },
                           ),
                         ),
-                        if (widget.canEditTeams)
+                        if (widget.canEditTeams && MediaQuery.of(context).size.width >= 600)
                           Positioned(
                             right: 0,
                             child: IconButton(
@@ -190,18 +202,23 @@ class _MatchWidgetState extends State<MatchWidget> {
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                      horizontal: 8,
+                      vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.lightSurface,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Suma punktów: ${teamScore.toStringAsFixed(1)}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      '${teamScore.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -334,7 +351,7 @@ class _MatchWidgetState extends State<MatchWidget> {
                 onEditTap: () => setState(() => _isEditingTeamB = true),
                 onSaveTap: () => setState(() => _isEditingTeamB = false),
                 onCancelTap: () {
-                  _teamBController.text = widget.teamBName ?? 'Czarni United';
+                  _teamBController.text = widget.teamBName ?? 'Czarni Untd';
                   setState(() => _isEditingTeamB = false);
                 },
                 isTeamA: false,
@@ -342,7 +359,7 @@ class _MatchWidgetState extends State<MatchWidget> {
             ],
           ),
         ),
-        if (widget.canEditTeams)
+        if (widget.canEditTeams && MediaQuery.of(context).size.width >= 600)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Row(
