@@ -11,6 +11,7 @@ import 'package:squads/widgets/player_stat_widget.dart';
 import 'package:squads/widgets/stats_carousel.dart';
 import '../models/carousel_type.dart';
 import '../models/stat_type_config.dart';
+import '../theme/app_theme.dart';
 
 class PlayerDetailPage extends ConsumerStatefulWidget {
   final Player player;
@@ -900,7 +901,8 @@ class _DetailedStatsList extends StatelessWidget {
     ];
     
     return Column(
-      children: statRows.map((stat) => _StatRow(stat: stat)).toList(),
+      children: statRows.asMap().entries.map((entry) => 
+        _StatRow(stat: entry.value, index: entry.key)).toList(),
     );
   }
 }
@@ -913,31 +915,32 @@ class _StatRowData {
 
 class _StatRow extends StatelessWidget {
   final _StatRowData stat;
-  const _StatRow({required this.stat});
+  final int index;
+  const _StatRow({required this.stat, required this.index});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEven = index % 2 == 0;
+    
+    // Alternate beige background colors matching app theme
+    final backgroundColor = isEven 
+        ? (isDark ? AppColors.borderMuted.withOpacity(0.4) : const Color(0xFFF0EBE6)) 
+        : (isDark ? AppColors.borderMuted.withOpacity(0.2) : const Color(0xFFF8F5F2));
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Text(stat.title, style: theme.textTheme.bodyMedium),
-          const SizedBox(width: 8),
           Expanded(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Calculate number of dots based on available width
-                final dotCount = (constraints.maxWidth / 3).floor() - 1;
-                return Text(
-                  List.filled(dotCount > 0 ? dotCount : 1, '.').join(),
-                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
-                  overflow: TextOverflow.clip,
-                );
-              },
-            ),
+            child: Text(stat.title, style: theme.textTheme.bodyMedium),
           ),
-          const SizedBox(width: 8),
           Text(stat.value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
         ],
       ),
