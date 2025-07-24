@@ -2,14 +2,14 @@
     "squads": [
         {
             "name": "Politechnika",
-            "owner_id": "d92665df-3aa5-4f0f-9bb0-098a816c36d4",
+            "owner_id": "d230b0e5-42ce-4367-b9a9-968dbf546d2f",
             "players": [
-                {"name": "Ignacy", "base_score": 84},
-                {"name": "Stach R", "base_score": 80},
+                {"name": "Ignacy", "base_score": 83},
+                {"name": "Stach R", "base_score": 79},
                 {"name": "Mateusz O", "base_score": 80},
-                {"name": "Karol", "base_score": 74},
-                {"name": "Piotr K", "base_score": 46},
-                {"name": "Piotr Wan", "base_score": 46},
+                {"name": "Karol", "base_score": 73},
+                {"name": "Piotr K", "base_score": 45},
+                {"name": "Piotr Wan", "base_score": 45},
                 {"name": "Robert z TV", "base_score": 46},
                 {"name": "Wojtek Rosa", "base_score": 57},
                 {"name": "Marcin Sz", "base_score": 62},
@@ -41,7 +41,10 @@
                 {"name": "Janek Zając", "base_score": 45},
                 {"name": "Szymon", "base_score": 28},
                 {"name": "Bartosz Świerk", "base_score": 63},
-                {"name": "Jurek Sz", "base_score": 63}
+                {"name": "Jurek Sz", "base_score": 63},
+                {"name": "Błażej Młynarski", "base_score": 61},
+                {"name": "Grzesiek z Mazur ", "base_score": 50},
+                {"name": "Jan Michał", "base_score": 30}
             ]
         }
     ]

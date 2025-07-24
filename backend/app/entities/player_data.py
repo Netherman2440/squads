@@ -1,10 +1,13 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
-from app.schemas import PlayerResponse, PlayerDetailResponse
+from app.schemas import PlayerResponse, PlayerDetailResponse, PlayerRef
 from app.models import Player
-from app.entities import MatchData
+# Changed: Direct import instead of importing through app.entities
+from app.entities.match_data import MatchData
 from app.constants import Position
+from app.entities.stats_data import PlayerStatsData
 
 
 @dataclass
@@ -12,11 +15,11 @@ class PlayerData:
     squad_id: str
     player_id: str
     name: str
+    created_at: datetime
     base_score: int
     _score: Optional[float] = None
     position: Position = Position.NONE
     matches_played: int = 0
-
     @property
     def score(self) -> float:
         # Return _score if set, otherwise base_score
@@ -37,6 +40,13 @@ class PlayerData:
             score=self.score,
             position=self.position,
             matches_played=self.matches_played,
+            created_at=self.created_at,
+        )
+    
+    def to_ref(self) -> PlayerRef:
+        return PlayerRef(
+            playerId=self.player_id,
+            playerName=self.name,
         )
     
     @classmethod
@@ -49,11 +59,13 @@ class PlayerData:
             base_score=orm_player.base_score,
             _score=orm_player.score,
             matches_played=len(orm_player.matches),
+            created_at=orm_player.created_at,
         )
 
 @dataclass
 class PlayerDetailData(PlayerData):
     matches: list = field(default_factory=list)
+    stats: PlayerStatsData = field(default_factory=PlayerStatsData)
     
     def to_response(self) -> PlayerDetailResponse:
         matches_response = [match.to_response() for match in self.matches]
@@ -65,7 +77,8 @@ class PlayerDetailData(PlayerData):
             score=self.score,
             position=self.position,
             matches_played=self.matches_played,
-            matches=matches_response,
+            created_at=self.created_at,
+            stats=self.stats.to_schema(),
         )
 
     @classmethod

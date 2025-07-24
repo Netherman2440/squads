@@ -3,6 +3,7 @@ from app.entities import PlayerData, PlayerDetailData, MatchData
 from app.constants import Position
 from app.schemas.player_schemas import PlayerResponse, PlayerListResponse
 from app.services.match_service import MatchService
+from app.services.stat_service import StatService
 
 class PlayerService:
     def __init__(self, session):
@@ -15,12 +16,16 @@ class PlayerService:
             name=player.name,
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
-            _score=player.score,
-            matches_played=len(player.matches)
+            _score=round(player.score, 2),
+            matches_played=len(player.matches),
+            created_at=player.created_at
         )
     
     def player_to_detail_data(self, player: Player) -> PlayerDetailData:
         match_service = MatchService(self.session)
+
+        stats_service = StatService(self.session)
+        stats = stats_service.get_player_stats(player.player_id)
 
         return PlayerDetailData(
             squad_id=player.squad_id,
@@ -28,9 +33,11 @@ class PlayerService:
             name=player.name,
             position=Position(player.position) if player.position else Position.NONE,
             base_score=player.base_score,
-            _score=player.score,
+            _score=round(player.score, 2),
             matches_played=len(player.matches),
-            matches=[match_service.match_to_data(match) for match in player.matches]
+            created_at=player.created_at,
+            #matches=[match_service.match_to_data(match) for match in player.matches],
+            stats=stats,
         )
 
     def get_players(self, squad_id: str) -> list[PlayerData]:
@@ -126,14 +133,14 @@ class PlayerService:
             score_history = ScoreHistory(
                 player_id=player_id,
                 match_id=match_id,
-                previous_score=player.score,
-                new_score=score,
-                delta=score - player.score
+                previous_score=round(player.score, 2),
+                new_score=round(score, 2),
+                delta=round(score - player.score, 2)
             )
             self.session.add(score_history)
         else:
-            score_history.new_score = score
-            score_history.delta = score - score_history.previous_score
+            score_history.new_score = round(score, 2)
+            score_history.delta = round(score - score_history.previous_score, 2)
 
         # Don't directly set player.score - instead recalculate from all matches
         # This handles the case where we're updating an old match and need to 
@@ -152,7 +159,7 @@ class PlayerService:
         return self.get_player(player_id)
     
     def recalculate_and_update_score(self, player_id: str) -> PlayerData | None:
-        """Recalculate player score by going through score history to check for changes"""
+        """Recalculate player score by going through score history to check for changes. Clamp score to [0, 100]."""
         player = self.session.query(Player).filter(Player.player_id == player_id).first()
         if not player:
             return None
@@ -167,10 +174,16 @@ class PlayerService:
         for score_history in score_histories:
             current_score += score_history.delta
 
+        # Clamp score to [0, 100]
+        current_score = max(0, min(100, current_score))
+
         # Update player's score if it has changed
         if player.score != current_score:
             print(f"Updating player {player.name} score from {player.score} to {current_score}")
             player.score = current_score
+
+            #format score to 2 decimal places
+            player.score = round(player.score, 2)
             self.session.commit()
 
         # Return updated PlayerData

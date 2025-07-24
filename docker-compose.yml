@@ -1,38 +1,19 @@
 services:
-  # Database service (SQLite for development, can be changed to PostgreSQL for production)
-  db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: squads
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1234
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-    networks:
-      - squads-network
-
-  # Backend FastAPI service
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "20757:8000"
     environment:
-      - DATABASE_URL=postgresql://postgres:1234@db:5432/squads
-      - ENVIRONMENT=production
-    depends_on:
-      - db
+      - DATABASE_URL=${DATABASE_URL}
+      - ENVIRONMENT=${ENVIRONMENT}
     networks:
       - squads-network
     volumes:
       - ./backend:/app
     restart: unless-stopped
 
-volumes:
-  postgres_data:
 
 networks:
   squads-network:

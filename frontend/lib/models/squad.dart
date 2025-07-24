@@ -85,9 +85,58 @@ class SquadListResponse {
   }
 }
 
+class SquadStats {
+  final String squadId;
+  final DateTime createdAt;
+  final int totalPlayers;
+  final int totalMatches;
+  final int totalGoals;
+  final double avgPlayerScore;
+  final double avgGoalsPerMatch;
+  final List<double> avgScore; // [homeAvg, awayAvg]
+
+  SquadStats({
+    required this.squadId,
+    required this.createdAt,
+    required this.totalPlayers,
+    required this.totalMatches,
+    required this.totalGoals,
+    required this.avgPlayerScore,
+    required this.avgGoalsPerMatch,
+    required this.avgScore,
+  });
+
+  factory SquadStats.fromJson(Map<String, dynamic> json) {
+    return SquadStats(
+      squadId: json['squad_id'],
+      createdAt: DateTime.parse(json['created_at']),
+      totalPlayers: json['total_players'],
+      totalMatches: json['total_matches'],
+      totalGoals: json['total_goals'],
+      avgPlayerScore: json['avg_player_score'].toDouble(),
+      avgGoalsPerMatch: json['avg_goals_per_match'].toDouble(),
+      avgScore: List<double>.from(json['avg_score']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'squad_id': squadId,
+      'created_at': createdAt.toIso8601String(),
+      'total_players': totalPlayers,
+      'total_matches': totalMatches,
+      'total_goals': totalGoals,
+      'avg_player_score': avgPlayerScore,
+      'avg_goals_per_match': avgGoalsPerMatch,
+      'avg_score': avgScore,
+    };
+  }
+}
+
 class SquadDetailResponse extends Squad {
   final List<Player> players;
   final List<Match> matches;
+  final SquadStats stats;
 
   SquadDetailResponse({
     required super.squadId,
@@ -97,6 +146,7 @@ class SquadDetailResponse extends Squad {
     required super.ownerId,
     required this.players,
     required this.matches,
+    required this.stats,
   });
 
   factory SquadDetailResponse.fromJson(Map<String, dynamic> json) {
@@ -112,6 +162,7 @@ class SquadDetailResponse extends Squad {
       matches: (json['matches'] as List)
           .map((matchJson) => Match.fromJson(matchJson))
           .toList(),
+      stats: SquadStats.fromJson(json['stats']),
     );
   }
 
@@ -120,6 +171,7 @@ class SquadDetailResponse extends Squad {
     final Map<String, dynamic> data = super.toJson();
     data['players'] = players.map((player) => player.toJson()).toList();
     data['matches'] = matches.map((match) => match.toJson()).toList();
+    data['stats'] = stats.toJson();
     return data;
   }
 }

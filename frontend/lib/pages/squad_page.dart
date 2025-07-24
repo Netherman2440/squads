@@ -13,6 +13,7 @@ import '../state/squad_state.dart';
 import '../state/players_state.dart';
 import '../state/matches_state.dart';
 
+
 class SquadPage extends ConsumerStatefulWidget {
   final String squadId;
 
@@ -83,7 +84,9 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             ),
         ],
       ),
-      body: _buildBody(context, squadState, playersState, matchesState),
+      body: SingleChildScrollView(
+        child: _buildBody(context, squadState, playersState, matchesState),
+      ),
     );
   }
 
@@ -117,18 +120,15 @@ class _SquadPageState extends ConsumerState<SquadPage> {
       );
     }
 
-    return SingleChildScrollView(
-      padding: EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSquadInfo(squadState, playersState, matchesState),
-          SizedBox(height: 24),
-          _buildMainSections(context, squadState, playersState, matchesState),
-          SizedBox(height: 24),
-          _buildStatisticsSection(),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSquadInfo(squadState, playersState, matchesState),
+        SizedBox(height: 24),
+        _buildMainSections(context, squadState, playersState, matchesState),
+        SizedBox(height: 24),
+        _buildStatisticsSection(),
+      ],
     );
   }
 
@@ -157,8 +157,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             SizedBox(height: 16),
             _buildInfoRow('Name', squad.name),
             _buildInfoRow('Created', squad.createdAt.toString().split(' ')[0]),
-            _buildInfoRow('Players', playersState.players.length.toString()),
-            _buildInfoRow('Matches', matchesState.matches.length.toString()),
+            //_buildInfoRow('Owner', squad.ownerId),
           ],
         ),
       ),
@@ -176,7 +175,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             color: AppColors.secondary,
             onTap: () => _navigateToPlayers(context),
             canAccess: true,
-            count: playersState.players.length,
+            count: 0,
+            showCount: false,
           ),
         ),
         SizedBox(width: 12),
@@ -188,7 +188,8 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             color: AppColors.success,
             onTap: () => _navigateToMatches(context),
             canAccess: true,
-            count: matchesState.matches.length,
+            count: 0,
+            showCount: false,
           ),
         ),
         SizedBox(width: 12),
@@ -200,8 +201,9 @@ class _SquadPageState extends ConsumerState<SquadPage> {
             color: AppColors.warning,
             onTap: () => _navigateToTournaments(context),
             canAccess: true, // Tournaments will be available to all
-            count: 0, // Coming soon
-            isComingSoon: true,
+            count: 0, // No count for tournaments
+            showCount: false,
+            isComingSoon: false,
           ),
         ),
       ],
@@ -216,6 +218,7 @@ class _SquadPageState extends ConsumerState<SquadPage> {
     required VoidCallback onTap,
     required bool canAccess,
     required int count,
+    bool showCount = true,
     bool isComingSoon = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -226,59 +229,49 @@ class _SquadPageState extends ConsumerState<SquadPage> {
         onTap: canAccess ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          height: 120,
-          padding: EdgeInsets.all(16),
+          height: 100,
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            gradient: isComingSoon 
-              ? LinearGradient(
-                  colors: isDark 
-                    ? [AppColors.borderMuted, AppColors.border]
-                    : [Colors.grey.shade300, Colors.grey.shade400],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : LinearGradient(
-                  colors: [
-                    color.withOpacity(isDark ? 0.2 : 0.1), 
-                    color.withOpacity(isDark ? 0.3 : 0.2)
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+            gradient: LinearGradient(
+              colors: [
+                color.withOpacity(isDark ? 0.2 : 0.1), 
+                color.withOpacity(isDark ? 0.3 : 0.2)
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 32,
-                color: isComingSoon 
-                  ? (isDark ? AppColors.textMuted : Colors.grey.shade600)
-                  : color,
+                size: 28,
+                color: color,
               ),
-              SizedBox(height: 8),
+              SizedBox(height: 6),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: isComingSoon 
-                    ? (isDark ? AppColors.textMuted : Colors.grey.shade600)
-                    : AppColors.text,
+                  color: AppColors.text,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
               ),
-              SizedBox(height: 4),
-              Text(
-                isComingSoon ? 'Coming Soon' : '$count',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isComingSoon 
-                    ? (isDark ? AppColors.textMuted : Colors.grey.shade500)
-                    : AppColors.textMuted,
+              if (showCount) ...[
+                SizedBox(height: 2),
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -287,66 +280,38 @@ class _SquadPageState extends ConsumerState<SquadPage> {
   }
 
   Widget _buildStatisticsSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final squadState = ref.watch(squadProvider);
+    final theme = Theme.of(context);
     
-    return Card(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            colors: [
-              AppColors.info.withOpacity(isDark ? 0.2 : 0.1),
-              AppColors.info.withOpacity(isDark ? 0.3 : 0.2)
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(Icons.analytics, size: 24, color: AppColors.info),
-                  SizedBox(width: 8),
-                  Text(
-                    'Statistics',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.info,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark 
-                    ? AppColors.bgLight.withOpacity(0.7)
-                    : Colors.white.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.hourglass_empty, color: AppColors.textMuted),
-                    SizedBox(width: 8),
-                    Text(
-                      'Statistics will be available soon',
-                      style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
+              Icon(Icons.analytics, size: 24, color: theme.textTheme.bodyMedium?.color),
+              SizedBox(width: 8),
+              Text(
+                'Statistics',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: theme.textTheme.bodyMedium?.color,
                 ),
               ),
             ],
           ),
-        ),
+          SizedBox(height: 16),
+          _SquadDetailedStatsList(
+            squadStats: squadState.squad?.stats,
+          ),
+        ],
       ),
     );
   }
@@ -416,5 +381,81 @@ class _SquadPageState extends ConsumerState<SquadPage> {
 
   void _navigateToTournaments(BuildContext context) {
     //MessageService.showInfo(context, 'Tournaments page coming soon');
+  }
+}
+
+class _SquadDetailedStatsList extends StatelessWidget {
+  final SquadStats? squadStats;
+
+  const _SquadDetailedStatsList({
+    required this.squadStats,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (squadStats == null) {
+      return Column(
+        children: [
+          Text(
+            'No statistics available',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
+        ],
+      );
+    }
+
+    final stats = [
+      _StatRowData('Players Count', squadStats!.totalPlayers.toString()),
+      _StatRowData('Matches Count', squadStats!.totalMatches.toString()),
+      _StatRowData('Total Goals', squadStats!.totalGoals.toString()),
+      _StatRowData('Average Goals per Match', squadStats!.avgGoalsPerMatch.toStringAsFixed(1)),
+      _StatRowData('Average Player Score', squadStats!.avgPlayerScore.toStringAsFixed(1)),
+    ];
+
+    return Column(
+      children: stats.asMap().entries.map((entry) => 
+        _StatRow(stat: entry.value, index: entry.key)).toList(),
+    );
+  }
+}
+
+class _StatRowData {
+  final String title;
+  final String value;
+  const _StatRowData(this.title, this.value);
+}
+
+class _StatRow extends StatelessWidget {
+  final _StatRowData stat;
+  final int index;
+  const _StatRow({required this.stat, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isEven = index % 2 == 0;
+    
+    // Alternate beige background colors matching app theme
+    final backgroundColor = isEven 
+        ? (isDark ? AppColors.borderMuted.withOpacity(0.4) : const Color(0xFFF0EBE6)) 
+        : (isDark ? AppColors.borderMuted.withOpacity(0.2) : const Color(0xFFF8F5F2));
+    
+    return Container(
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(stat.title, style: theme.textTheme.bodyMedium),
+          ),
+          Text(stat.value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
   }
 } 

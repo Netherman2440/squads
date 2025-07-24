@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/player.dart';
+import '../theme/app_theme.dart';
 import 'player_widget.dart';
 
 class MatchWidget extends StatefulWidget {
@@ -45,14 +46,19 @@ class _MatchWidgetState extends State<MatchWidget> {
     super.initState();
     _teamAPlayers = List<Player>.from(widget.teamAPlayers);
     _teamBPlayers = List<Player>.from(widget.teamBPlayers);
-    _teamAController = widget.teamAController ?? TextEditingController(text: widget.teamAName ?? 'FC Biali');
-    _teamBController = widget.teamBController ?? TextEditingController(text: widget.teamBName ?? 'Czarni United');
+    _teamAController =
+        widget.teamAController ??
+        TextEditingController(text: widget.teamAName ?? 'FC Biali');
+    _teamBController =
+        widget.teamBController ??
+        TextEditingController(text: widget.teamBName ?? 'Czarni Untd');
   }
 
   @override
   void didUpdateWidget(covariant MatchWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.teamAPlayers != oldWidget.teamAPlayers || widget.teamBPlayers != oldWidget.teamBPlayers) {
+    if (widget.teamAPlayers != oldWidget.teamAPlayers ||
+        widget.teamBPlayers != oldWidget.teamBPlayers) {
       _teamAPlayers = List<Player>.from(widget.teamAPlayers);
       _teamBPlayers = List<Player>.from(widget.teamBPlayers);
     }
@@ -91,8 +97,23 @@ class _MatchWidgetState extends State<MatchWidget> {
     widget.onTeamsChanged?.call(_teamAPlayers, _teamBPlayers);
   }
 
-  double _calculateTeamScore(List<Player> players) {
-    return players.fold(0.0, (sum, player) => sum + player.score);
+  double _calculateTeamScore(List<Player> teamPlayers, List<Player> opposingTeamPlayers, {bool allowSubstitutions = true}) {
+    if (!allowSubstitutions || teamPlayers.length == opposingTeamPlayers.length) {
+      // No substitutions or equal team sizes - count all players
+      return teamPlayers.fold(0.0, (sum, player) => sum + player.score);
+    }
+    
+    if (teamPlayers.length > opposingTeamPlayers.length) {
+      // This team is larger - exclude the weakest player
+      final sortedPlayers = List<Player>.from(teamPlayers)
+        ..sort((a, b) => b.score.compareTo(a.score)); // Sort descending by score
+      // Take all but the last (weakest) player
+      return sortedPlayers.take(sortedPlayers.length - 1)
+        .fold(0.0, (sum, player) => sum + player.score);
+    } else {
+      // This team is smaller - count all players
+      return teamPlayers.fold(0.0, (sum, player) => sum + player.score);
+    }
   }
 
   Widget _buildTeamColumn({
@@ -105,7 +126,7 @@ class _MatchWidgetState extends State<MatchWidget> {
     required VoidCallback onCancelTap,
     required bool isTeamA,
   }) {
-    final teamScore = _calculateTeamScore(players);
+    final teamScore = _calculateTeamScore(players, isTeamA ? _teamBPlayers : _teamAPlayers);
 
     return Expanded(
       child: Card(
@@ -125,11 +146,13 @@ class _MatchWidgetState extends State<MatchWidget> {
                             controller: controller,
                             decoration: const InputDecoration(
                               border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                             ),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -148,15 +171,25 @@ class _MatchWidgetState extends State<MatchWidget> {
                       alignment: Alignment.center,
                       children: [
                         Center(
-                          child: Text(
-                            title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
+                          child: Builder(
+                            builder: (context) {
+                              final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+                              final displayTitle = isNarrowScreen && title.length > 8
+                                  ? '${title.substring(0, 8)}...'
+                                  : title;
+                              
+                              return Text(
+                                displayTitle,
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(fontWeight: FontWeight.bold),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            },
                           ),
                         ),
-                        if (widget.canEditTeams)
+                        if (widget.canEditTeams && MediaQuery.of(context).size.width >= 600)
                           Positioned(
                             right: 0,
                             child: IconButton(
@@ -168,16 +201,24 @@ class _MatchWidgetState extends State<MatchWidget> {
                     ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      borderRadius: BorderRadius.circular(8),
+                      color: AppColors.lightSurface,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
-                      'Suma punktów: ${teamScore.toStringAsFixed(1)}',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).textTheme.bodyMedium?.color,
+                      '${teamScore.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        fontSize: 14,
                       ),
                     ),
                   ),
@@ -187,34 +228,41 @@ class _MatchWidgetState extends State<MatchWidget> {
             // Players list with drag & drop
             Expanded(
               child: DragTarget<Player>(
-                onWillAccept: (player) => widget.canEditTeams && player != null && !players.any((p) => p.playerId == player.playerId),
-                onAcceptWithDetails: (details) => _movePlayer(details.data, isTeamA),
+                onWillAccept:
+                    (player) =>
+                        widget.canEditTeams &&
+                        player != null &&
+                        !players.any((p) => p.playerId == player.playerId),
+                onAcceptWithDetails:
+                    (details) => _movePlayer(details.data, isTeamA),
                 builder: (context, candidateData, rejectedData) {
                   final isActive = candidateData.isNotEmpty;
                   return Container(
-                    decoration: isActive
-                        ? BoxDecoration(
-                            color: Colors.blue.withOpacity(0.08),
-                            border: Border.all(color: Colors.blue, width: 2),
-                            borderRadius: BorderRadius.circular(8),
-                          )
-                        : null,
-                    child: players.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'Brak graczy w drużynie',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontStyle: FontStyle.italic,
+                    decoration:
+                        isActive
+                            ? BoxDecoration(
+                              color: Colors.blue.withOpacity(0.08),
+                              border: Border.all(color: Colors.blue, width: 2),
+                              borderRadius: BorderRadius.circular(8),
+                            )
+                            : null,
+                    child:
+                        players.isEmpty
+                            ? const Center(
+                              child: Text(
+                                'Brak graczy w drużynie',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontStyle: FontStyle.italic,
+                                ),
                               ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: players.length,
-                            itemBuilder: (context, index) {
-                              final player = players[index];
-                              return widget.canEditTeams
-                                  ? Draggable<Player>(
+                            )
+                            : ListView.builder(
+                              itemCount: players.length,
+                              itemBuilder: (context, index) {
+                                final player = players[index];
+                                return widget.canEditTeams
+                                    ? Draggable<Player>(
                                       data: player,
                                       feedbackOffset: const Offset(150, 0),
                                       feedback: Material(
@@ -226,6 +274,7 @@ class _MatchWidgetState extends State<MatchWidget> {
                                             child: PlayerWidget(
                                               player: player,
                                               showScores: widget.showScores,
+                                              compact: true,
                                             ),
                                           ),
                                         ),
@@ -237,22 +286,33 @@ class _MatchWidgetState extends State<MatchWidget> {
                                           child: PlayerWidget(
                                             player: player,
                                             showScores: widget.showScores,
+                                            compact: true,
                                           ),
                                         ),
                                       ),
                                       child: PlayerWidget(
                                         player: player,
-                                        onTap: widget.onPlayerTap != null ? () => widget.onPlayerTap!(player) : null,
+                                        onTap:
+                                            widget.onPlayerTap != null
+                                                ? () =>
+                                                    widget.onPlayerTap!(player)
+                                                : null,
                                         showScores: widget.showScores,
+                                        compact: true,
                                       ),
                                     )
-                                  : PlayerWidget(
+                                    : PlayerWidget(
                                       player: player,
-                                      onTap: widget.onPlayerTap != null ? () => widget.onPlayerTap!(player) : null,
+                                      onTap:
+                                          widget.onPlayerTap != null
+                                              ? () =>
+                                                  widget.onPlayerTap!(player)
+                                              : null,
                                       showScores: widget.showScores,
+                                      compact: true,
                                     );
-                            },
-                          ),
+                              },
+                            ),
                   );
                 },
               ),
@@ -267,20 +327,6 @@ class _MatchWidgetState extends State<MatchWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        if (widget.canEditTeams)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: _swapTeams,
-                  icon: const Icon(Icons.swap_horiz),
-                  tooltip: 'Rotuj drużyny',
-                ),
-              ],
-            ),
-          ),
         Expanded(
           child: Row(
             children: [
@@ -305,7 +351,7 @@ class _MatchWidgetState extends State<MatchWidget> {
                 onEditTap: () => setState(() => _isEditingTeamB = true),
                 onSaveTap: () => setState(() => _isEditingTeamB = false),
                 onCancelTap: () {
-                  _teamBController.text = widget.teamBName ?? 'Czarni United';
+                  _teamBController.text = widget.teamBName ?? 'Czarni Untd';
                   setState(() => _isEditingTeamB = false);
                 },
                 isTeamA: false,
@@ -313,7 +359,21 @@ class _MatchWidgetState extends State<MatchWidget> {
             ],
           ),
         ),
+        if (widget.canEditTeams && MediaQuery.of(context).size.width >= 600)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: _swapTeams,
+                  icon: const Icon(Icons.swap_horiz),
+                  tooltip: 'Rotuj drużyny',
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }
-} 
+}

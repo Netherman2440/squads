@@ -11,6 +11,7 @@ import 'package:squads/pages/player_detail_page.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:squads/state/squad_state.dart';
 import 'package:squads/state/user_state.dart';
+import 'package:squads/theme/app_theme.dart';
 
 class MatchPage extends ConsumerStatefulWidget {
   final String squadId;
@@ -42,6 +43,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
   String? _squadName;
   String? _ownerId;
   Player? _draggedPlayer;
+  bool _isEditingTeams = false; // Whether admin is editing teams
   bool get _isOwner {
     final squadState = ref.watch(squadProvider);
     final userId = ref.watch(userSessionProvider).user?.userId ?? '';
@@ -282,6 +284,7 @@ class _MatchPageState extends ConsumerState<MatchPage> {
       await _loadData();
       setState(() {
         _isDirty = false;
+        _isEditingTeams = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Zmiany zapisane!')),
@@ -291,6 +294,74 @@ class _MatchPageState extends ConsumerState<MatchPage> {
         SnackBar(content: Text('Błąd zapisu: $e')),
       );
     }
+  }
+
+  int _getTeamScore(List<Player> teamPlayers, List<Player> opposingTeamPlayers, {bool allowSubstitutions = true}) {
+    if (!allowSubstitutions || teamPlayers.length == opposingTeamPlayers.length) {
+      // No substitutions or equal team sizes - count all players
+      return (teamPlayers.fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+    }
+    
+    if (teamPlayers.length > opposingTeamPlayers.length) {
+      // This team is larger - exclude the weakest player
+      final sortedPlayers = List<Player>.from(teamPlayers)
+        ..sort((a, b) => (b.score ?? 0).compareTo(a.score ?? 0)); // Sort descending
+      // Take all but the last (weakest) player
+      return (sortedPlayers.take(sortedPlayers.length - 1)
+        .fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+    } else {
+      // This team is smaller - count all players
+      return (teamPlayers.fold<double>(0, (sum, p) => sum + (p.score ?? 0))).toInt();
+    }
+  }
+
+
+
+  Widget _buildScoreBox({required TextEditingController controller, required bool enabled}) {
+    final hasScore = controller.text.isNotEmpty;
+    final theme = Theme.of(context);
+    final Color baseBg = AppColors.lightSurface;
+    final Color borderColor = hasScore
+        ? theme.colorScheme.primary.withOpacity(0.5)
+        : theme.colorScheme.outlineVariant;
+    
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: baseBg,
+        border: Border.all(
+          color: borderColor,
+          width: 2,
+        ),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Center(
+        child: TextField(
+          enabled: enabled,
+          controller: controller,
+          keyboardType: TextInputType.number,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            disabledBorder: InputBorder.none,
+            hintText: '',
+            isDense: true,
+            contentPadding: EdgeInsets.zero,
+            filled: true,
+            fillColor: Colors.transparent,
+          ),
+          onChanged: (_) => _onScoreChanged(),
+        ),
+      ),
+    );
   }
 
   @override
@@ -305,13 +376,28 @@ class _MatchPageState extends ConsumerState<MatchPage> {
         body: Center(child: Text('Error:  $_error')),
       );
     }
-    const double maxListHeight = 520; // increased for 6 players
+    const double maxListHeight = 1200; // increased for more players and scroll
+    // Calculate dynamic height for player lists section
+    int maxPlayers = _teamAPlayers.length > _teamBPlayers.length ? _teamAPlayers.length : _teamBPlayers.length;
+    double playerListHeight = (maxPlayers * 50).clamp(200, 800).toDouble();
     return WillPopScope(
       onWillPop: _onWillPop,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Mecz'),
+          title: Text(
+            'Mecz ${ _matchDetail!.createdAt.day}.${ _matchDetail!.createdAt.month}.${ _matchDetail!.createdAt.year}',
+          ),
           actions: [
+            if (_isOwner && !_hasResult)
+              IconButton(
+                icon: Icon(_isEditingTeams ? Icons.check : Icons.edit),
+                tooltip: _isEditingTeams ? 'Zakończ edycję składu' : 'Edytuj skład',
+                onPressed: () {
+                  setState(() {
+                    _isEditingTeams = !_isEditingTeams;
+                  });
+                },
+              ),
             if (_isOwner)
               IconButton(
                 icon: const Icon(Icons.delete),
@@ -322,102 +408,111 @@ class _MatchPageState extends ConsumerState<MatchPage> {
         ),
         body: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
-              child: Column(
-                children: [
-                  // Team names and score row
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12, bottom: 16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _teamAName,
-                            textAlign: TextAlign.right,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          width: 120,
-                          height: 56,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Theme.of(context).colorScheme.primary, width: 2),
-                          ),
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+            SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+                child: Column(
+                  children: [
+                    // Team names and score row
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Flexible(
-                                  child: SizedBox(
-                                    width: 40,
-                                    child: TextField(
-                                      enabled: _isOwner, // score is editable only for owner
-                                      controller: _scoreAController,
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.headlineSmall,
-                                      decoration: const InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: '-',
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.zero,
-                                      ),
-                                      onChanged: (_) => _onScoreChanged(),
-                                    ),
-                                  ),
+                                Builder(
+                                  builder: (context) {
+                                    final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+                                    final displayName = isNarrowScreen && _teamAName.length > 8
+                                        ? '${_teamAName.substring(0, 8)}...'
+                                        : _teamAName;
+                                    
+                                    return Text(
+                                      displayName,
+                                      textAlign: TextAlign.right,
+                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    );
+                                  },
                                 ),
-                                const Text(' : ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
-                                Flexible(
-                                  child: SizedBox(
-                                    width: 40,
-                                    child: TextField(
-                                      enabled: _isOwner, // score is editable only for owner
-                                      controller: _scoreBController,
-                                      keyboardType: TextInputType.number,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.headlineSmall,
-                                      decoration: const InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: '-',
-                                        isDense: true,
-                                        contentPadding: EdgeInsets.zero,
-                                      ),
-                                      onChanged: (_) => _onScoreChanged(),
-                                    ),
-                                  ),
+                                Text(
+                                  'Total score: ${_getTeamScore(_teamAPlayers, _teamBPlayers)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _teamBName,
-                            textAlign: TextAlign.left,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                          const SizedBox(width: 12),
+                          Row(
+                            children: [
+                              _buildScoreBox(
+                                controller: _scoreAController,
+                                enabled: _isOwner,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                '-',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildScoreBox(
+                                controller: _scoreBController,
+                                enabled: _isOwner,
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Builder(
+                                  builder: (context) {
+                                    final isNarrowScreen = MediaQuery.of(context).size.width < 600;
+                                    final displayName = isNarrowScreen && _teamBName.length > 8
+                                        ? '${_teamBName.substring(0, 8)}...'
+                                        : _teamBName;
+                                    
+                                    return Text(
+                                      displayName,
+                                      textAlign: TextAlign.left,
+                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+                                    );
+                                  },
+                                ),
+                                Text(
+                                  'Total score: ${_getTeamScore(_teamBPlayers, _teamAPlayers)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  // Player lists row
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildPlayerList(_teamAPlayers, true, maxListHeight, enabled: !_hasResult),
-                        const SizedBox(width: 12),
-                        _buildPlayerList(_teamBPlayers, false, maxListHeight, enabled: !_hasResult),
-                      ],
+                    // Player lists row (dynamic height)
+                    SizedBox(
+                      height: playerListHeight,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildPlayerList(_teamAPlayers, true, maxListHeight, enabled: !_hasResult),
+                          const SizedBox(width: 12),
+                          _buildPlayerList(_teamBPlayers, false, maxListHeight, enabled: !_hasResult),
+                        ],
+                      ),
                     ),
-                  ),
-                  if (!_hasResult)
+                    // Statistics section (always visible)
                     Padding(
                       padding: const EdgeInsets.only(top: 24.0),
                       child: Opacity(
@@ -447,7 +542,8 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                         ),
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
             ),
             if (!_hasResult) _buildTrashTarget(),
@@ -465,7 +561,8 @@ class _MatchPageState extends ConsumerState<MatchPage> {
   }
 
   Widget _buildPlayerList(List<Player> players, bool isTeamA, double maxHeight, {bool enabled = true}) {
-    final canAdd = enabled && _isOwner;
+    final canEdit = _isOwner && !_hasResult && _isEditingTeams;
+    final canAdd = canEdit;
     return Expanded(
       child: Container(
         constraints: BoxConstraints(maxHeight: maxHeight),
@@ -479,8 +576,8 @@ class _MatchPageState extends ConsumerState<MatchPage> {
               children: [
                 Expanded(
                   child: DragTarget<Player>(
-                    onWillAccept: (player) => canAdd && player != null && !players.any((p) => p.playerId == player.playerId),
-                    onAcceptWithDetails: (details) => canAdd ? _movePlayer(details.data, isTeamA) : null,
+                    onWillAccept: (player) => canEdit && player != null && !players.any((p) => p.playerId == player.playerId),
+                    onAcceptWithDetails: (details) => canEdit ? _movePlayer(details.data, isTeamA) : null,
                     builder: (context, candidateData, rejectedData) {
                       final isActive = candidateData.isNotEmpty;
                       return Container(
@@ -495,68 +592,82 @@ class _MatchPageState extends ConsumerState<MatchPage> {
                           itemCount: players.length,
                           itemBuilder: (context, idx) {
                             final player = players[idx];
-                            return canAdd
-                                ? Draggable<Player>(
-                                    data: player,
-                                    feedbackOffset: const Offset(150, 0),
-                                    feedback: Material(
-                                      color: Colors.transparent,
-                                      child: SizedBox(
-                                        width: 300,
-                                        child: Opacity(
-                                          opacity: 0.7,
-                                          child: PlayerWidget(
-                                            player: player,
-                                            showScores: true,
-                                          ),
-                                        ),
+                            if (canEdit) {
+                              return Draggable<Player>(
+                                data: player,
+                                feedbackOffset: const Offset(150, 0),
+                                feedback: Material(
+                                  color: Colors.transparent,
+                                  child: SizedBox(
+                                    width: 300,
+                                    child: Opacity(
+                                      opacity: 0.7,
+                                      child: PlayerWidget(
+                                        player: player,
+                                        showScores: true,
+                                        compact: true,
                                       ),
                                     ),
-                                    childWhenDragging: Opacity(
-                                      opacity: 0.3,
-                                      child: SizedBox(
-                                        width: 300,
-                                        child: PlayerWidget(
-                                          player: player,
-                                          showScores: true,
-                                        ),
-                                      ),
-                                    ),
+                                  ),
+                                ),
+                                childWhenDragging: Opacity(
+                                  opacity: 0.3,
+                                  child: SizedBox(
+                                    width: 300,
                                     child: PlayerWidget(
                                       player: player,
-                                      onTap: null,
                                       showScores: true,
+                                      compact: true,
                                     ),
-                                    onDragStarted: () => _onPlayerDragStarted(player),
-                                    onDragEnd: (_) => _onPlayerDragEnded(),
-                                  )
-                                : PlayerWidget(
-                                    player: player,
-                                    onTap: () => _onPlayerTap(player),
-                                    showScores: true,
-                                  );
+                                  ),
+                                ),
+                                child: PlayerWidget(
+                                  player: player,
+                                  onTap: null,
+                                  showScores: true,
+                                  compact: true,
+                                ),
+                                onDragStarted: () => _onPlayerDragStarted(player),
+                                onDragEnd: (_) => _onPlayerDragEnded(),
+                              );
+                            } else {
+                              return PlayerWidget(
+                                player: player,
+                                onTap: () => _onPlayerTap(player),
+                                showScores: true,
+                                compact: true,
+                              );
+                            }
                           },
                         ),
                       );
                     },
                   ),
                 ),
+                if (canAdd)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(6),
+                        onTap: () => _addPlayerToTeam(isTeamA),
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: Center(
+                            child: Icon(Icons.add, size: 20, color: Colors.grey[700]),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
-            if (canAdd)
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: FloatingActionButton(
-                  mini: true,
-                  heroTag: isTeamA ? 'addA' : 'addB',
-                  onPressed: canAdd ? () => _addPlayerToTeam(isTeamA) : null,
-                  child: const Icon(Icons.add),
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.black54,
-                  elevation: 1,
-                ),
-              ),
           ],
         ),
       ),

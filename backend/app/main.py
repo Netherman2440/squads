@@ -15,6 +15,8 @@ from app.routes import squads
 #alembic revision --autogenerate -m "Add ScoreHistory table"
 #docker-compose exec backend bash
 
+
+
 app = FastAPI(
     title="Squads API",
     description="API for managing football squads, players, and matches",

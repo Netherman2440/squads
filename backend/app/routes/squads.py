@@ -210,6 +210,24 @@ async def update_player(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found after update")
     return detail_player.to_response()
 
+@router.delete("/{squad_id}/players/{player_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_player(
+    squad_id: str,
+    player_id: str,
+    user_id: str = Depends(get_current_user),
+    player_service: PlayerService = Depends(get_player_service),
+    squad_service: SquadService = Depends(get_squad_service)
+):
+    """Delete a player from a squad - only squad owner can delete players"""
+    if not check_user_can_access_squad(user_id, squad_id, squad_service):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only squad owner can delete players")
+
+    player = player_service.get_player(player_id)
+    if player is None or player.squad_id != squad_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found in this squad")
+
+    player_service.delete_player(player_id)
+
 @router.get("/{squad_id}/matches", response_model=MatchListResponse)
 async def get_matches(
     squad_id: str, 
@@ -296,9 +314,13 @@ async def delete_match(
     if not check_user_can_access_squad(user_id, squad_id, squad_service):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only squad owner can delete matches")
     
-    success = match_service.delete_match(match_id)
-    if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+    try:
+        success = match_service.delete_match(match_id)
+        if not success:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
+    except Exception as e:
+        # Handle any errors during match deletion or score recalculation
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to delete match: {str(e)}")
 
 @router.post("/{squad_id}/matches/draw", response_model=DraftListResponse)
 async def draw_match(

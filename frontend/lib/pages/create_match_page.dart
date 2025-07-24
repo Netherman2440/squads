@@ -119,6 +119,17 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Wyniki draftu'),
+        actions: [
+          TextButton.icon(
+            onPressed: _createMatch,
+            icon: const Icon(Icons.check, color: Colors.white),
+            label: const Text(
+              'Create Match',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -136,14 +147,14 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
                   },
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: Theme.of(context).primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     'Draft ${_selectedDraftIndex + 1} z $draftCount',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ),
                 IconButton(
@@ -173,12 +184,6 @@ class _CreateMatchPageState extends ConsumerState<CreateMatchPage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _createMatch,
-        label: const Text('Create Match'),
-        icon: const Icon(Icons.check),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 } 

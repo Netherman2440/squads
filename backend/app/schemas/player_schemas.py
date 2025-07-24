@@ -1,6 +1,8 @@
+from datetime import datetime
 from pydantic import BaseModel, Field
 from typing import Optional, TYPE_CHECKING
 from app.constants import Position
+from app.schemas.stats_schemas import PlayerStats
 
 class PlayerBase(BaseModel):
     """Base player schema with common fields"""
@@ -19,7 +21,7 @@ class PlayerUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=100, description="Player name")
     base_score: Optional[int] = Field(None, ge=0, le=100, description="Player base score (0-100)")
     position: Optional[Position] = Field(None, description="Player position")
-    score: Optional[float] = Field(None, ge=0, description="Current calculated score")
+    score: Optional[float] = Field(None, ge=0, le=100, description="Current calculated score (0-100)")
 
 
 
@@ -33,6 +35,7 @@ class PlayerResponse(PlayerBase):
     score: float
     position: Position
     matches_played: int
+    created_at: datetime
 
 class PlayerListResponse(BaseModel):
     """Schema for list of players"""
@@ -41,7 +44,7 @@ class PlayerListResponse(BaseModel):
 
 class PlayerDetailResponse(PlayerResponse):
     """Schema for detailed player response with matches"""
-    matches: list["MatchResponse"]
+    stats: PlayerStats
 
 if TYPE_CHECKING:
     from app.schemas.match_schemas import MatchResponse

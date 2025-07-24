@@ -3,6 +3,7 @@ from .match_schemas import MatchCreate, MatchResponse, MatchUpdate, MatchListRes
 from .squad_schemas import SquadCreate, SquadResponse, SquadUpdate, SquadListResponse, SquadDetailResponse
 from .draft_schemas import DraftCreate, DraftResponse, DraftListResponse
 from .auth_schemas import UserRegister, UserLogin, UserResponse, AuthResponse
+from .stats_schemas import PlayerStats, SquadStats, CarouselStat, PlayerRef, MatchRef
 
 __all__ = [
     "PlayerCreate",
@@ -31,4 +32,10 @@ __all__ = [
     "UserLogin",
     "UserResponse",
     "AuthResponse",
+
+    "PlayerStats",
+    "SquadStats",
+    "CarouselStat",
+    "PlayerRef",
+    "MatchRef",
 ]

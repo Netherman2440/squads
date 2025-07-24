@@ -36,11 +36,18 @@ class _DraftPageState extends ConsumerState<DraftPage> {
   String _searchQuery = '';
   bool _isLoading = true;
   String? _error;
+  final ScrollController _selectedPlayersScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadPlayers();
+  }
+
+  @override
+  void dispose() {
+    _selectedPlayersScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadPlayers() async {
@@ -67,6 +74,19 @@ class _DraftPageState extends ConsumerState<DraftPage> {
 
   void _onPlayerCreated() {
     _loadPlayers();
+    _scrollToEndOfSelectedPlayers();
+  }
+
+  void _scrollToEndOfSelectedPlayers() {
+    if (_selectedPlayersScrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _selectedPlayersScrollController.animateTo(
+          _selectedPlayersScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
   }
 
   List<Player> _getFilteredPlayers(List<Player> players) {
@@ -140,6 +160,18 @@ class _DraftPageState extends ConsumerState<DraftPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tworzenie składu'),
+        actions: [
+          if (canManagePlayers && draftState.selectedPlayers.isNotEmpty)
+            TextButton.icon(
+              onPressed: _createDraft,
+              icon: const Icon(Icons.shuffle, color: Colors.white),
+              label: const Text(
+                'Draft',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -168,9 +200,9 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                     ],
                   ),
                 )
-              : Row(
+              : Column(
                   children: [
-                    // Available players column (left)
+                    // Selected players section (top)
                     Expanded(
                       flex: 1,
                       child: Stack(
@@ -179,12 +211,72 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                             margin: const EdgeInsets.all(8.0),
                             child: Column(
                               children: [
-
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Wybrani gracze (${draftState.selectedPlayers.length})',
+                                          style: Theme.of(context).textTheme.titleMedium,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: draftState.selectedPlayers.isEmpty
+                                      ? const Center(
+                                          child: Text(
+                                            'Brak wybranych graczy',
+                                            style: TextStyle(
+                                              color: Colors.grey,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          controller: _selectedPlayersScrollController,
+                                          itemCount: draftState.selectedPlayers.length,
+                                          itemBuilder: (context, index) {
+                                            final player = draftState.selectedPlayers[index];
+                                            return PlayerWidget(
+                                              player: player,
+                                              onTap: canManagePlayers
+                                                  ? () => ref.read(draftProvider.notifier).removePlayer(player)
+                                                  : null,
+                                              showScores: true,
+                                              compact: true,
+                                            );
+                                          },
+                                        ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Available players section (bottom)
+                    Expanded(
+                      flex: 1,
+                      child: Stack(
+                        children: [
+                          Card(
+                            margin: const EdgeInsets.all(8.0),
+                            child: Column(
+                              children: [
                                 Expanded(
                                   child: PlayersListWidget(
-                                    players: _getFilteredPlayers(draftState.availablePlayers),
+                                    players: draftState.availablePlayers,
                                     onPlayerSelected: canManagePlayers
-                                        ? (player) => ref.read(draftProvider.notifier).addPlayer(player)
+                                        ? (player) {
+                                            ref.read(draftProvider.notifier).addPlayer(player);
+                                            _scrollToEndOfSelectedPlayers();
+                                          }
                                         : null,
                                     allowAdd: false,
                                     allowSelect: true,
@@ -201,77 +293,6 @@ class _DraftPageState extends ConsumerState<DraftPage> {
                                 onPressed: () => _showAddPlayerDialog(context),
                                 child: const Icon(Icons.add),
                                 tooltip: 'Dodaj gracza',
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    // Selected players column (right)
-                    Expanded(
-                      flex: 1,
-                      child: Stack(
-                        children: [
-                          Card(
-                            margin: const EdgeInsets.all(8.0),
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Wybrani gracze (${draftState.selectedPlayers.length})',
-                                        style: Theme.of(context).textTheme.titleMedium,
-                                      ),
-                                      if (draftState.selectedPlayers.isNotEmpty && canManagePlayers)
-                                        IconButton(
-                                          icon: const Icon(Icons.clear_all),
-                                          onPressed: () {
-                                            ref.read(draftProvider.notifier).clearSelectedPlayers();
-                                          },
-                                          tooltip: 'Wyczyść wszystkich',
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                Expanded(
-                                  child: draftState.selectedPlayers.isEmpty
-                                      ? const Center(
-                                          child: Text(
-                                            'Brak wybranych graczy',
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                          ),
-                                        )
-                                      : ListView.builder(
-                                          itemCount: draftState.selectedPlayers.length,
-                                          itemBuilder: (context, index) {
-                                            final player = draftState.selectedPlayers[index];
-                                            return PlayerWidget(
-                                              player: player,
-                                              onTap: canManagePlayers
-                                                  ? () => ref.read(draftProvider.notifier).removePlayer(player)
-                                                  : null,
-                                              showScores: true,
-                                            );
-                                          },
-                                        ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (canManagePlayers && draftState.selectedPlayers.isNotEmpty)
-                            Positioned(
-                              bottom: 16,
-                              right: 16,
-                              child: FloatingActionButton.extended(
-                                onPressed: _createDraft,
-                                label: const Text('Draft'),
-                                icon: const Icon(Icons.shuffle),
-                                tooltip: 'Utwórz draft',
                               ),
                             ),
                         ],

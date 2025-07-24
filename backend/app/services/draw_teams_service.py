@@ -14,10 +14,11 @@ class Relation:
 
 #players are sorted by score from highest to lowest
 class DrawTeamsService:
-    def __init__(self, players: list[PlayerData], amount_of_teams: int = 2, amount_of_draws: int = 20):
+    def __init__(self, players: list[PlayerData], amount_of_teams: int = 2, amount_of_draws: int = 20, allow_substitutions: bool = True):
         self.players = sorted(players, key=lambda x: x.score, reverse=True)
         self.amount_of_teams = amount_of_teams
         self.amount_of_draws = amount_of_draws
+        self.allow_substitutions = allow_substitutions
 
     def draw_teams(self) -> list[tuple[list[PlayerData], list[PlayerData]]]:
         if self.amount_of_teams == 2:
@@ -44,7 +45,10 @@ class DrawTeamsService:
         # Sort combos by how close their score is to half of the total score
         combos = sorted(
             combos,
-            key=lambda x: abs(sum(self.players[i].score for i in x) - total_score / 2)
+            key=lambda x: (
+                abs(self._get_effective_combo_score(x) - self._get_effective_total_score() / 2),  # First: team balance
+                self._calculate_squared_differences_for_combo(x)                                   # Second: squared differences
+            )
         )
 
         combos = combos[0:self.amount_of_draws]
@@ -57,6 +61,68 @@ class DrawTeamsService:
             draft_data.append((team_a, team_b))
 
         return draft_data
+    
+    def _get_effective_total_score(self) -> float:
+        """Get total score of all players considering substitutions"""
+        if not self.allow_substitutions:
+            return sum(player.score for player in self.players)
+        
+        # If substitutions allowed and odd number of players, exclude the weakest
+        total_players = len(self.players)
+        expected_smaller_team_size = total_players // self.amount_of_teams
+        
+        if total_players % self.amount_of_teams != 0:
+            # Odd number - exclude the weakest player
+            return sum(player.score for player in self.players[:-1])
+        else:
+            return sum(player.score for player in self.players)
+    
+    def _get_effective_combo_score(self, combo: tuple) -> float:
+        """Get effective score for a combo considering substitutions"""
+        team_a = [self.players[i] for i in combo]
+        team_b = [self.players[i] for i in range(len(self.players)) if i not in combo]
+        
+        return self._get_effective_team_score(team_a, team_b)
+    
+    def _get_effective_team_score(self, team_a: list[PlayerData], team_b: list[PlayerData]) -> float:
+        """Get team A score considering substitutions option"""
+        if not self.allow_substitutions:
+            return sum(player.score for player in team_a)
+        
+        # If team sizes are different, exclude weakest player from larger team
+        if len(team_a) > len(team_b):
+            # team_a is larger, exclude its weakest player
+            team_a_sorted = sorted(team_a, key=lambda x: x.score, reverse=True)
+            return sum(player.score for player in team_a_sorted[:-1])
+        else:
+            return sum(player.score for player in team_a)
+    
+    def _calculate_squared_differences_for_combo(self, combo: tuple) -> float:
+        """Calculate sum of squared differences for a specific combination of player indices"""
+        # Create teams from the combo
+        team_a = [self.players[i] for i in combo]
+        team_b = [self.players[i] for i in range(len(self.players)) if i not in combo]
+        
+        # Sort both teams by score (highest to lowest)
+        team_a_sorted = sorted(team_a, key=lambda x: x.score, reverse=True)
+        team_b_sorted = sorted(team_b, key=lambda x: x.score, reverse=True)
+        
+        # Handle substitutions - exclude weakest player from larger team
+        if self.allow_substitutions and len(team_a_sorted) != len(team_b_sorted):
+            if len(team_a_sorted) > len(team_b_sorted):
+                # team_a is larger, exclude its weakest player
+                team_a_sorted = team_a_sorted[:-1]
+            else:
+                # team_b is larger, exclude its weakest player
+                team_b_sorted = team_b_sorted[:-1]
+        
+        # Calculate sum of squared differences between corresponding players
+        squared_sum = 0
+        for i in range(min(len(team_a_sorted), len(team_b_sorted))):
+            diff = team_a_sorted[i].score - team_b_sorted[i].score
+            squared_sum += diff * diff
+        
+        return squared_sum
 
     def draw_teams_3(self) -> list[int]:
         team_size = len(self.players) // self.amount_of_teams
@@ -74,32 +140,26 @@ class DrawTeamsService:
 #cd backend
 #python -m app.services.draw_teams_service
 if __name__ == "__main__":
+    from datetime import datetime
+    
     players = [
-        PlayerData.create(name="John", base_score=100, squad_id="squad-1"),
-        PlayerData.create(name="Jane", base_score=90, squad_id="squad-1"),
-        PlayerData.create(name="Jim", base_score=80, squad_id="squad-1"),
-        PlayerData.create(name="Jill", base_score=70, squad_id="squad-1"),
-        PlayerData.create(name="Jack", base_score=60, squad_id="squad-1"),
-        PlayerData.create(name="Jerry", base_score=95, squad_id="squad-2"),
-        PlayerData.create(name="Janet", base_score=85, squad_id="squad-2"),
-        PlayerData.create(name="Jacob", base_score=75, squad_id="squad-2"),
-        PlayerData.create(name="Julia", base_score=65, squad_id="squad-2"),
-        PlayerData.create(name="Jordan", base_score=55, squad_id="squad-2"),
-        PlayerData.create(name="Jasper", base_score=92, squad_id="squad-3"),
-        PlayerData.create(name="Jade", base_score=82, squad_id="squad-3"),
-        PlayerData.create(name="Joan", base_score=72, squad_id="squad-3"),
-        PlayerData.create(name="Jules", base_score=62, squad_id="squad-3"),
-        PlayerData.create(name="Joy", base_score=52, squad_id="squad-3"),
-        PlayerData.create(name="Jeff", base_score=88, squad_id="squad-4"),
-        PlayerData.create(name="Josie", base_score=78, squad_id="squad-4"),
-        PlayerData.create(name="Johan", base_score=68, squad_id="squad-4"),
-        PlayerData.create(name="James", base_score=58, squad_id="squad-4"),
-        PlayerData.create(name="Jocelyn", base_score=48, squad_id="squad-4"),
-        PlayerData.create(name="Jeremy", base_score=77, squad_id="squad-5"),
-        PlayerData.create(name="Jenna", base_score=67, squad_id="squad-5"),
+        PlayerData(squad_id="squad-1", player_id="1", name="John", base_score=100, created_at=datetime.now()),
+        PlayerData(squad_id="squad-1", player_id="2", name="Jane", base_score=90, created_at=datetime.now()),
+        PlayerData(squad_id="squad-1", player_id="3", name="Jim", base_score=80, created_at=datetime.now()),
+        PlayerData(squad_id="squad-1", player_id="4", name="Jill", base_score=70, created_at=datetime.now()),
+        PlayerData(squad_id="squad-1", player_id="5", name="Jack", base_score=60, created_at=datetime.now()),
     ]
-    draw_teams_service = DrawTeamsService(players, 2)
+    draw_teams_service = DrawTeamsService(players, 2, amount_of_draws=5)
     teams = draw_teams_service.draw_teams()
 
-    print(teams)
-    print(len(teams))
+    print("Team combinations (5 players with substitutions):")
+    for i, (team_a, team_b) in enumerate(teams):
+        team_a_score = draw_teams_service._get_effective_team_score(team_a, team_b)
+        team_b_score = draw_teams_service._get_effective_team_score(team_b, team_a)
+        score_diff = abs(team_a_score - team_b_score)
+        
+        print(f"Combination {i+1}:")
+        print(f"  Team A ({len(team_a)} players, effective score: {team_a_score}): {[p.name for p in team_a]}")
+        print(f"  Team B ({len(team_b)} players, effective score: {team_b_score}): {[p.name for p in team_b]}")
+        print(f"  Score difference: {score_diff}")
+        print()

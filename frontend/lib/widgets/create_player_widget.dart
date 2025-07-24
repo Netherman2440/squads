@@ -22,7 +22,7 @@ class _CreatePlayerWidgetState extends ConsumerState<CreatePlayerWidget> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _scoreController = TextEditingController();
-  Position _selectedPosition = Position.none;
+  Position _selectedPosition = Position.none; // Keep for API compatibility
   bool _isLoading = false;
 
   @override
@@ -43,7 +43,7 @@ class _CreatePlayerWidgetState extends ConsumerState<CreatePlayerWidget> {
       final playerCreate = PlayerCreate(
         name: _nameController.text.trim(),
         baseScore: int.parse(_scoreController.text),
-        position: _selectedPosition,
+        position: _selectedPosition, // Still send position for backend compatibility
       );
 
       await PlayerService.instance.createPlayer(widget.squadId, playerCreate);
@@ -51,7 +51,7 @@ class _CreatePlayerWidgetState extends ConsumerState<CreatePlayerWidget> {
       // Clear form
       _nameController.clear();
       _scoreController.clear();
-      _selectedPosition = Position.forward;
+      // Keep _selectedPosition as Position.none
 
       // Notify parent
       widget.onPlayerCreated?.call();
@@ -122,27 +122,6 @@ class _CreatePlayerWidgetState extends ConsumerState<CreatePlayerWidget> {
                     return 'Wprowadź poprawną liczbę';
                   }
                   return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<Position>(
-                value: _selectedPosition,
-                decoration: const InputDecoration(
-                  labelText: 'Pozycja',
-                  border: OutlineInputBorder(),
-                ),
-                items: Position.values.map((position) {
-                  return DropdownMenuItem(
-                    value: position,
-                    child: Text(position.displayName),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedPosition = value;
-                    });
-                  }
                 },
               ),
               const SizedBox(height: 16),

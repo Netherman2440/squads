@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional
 from app.schemas.match_schemas import TeamDetailResponse
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.entities.player_data import PlayerData
+
 
 @dataclass
 class TeamData:
@@ -15,7 +19,7 @@ class TeamData:
 
 @dataclass
 class TeamDetailData(TeamData):
-    players: list = None
+    players: list["PlayerData"] = None
 
     def to_response(self) -> TeamDetailResponse:
         return TeamDetailResponse(

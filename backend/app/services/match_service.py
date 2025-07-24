@@ -83,8 +83,8 @@ class MatchService:
             score_history = ScoreHistory(
                 match_id=match.match_id,
                 player_id=player.player_id,
-                previous_score=player.score,
-                new_score=player.score,
+                previous_score=round(player.score, 2),
+                new_score=round(player.score, 2),
                 delta=0.0
             )
             self.session.add(score_history)
@@ -138,6 +138,32 @@ class MatchService:
             
         return draft_data
     
+    def validate_no_older_matches_without_result(self, squad_id: str, current_match_id: str) -> bool:
+        """
+        Check if there are any older matches without results.
+        Returns False if there are older matches with null scores.
+        """
+        # Get current match to compare creation time
+        current_match = self.session.query(Match).filter(Match.match_id == current_match_id).first()
+        if not current_match:
+            return False
+        
+        # Find all older matches in the same squad
+        older_matches = self.session.query(Match).filter(
+            Match.squad_id == squad_id,
+            Match.created_at < current_match.created_at
+        ).all()
+        
+        # Check if any older match has null score in any team
+        for match in older_matches:
+            teams = match.teams
+            if len(teams) >= 2:
+                # If either team has null score, validation fails
+                if teams[0].score is None or teams[1].score is None:
+                    return False
+        
+        return True
+
     def update_match(self, match_id: str, 
                      team_a: TeamUpdate, 
                      team_b: TeamUpdate,
@@ -145,6 +171,14 @@ class MatchService:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()
         if not match:
             return None
+
+        # Check if we're updating scores (not just players)
+        is_updating_score = (team_a.score is not None or team_b.score is not None)
+        
+        # Validate that there are no older matches without results
+        if is_updating_score:
+            if not self.validate_no_older_matches_without_result(match.squad_id, match_id):
+                raise ValueError("Cannot update match result: there are older matches without results")
 
         from app.services import TeamService, PlayerService
         team_service = TeamService(self.session)
@@ -289,10 +323,22 @@ class MatchService:
         match = self.session.query(Match).filter(Match.match_id == match_id).first()
         if not match:
             return False
+        
+        # Get all players who participated in this match before deleting it
+        players_to_recalculate = set()
+        for team in match.teams:
+            for player in team.players:
+                players_to_recalculate.add(player.player_id)
             
         # Delete the match (cascade should handle teams and score history)
         self.session.delete(match)
         self.session.commit()
+        
+        # Recalculate scores for all players who were in the deleted match
+        from app.services import PlayerService
+        player_service = PlayerService(self.session)
+        for player_id in players_to_recalculate:
+            player_service.recalculate_and_update_score(player_id)
         
         return True
         

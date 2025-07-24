@@ -8,7 +8,8 @@ import '../state/user_state.dart';
 import '../state/players_state.dart';
 import '../state/matches_state.dart';
 import '../state/squad_state.dart';
-import '../utils/permission_utils.dart';
+import 'package:squads/theme/app_theme.dart';
+import 'package:squads/theme/color_utils.dart';
 import 'match_page.dart';
 import 'squad_page.dart';
 import 'draft_page.dart';
@@ -236,18 +237,22 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
 
   Widget _buildScoreBox({required String score, required bool isLeft}) {
     final hasScore = score.isNotEmpty;
-    
+    final theme = Theme.of(context);
+    // Use theme-based colors for a lighter, more neutral look
+    final Color baseBg = theme.brightness == Brightness.dark
+        ? AppColors.lightSurface
+        : AppColors.lightSurface;
+    final Color borderColor = hasScore
+        ? theme.colorScheme.primary.withOpacity(0.5)
+        : theme.colorScheme.outlineVariant;
+    final Color textColor = Colors.black;
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: hasScore 
-          ? (isLeft ? Colors.blue.shade100 : Colors.red.shade100)
-          : Colors.grey.shade200,
+        color: baseBg,
         border: Border.all(
-          color: hasScore 
-            ? (isLeft ? Colors.blue.shade300 : Colors.red.shade300)
-            : Colors.grey.shade300,
+          color: borderColor,
           width: 2,
         ),
         borderRadius: BorderRadius.circular(8),
@@ -258,9 +263,7 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: hasScore 
-              ? (isLeft ? Colors.blue.shade700 : Colors.red.shade700)
-              : Colors.grey.shade500,
+            color: textColor,
           ),
         ),
       ),
@@ -275,7 +278,7 @@ class _MatchHistoryPageState extends ConsumerState<MatchHistoryPage> {
       return 'Today ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     } else if (difference.inDays == 1) {
       return 'Yesterday ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-    } else if (difference.inDays < 7) {
+    } else if (difference.inDays < 3) {
       return '${difference.inDays} days ago ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
     } else {
       return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
